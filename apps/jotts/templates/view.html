@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Jotts — {{ note.title }}{% endblock %}
+{% block content %}
+  <div class="note-header">
+    <h1>{{ note.title }}</h1>
+    <time class="note-date" datetime="{{ note.updated_at }}Z">{{ note.updated_at }}</time>
+  </div>
+  <div class="note-actions">
+    <a href="/notes/{{ note.short_id }}/edit">edit</a>
+    <form method="POST" action="/notes/{{ note.short_id }}/delete" class="inline-form">
+      <button type="submit" class="link-button" onclick="return confirm('delete this note?')">delete</button>
+    </form>
+  </div>
+  <article class="markdown-body">
+    {{ rendered_content|safe }}
+  </article>
+{% endblock %}

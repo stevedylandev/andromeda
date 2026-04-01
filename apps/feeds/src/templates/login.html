@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://feeds.stevedylan.dev/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://feeds.stevedylan.dev/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://feeds.stevedylan.dev/assets/favicon-16x16.png">
+    <link rel="manifest" href="https://feeds.stevedylan.dev/assets/site.webmanifest">
+    <title>Feeds | Login</title>
+  </head>
+  <body>
+    <a href="/" class="header">
+      <h1>FEEDS</h1>
+    </a>
+    {% if let Some(err) = error %}
+    <p class="error-msg">{{ err }}</p>
+    {% endif %}
+
+    <form class="admin-form" method="POST" action="/admin/login">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required autofocus />
+      <button type="submit">Login</button>
+    </form>
+  </body>
+</html>

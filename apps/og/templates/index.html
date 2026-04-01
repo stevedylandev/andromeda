@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}OG{% endblock %}
+
+{% block content %}
+<div class="index-container">
+    <form action="/check" method="POST" class="check-form">
+        <input
+            type="text"
+            name="url"
+            placeholder="example.com"
+            required
+            autocomplete="url"
+            autofocus
+        >
+        <button type="submit">Check</button>
+    </form>
+</div>
+{% endblock %}

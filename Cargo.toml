@@ -1,0 +1,44 @@
+[workspace]
+members = [
+    "apps/sipp",
+    "apps/feeds",
+    "apps/parcels",
+    "apps/jotts",
+    "apps/og",
+    "apps/shrink",
+    "crates/auth",
+]
+resolver = "3"
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+[workspace.dependencies]
+# Core web stack
+axum = "0.8.8"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dotenvy = "0.15"
+
+# HTTP / middleware
+tower-http = "0.6.8"
+
+# Assets
+rust-embed = "8"
+
+# Database
+rusqlite = { version = "0.38", features = ["bundled"] }
+nanoid = "0.4.0"
+
+# Auth
+subtle = "2"
+rand = "0.8"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Workspace crates
+andromeda-auth = { path = "crates/auth" }

@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}SHRINK{% endblock %}
+{% block content %}
+
+<div id="drop-zone">
+    <p>DROP IMAGE HERE OR CLICK TO SELECT</p>
+    <input type="file" id="file-input" accept="image/*" hidden>
+</div>
+
+<div id="preview-section">
+    <img id="preview-img" alt="Preview">
+    <p id="original-size"></p>
+</div>
+
+<div id="controls">
+    <div class="control-row">
+        <label for="quality-slider">QUALITY</label>
+        <input type="range" id="quality-slider" min="1" max="100" value="80">
+        <span id="quality-value">80</span>
+    </div>
+    <div class="control-row">
+        <label>RESIZE</label>
+        <input type="number" id="width-input" placeholder="WIDTH" min="1">
+        <span class="dimension-sep">x</span>
+        <span id="height-display">—</span>
+    </div>
+    <button id="compress-btn">COMPRESS</button>
+</div>
+
+<div id="result-section">
+    <div class="size-comparison">
+        <div>
+            <label>ORIGINAL</label>
+            <p id="result-original-size"></p>
+        </div>
+        <div>
+            <label>COMPRESSED</label>
+            <p id="result-compressed-size"></p>
+        </div>
+        <div>
+            <label>REDUCTION</label>
+            <p id="result-reduction"></p>
+        </div>
+    </div>
+    <a id="download-link">
+        <button>DOWNLOAD</button>
+    </a>
+</div>
+
+<script>
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const previewSection = document.getElementById('preview-section');
+const previewImg = document.getElementById('preview-img');
+const originalSize = document.getElementById('original-size');
+const controls = document.getElementById('controls');
+const qualitySlider = document.getElementById('quality-slider');
+const qualityValue = document.getElementById('quality-value');
+const widthInput = document.getElementById('width-input');
+const heightDisplay = document.getElementById('height-display');
+const compressBtn = document.getElementById('compress-btn');
+const resultSection = document.getElementById('result-section');
+const resultOriginalSize = document.getElementById('result-original-size');
+const resultCompressedSize = document.getElementById('result-compressed-size');
+const resultReduction = document.getElementById('result-reduction');
+const downloadLink = document.getElementById('download-link');
+
+let selectedFile = null;
+let naturalWidth = 0;
+let naturalHeight = 0;
+
+function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    originalSize.textContent = formatBytes(file.size);
+    previewSection.classList.add('visible');
+    controls.classList.add('visible');
+    resultSection.classList.remove('visible');
+
+    const tmp = new Image();
+    tmp.onload = () => {
+        naturalWidth = tmp.naturalWidth;
+        naturalHeight = tmp.naturalHeight;
+        widthInput.value = naturalWidth;
+        heightDisplay.textContent = naturalHeight;
+    };
+    tmp.src = url;
+}
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+});
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+
+qualitySlider.addEventListener('input', () => {
+    qualityValue.textContent = qualitySlider.value;
+});
+
+widthInput.addEventListener('input', () => {
+    if (naturalWidth > 0) {
+        const w = parseInt(widthInput.value) || 0;
+        heightDisplay.textContent = w > 0 ? Math.round(w * naturalHeight / naturalWidth) : '—';
+    }
+});
+
+compressBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+    compressBtn.disabled = true;
+    compressBtn.textContent = 'COMPRESSING...';
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('quality', qualitySlider.value);
+    const w = parseInt(widthInput.value) || 0;
+    if (w > 0) {
+        formData.append('width', w.toString());
+    }
+
+    try {
+        const res = await fetch('/compress', { method: 'POST', body: formData });
+        if (!res.ok) {
+            const text = await res.text();
+            alert('Compression failed: ' + text);
+            return;
+        }
+        const blob = await res.blob();
+        const originalBytes = selectedFile.size;
+        const compressedBytes = blob.size;
+        const reduction = ((1 - compressedBytes / originalBytes) * 100).toFixed(1);
+
+        resultOriginalSize.textContent = formatBytes(originalBytes);
+        resultCompressedSize.textContent = formatBytes(compressedBytes);
+        resultReduction.textContent = reduction + '%';
+
+        if (downloadLink.href && downloadLink.href.startsWith('blob:')) {
+            URL.revokeObjectURL(downloadLink.href);
+        }
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = selectedFile.name.replace(/\.[^.]+$/, '') + '_compressed.jpg';
+        resultSection.classList.add('visible');
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        compressBtn.disabled = false;
+        compressBtn.textContent = 'COMPRESS';
+    }
+});
+</script>
+
+{% endblock %}

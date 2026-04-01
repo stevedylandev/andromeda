@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#121113">
+    <title>{% block title %}SHRINK{% endblock %}</title>
+    <meta name="description" content="Shorten URLs with SHRINK">
+    <meta property="og:title" content="SHRINK">
+    <meta property="og:description" content="Shorten URLs with SHRINK">
+    <meta property="og:image" content="/static/og.png">
+    <meta property="og:type" content="website">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <header>
+        <a href="/" class="logo">SHRINK</a>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

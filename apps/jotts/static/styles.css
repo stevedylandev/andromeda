@@ -1,0 +1,354 @@
+@font-face {
+  font-family: "Commit Mono";
+  src: url("/assets/fonts/CommitMono-400-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Commit Mono";
+  src: url("/assets/fonts/CommitMono-700-Regular.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Commit Mono", monospace, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html {
+  background: #121113;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start;
+  gap: 1.5rem;
+  min-height: 100vh;
+  max-width: 700px;
+  margin: auto;
+  padding: 0 1rem;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.7;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 2rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12px;
+}
+
+/* Main content */
+
+main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Forms */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+input, textarea {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid white;
+  padding: 0.4rem 0.75rem;
+  font-size: 16px;
+  width: 100%;
+  border-radius: 0;
+}
+
+textarea {
+  min-height: 400px;
+  resize: vertical;
+}
+
+button {
+  background: #121113;
+  color: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid white;
+  cursor: pointer;
+  width: fit-content;
+  font-size: 14px;
+  border-radius: 0;
+}
+
+button:hover {
+  opacity: 0.7;
+}
+
+/* Error */
+
+.error {
+  color: #ffffff;
+  border-left: 2px solid #ffffff;
+  padding-left: 0.5rem;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* Note list */
+
+.note-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.note-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  text-decoration: none;
+}
+
+.note-item:hover {
+  opacity: 0.7;
+}
+
+.note-title {
+  font-size: 16px;
+}
+
+.note-date {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.empty {
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+/* Note view */
+
+.note-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.note-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.note-actions {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 12px;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.link-button:hover {
+  opacity: 0.7;
+}
+
+/* Markdown rendered content */
+
+.markdown-body {
+  width: 100%;
+  line-height: 1.6;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.markdown-body h1 { font-size: 18px; }
+.markdown-body h2 { font-size: 16px; }
+.markdown-body h3 { font-size: 15px; }
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 { font-size: 14px; }
+
+.markdown-body p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-body code {
+  background: #1e1c1f;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.markdown-body pre {
+  background: #1e1c1f;
+  padding: 12px;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+  border: 1px solid #333;
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown-body blockquote {
+  border-left: 2px solid #555;
+  padding-left: 12px;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #333;
+  padding: 6px;
+  text-align: left;
+}
+
+.markdown-body th {
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 1rem 0;
+}
+
+.markdown-body a {
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+}
+
+.markdown-body li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -1.5rem;
+}
+
+.markdown-body input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  border: 1px solid white;
+  border-radius: 0;
+  padding: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  cursor: pointer;
+}
+
+.markdown-body input[type="checkbox"]:checked::after {
+  content: '✔︎';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: white;
+  line-height: 1;
+}
+}

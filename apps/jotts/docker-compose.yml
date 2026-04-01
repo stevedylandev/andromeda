@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/jotts/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - JOTTS_PASSWORD=${JOTTS_PASSWORD:-changeme}
+      - JOTTS_DB_PATH=/data/jotts.sqlite
+      - COOKIE_SECURE=false
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+    volumes:
+      - jotts-data:/data
+    restart: unless-stopped
+
+volumes:
+  jotts-data:

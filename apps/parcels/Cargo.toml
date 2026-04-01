@@ -1,0 +1,25 @@
+[package]
+name = "parcels"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "parcels"
+path = "src/main.rs"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tower-http = { workspace = true, features = ["fs"] }
+rand = { workspace = true }
+subtle = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+andromeda-auth = { workspace = true }
+rusqlite = { workspace = true }
+reqwest = { version = "0.12", features = ["json"] }
+askama = { version = "0.12", features = ["with-axum"] }
+askama_axum = "0.4"
+anyhow = "1"

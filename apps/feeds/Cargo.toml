@@ -1,0 +1,22 @@
+[package]
+name = "feeds"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+dotenvy = { workspace = true }
+rust-embed = { workspace = true }
+subtle = { workspace = true }
+rand = { workspace = true }
+andromeda-auth = { workspace = true }
+askama = "0.13"
+reqwest = { version = "0.12", features = ["json"] }
+feed-rs = "2"
+chrono = "0.4"
+quick-xml = "0.37"
+mime_guess = "2"
+urlencoding = "2"

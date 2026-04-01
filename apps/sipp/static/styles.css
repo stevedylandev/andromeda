@@ -1,0 +1,167 @@
+* {
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	font-family: "Commit Mono", monospace, sans-serif;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+html {
+	background: #121113;
+	color: #ffffff;
+}
+
+html::-webkit-scrollbar {
+	display: none;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+	justify-content: start;
+	align-items: start;
+	gap: 1.5rem;
+	min-height: 100vh;
+	max-width: 700px;
+	margin: auto;
+}
+
+.header {
+	display: flex;
+	text-decoration: none;
+}
+
+.nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	margin-top: 2rem;
+}
+
+.icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #878787;
+	width: 24px;
+	height: 24px;
+}
+
+.icon svg {
+	width: 24px;
+	height: 24px;
+}
+
+.icon svg path {
+	fill: #878787;
+}
+
+.icon:hover svg path {
+	fill: white;
+}
+
+#snippetForm {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	width: 100%;
+}
+
+#snippetForm input {
+	background: #121113;
+	color: #ffffff;
+	border: 1px solid white;
+	padding: 4px;
+}
+
+#authForm input {
+	background: #121113;
+	color: #ffffff;
+	border: 1px solid white;
+	padding: 4px;
+}
+
+textarea {
+	background: #121113;
+	color: #ffffff;
+	width: 100%;
+	min-height: 400px;
+	padding: 6px;
+	border: 1px solid white;
+}
+
+.code-container {
+	border: 1px solid white;
+	height: 400px;
+	overflow: auto;
+}
+
+.code-container pre {
+	background-color: #121113 !important;
+	padding: 6px;
+	margin: 0;
+	min-height: 100%;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+button {
+	background: #121113;
+	color: #ffffff;
+	padding: 6px;
+	border: 1px solid white;
+	cursor: pointer;
+	width: fit-content;
+}
+
+a {
+	background: #121113;
+	color: #ffffff;
+}
+
+@media (max-width: 480px) {
+	body {
+		padding: 1rem;
+		gap: 1rem;
+	}
+}
+
+#snippetList {
+	flex-direction: column;
+	gap: 0;
+}
+
+.snippet-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px;
+	border: 1px solid white;
+	margin-top: -1px;
+	text-decoration: none;
+}
+
+.snippet-item:hover {
+	background: #1e1d1f;
+}
+
+.snippet-id {
+	color: #878787;
+	font-size: 13px;
+}
+
+@font-face {
+	font-family: "Commit Mono";
+	src: url("/assets/fonts/CommitMono-400-Regular.otf") format("opentype");
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: "Commit Mono";
+	src: url("/assets/fonts/CommitMono-700-Regular.otf") format("opentype");
+	font-weight: 700;
+	font-style: normal;
+}

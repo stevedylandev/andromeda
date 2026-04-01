@@ -1,0 +1,19 @@
+[package]
+name = "og"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tower-http = { workspace = true, features = ["cors"] }
+rust-embed = { workspace = true, features = ["mime-guess"] }
+dotenvy = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+askama = "0.13"
+reqwest = { version = "0.12", features = ["rustls-tls"], default-features = false }
+scraper = "0.22"
+url = "2"

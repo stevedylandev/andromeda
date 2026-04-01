@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://feeds.stevedylan.dev/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://feeds.stevedylan.dev/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://feeds.stevedylan.dev/assets/favicon-16x16.png">
+    <link rel="manifest" href="https://feeds.stevedylan.dev/assets/site.webmanifest">
+
+    <title>Feeds</title>
+    <meta name="description" content="Minimal RSS Reading">
+
+    <meta property="og:url" content="https://feeds.stevedylan.dev">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Feeds">
+    <meta property="og:description" content="Minimal RSS Reading">
+    <meta property="og:image" content="https://feeds.stevedylan.dev/assets/og.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="feeds.stevedylan.dev">
+    <meta property="twitter:url" content="https://feeds.stevedylan.dev">
+    <meta name="twitter:title" content="Feeds">
+    <meta name="twitter:description" content="Minimal RSS Reading">
+    <meta name="twitter:image" content="https://feeds.stevedylan.dev/assets/og.png">
+  </head>
+  <body>
+    <a href="/" class="header">
+      <h1>FEEDS</h1>
+    </a>
+
+    {% if let Some(urls) = feed_urls %}
+    <div id="feed-urls">
+      {% for url in urls %}
+      {{ url }}<br>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if let Some(err) = error %}
+    <div id="error" style="color: #ff6b6b;">
+      <p>{{ err }}</p>
+    </div>
+    {% elif items.is_empty() %}
+    <p class="no-feeds">No feeds available</p>
+    {% else %}
+    <div id="feeds-container">
+      <div class="feeds-list">
+        {% for item in items %}
+        <article class="feed-item">
+          <div class="feed-meta">
+            <span class="feed-date">{{ item.formatted_date }}</span>
+          </div>
+          <h3 class="feed-title">
+            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">
+              {{ item.title }}
+            </a>
+          </h3>
+          {% if !item.author.is_empty() %}
+          <p class="feed-author">{{ item.author }}</p>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </body>
+</html>

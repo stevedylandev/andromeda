@@ -1,0 +1,16 @@
+- [x] Allow creating snippet via file path 
+- [x] Use dotfile config to store creds, make an auth command
+- [x] Combine tui and server into one binary? ie `sipp server --port 3000`
+- [x] Server config to enable or disable certain endpoints as authenticated
+- [x] Server config as env / .env?
+- [x] README
+- [x] Add help menu to bottom status bar
+- [x] Make messages pop ups instead of status bar
+- [x] Figure out ts and tsx issues for syntax highlighting
+- [x] Look for SQL injection possibilities
+- [x] Make sure DB can handle multiple connections
+- [x] Find way to handle changelog and release notes in automation
+- [x] Confirm delete in TUI pop up
+- [x] Edit in TUI?
+- [x] Curl URLs for just content
+- [x] Limit on file size

@@ -1,0 +1,247 @@
+* {
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+	font-family: "Commit Mono", monospace, sans-serif;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+html {
+	background: #121113;
+	color: #ffffff;
+}
+
+html::-webkit-scrollbar {
+	display: none;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+	justify-content: start;
+	align-items: start;
+	gap: 1.5rem;
+	min-height: 100vh;
+	max-width: 700px;
+	margin: auto;
+}
+
+.header {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	text-decoration: none;
+	margin-top: 2rem;
+}
+
+.links {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-size: 12px;
+}
+
+.about {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	font-size: 14px;
+	line-height: 1.25rem;
+}
+
+button {
+	background: #121113;
+	color: #ffffff;
+	padding: 6px;
+	border: 1px solid white;
+	cursor: pointer;
+	width: fit-content;
+}
+
+a {
+	background: #121113;
+	color: #ffffff;
+}
+
+ul {
+	margin-left: 1.5rem;
+}
+
+li {
+	padding: 0.5rem 0;
+}
+
+code {
+	background: #333;
+	padding: 3px;
+}
+
+.feeds-list {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
+.feed-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 1rem 0;
+	border-bottom: 1px solid #333;
+}
+
+#feed-urls {
+	font-size: 12px;
+	color: #888;
+}
+
+.feed-item:last-child {
+	border-bottom: none;
+}
+
+.feed-meta {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 12px;
+	color: #888;
+}
+
+.feed-source {
+	font-weight: 700;
+}
+
+.feed-date {
+	color: #666;
+}
+
+.feed-title {
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1.4;
+}
+
+.feed-title a {
+	text-decoration: none;
+	color: #ffffff;
+	transition: color 0.2s ease;
+}
+
+.feed-title a:hover {
+	color: #ccc;
+}
+
+.feed-author {
+	font-size: 12px;
+	color: #888;
+	font-style: italic;
+}
+
+.no-feeds {
+	text-align: center;
+	color: #888;
+	padding: 2rem;
+}
+
+#loading {
+	text-align: center;
+	color: #888;
+	padding: 2rem;
+}
+
+#error {
+	text-align: center;
+	padding: 2rem;
+}
+
+@media (max-width: 480px) {
+	.feed-meta {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.25rem;
+	}
+
+	.feed-title {
+		font-size: 14px;
+	}
+}
+
+@media (max-width: 480px) {
+	body {
+		padding: 1rem;
+		gap: 1rem;
+	}
+}
+
+.admin-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	width: 100%;
+}
+
+.admin-form label {
+	font-size: 12px;
+	color: #888;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.admin-form input {
+	background: #1a1a1c;
+	color: #ffffff;
+	border: 1px solid #333;
+	padding: 10px;
+	font-family: "Commit Mono", monospace, sans-serif;
+	font-size: 14px;
+	outline: none;
+}
+
+.admin-form input:focus {
+	border-color: #666;
+}
+
+.error-msg {
+	color: #ff6b6b;
+	font-size: 14px;
+}
+
+.success-msg {
+	color: #6bff8a;
+	font-size: 14px;
+}
+
+.admin-notice {
+	font-size: 14px;
+	color: #888;
+	line-height: 1.4;
+}
+
+.admin-subs {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.admin-subs h3 {
+	font-size: 14px;
+	color: #888;
+	font-weight: 400;
+}
+
+@font-face {
+	font-family: "Commit Mono";
+	src: url("fonts/CommitMono-400-Regular.otf") format("opentype");
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: "Commit Mono";
+	src: url("fonts/CommitMono-700-Regular.otf") format("opentype");
+	font-weight: 700;
+	font-style: normal;
+}

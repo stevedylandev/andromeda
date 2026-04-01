@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://feeds.stevedylan.dev/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://feeds.stevedylan.dev/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://feeds.stevedylan.dev/assets/favicon-16x16.png">
+    <link rel="manifest" href="https://feeds.stevedylan.dev/assets/site.webmanifest">
+    <title>Feeds | Admin</title>
+  </head>
+  <body>
+    <a href="/" class="header">
+      <h1>FEEDS</h1>
+    </a>
+    {% if !freshrss_configured %}
+    <div class="admin-notice">
+      <p>FreshRSS is not configured. Set <code>FRESHRSS_URL</code>, <code>FRESHRSS_USERNAME</code>, and <code>FRESHRSS_PASSWORD</code> environment variables to use this feature.</p>
+    </div>
+    {% else %}
+
+    {% if let Some(msg) = success %}
+    <p class="success-msg">{{ msg }}</p>
+    {% endif %}
+
+    {% if let Some(err) = error %}
+    <p class="error-msg">{{ err }}</p>
+    {% endif %}
+
+    <form class="admin-form" method="POST" action="/admin/add-feed">
+      <label for="feed_url">Feed URL</label>
+      <input type="url" id="feed_url" name="feed_url" placeholder="https://example.com/feed.xml" required />
+      <button type="submit">Add Feed</button>
+    </form>
+
+    {% if let Some(subs) = subscriptions %}
+    <div class="admin-subs">
+      <h3>Current Subscriptions ({{ subs.len() }})</h3>
+      <div class="feeds-list">
+        {% for sub in subs %}
+        <div class="feed-item">
+          <h3 class="feed-title">
+            <a href="{{ sub.url }}" target="_blank" rel="noopener noreferrer">{{ sub.title }}</a>
+          </h3>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+  </body>
+</html>

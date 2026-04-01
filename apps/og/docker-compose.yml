@@ -1,0 +1,14 @@
+services:
+  og:
+    build:
+      context: ../..
+      dockerfile: apps/og/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - db_data:/app/data
+    environment:
+      - PORT=3000
+
+volumes:
+  db_data:

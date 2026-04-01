@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}PARCELS — login{% endblock %}
+{% block content %}
+<div style="max-width: 320px; margin: 4rem auto;">
+  <h1 style="font-size: 24px; margin-bottom: 2rem; font-weight: 700;">PARCELS</h1>
+  {% if let Some(err) = error %}
+  <div class="error">{{ err }}</div>
+  {% endif %}
+  <form method="POST" action="/login">
+    <div class="form-group">
+      <label for="password">password</label>
+      <input type="password" id="password" name="password" autofocus required>
+    </div>
+    <button type="submit" style="width: 100%; margin-top: 0.5rem;">sign in</button>
+  </form>
+</div>
+{% endblock %}

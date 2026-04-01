@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PARCELS{% endblock %}</title>
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+  <link rel="manifest" href="/static/site.webmanifest">
+  <link rel="icon" href="/static/favicon.ico">
+  <meta property="og:title" content="PARCELS">
+  <meta property="og:image" content="/static/og.png">
+  <meta property="og:type" content="website">
+  <style>
+    @font-face {
+      font-family: 'CommitMono';
+      src: url('/static/assets/fonts/CommitMono-400-Regular.otf') format('opentype');
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: 'CommitMono';
+      src: url('/static/assets/fonts/CommitMono-700-Regular.otf') format('opentype');
+      font-weight: 700;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #121113;
+      color: #ffffff;
+      font-family: 'CommitMono', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      max-width: 700px;
+      margin: auto;
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .container { padding: 0; }
+    a { color: #ffffff; text-decoration: none; }
+    a:hover { opacity: 0.7; }
+    input, button {
+      font-family: 'CommitMono', monospace;
+      font-size: 14px;
+      background: #121113;
+      color: #ffffff;
+      border: 1px solid #ffffff;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0;
+      cursor: pointer;
+    }
+    button:hover { opacity: 0.7; }
+    input { width: 100%; }
+    .error {
+      color: #ffffff;
+      border-left: 2px solid #ffffff;
+      padding-left: 0.5rem;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      text-align: left;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid #333;
+      vertical-align: top;
+    }
+    th { opacity: 0.5; font-weight: 400; font-size: 12px; text-transform: uppercase; }
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 2rem;
+      border-bottom: 1px solid #333;
+      padding-bottom: 1rem;
+    }
+    .links { display: flex; gap: 0.75rem; font-size: 12px; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.25rem; opacity: 0.7; font-size: 12px; }
+    .null { opacity: 0.3; }
+    .status-delivered { /* no color accent per design */ }
+    .status-alert { opacity: 0.8; }
+    .actions { display: flex; gap: 0.5rem; }
+    .parcel-list { display: flex; flex-direction: column; width: 100%; }
+    .parcel-list a { text-decoration: none; }
+    .parcel-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #333;
+    }
+    .parcel-item:last-child { border-bottom: none; }
+    .parcel-label { font-size: 16px; color: #fff; }
+    .parcel-tracking { font-size: 12px; color: #888; }
+    .parcel-meta { font-size: 12px; color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
