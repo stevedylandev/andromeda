@@ -1,0 +1,294 @@
+@font-face {
+    font-family: "Commit Mono";
+    src: url("/static/fonts/CommitMono-400-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Commit Mono";
+    src: url("/static/fonts/CommitMono-700-Regular.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    background: #121113;
+    color: #ffffff;
+    font-family: "Commit Mono", monospace, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+header {
+    margin-top: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #ffffff;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Drop Zone */
+#drop-zone {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    transition: border-color 0.15s;
+}
+
+#drop-zone:hover,
+#drop-zone.drag-over {
+    border-color: #ffffff;
+}
+
+#drop-zone p {
+    opacity: 0.5;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Preview */
+#preview-section {
+    display: none;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#preview-section.visible {
+    display: flex;
+}
+
+#preview-img {
+    max-width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border: 1px solid #333;
+}
+
+#original-size {
+    opacity: 0.7;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+/* Controls */
+#controls {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#controls.visible {
+    display: flex;
+}
+
+.control-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.control-row label {
+    font-size: 12px;
+    opacity: 0.7;
+    text-transform: uppercase;
+    min-width: 80px;
+}
+
+#quality-value {
+    font-size: 14px;
+    min-width: 2.5em;
+    text-align: right;
+}
+
+#quality-note {
+    font-size: 12px;
+    opacity: 0.5;
+    text-transform: uppercase;
+    min-height: 1.2em;
+}
+
+/* Number Inputs */
+input[type="number"] {
+    background: #121113;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 0;
+    padding: 0.4rem 0.75rem;
+    font-family: "Commit Mono", monospace, sans-serif;
+    font-size: 14px;
+    width: 90px;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+}
+
+input[type="number"]:hover,
+input[type="number"]:focus {
+    border-color: #ffffff;
+}
+
+.dimension-sep {
+    opacity: 0.5;
+}
+
+#height-display {
+    opacity: 0.7;
+    min-width: 4em;
+}
+
+/* Range Input */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.3);
+    outline: none;
+    border-radius: 0;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+}
+
+input[type="range"].disabled {
+    opacity: 0.3;
+}
+
+/* Select */
+select {
+    background: #121113;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 0;
+    padding: 0.4rem 0.75rem;
+    font-family: "Commit Mono", monospace, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+}
+
+select:hover,
+select:focus {
+    border-color: #ffffff;
+}
+
+/* Buttons */
+button {
+    background: #121113;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+    border-radius: 0;
+    padding: 0.6rem 1.5rem;
+    font-family: "Commit Mono", monospace, sans-serif;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+button:hover {
+    opacity: 0.7;
+}
+
+button:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+/* Results */
+#result-section {
+    display: none;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #333;
+}
+
+#result-section.visible {
+    display: flex;
+}
+
+.size-comparison {
+    display: flex;
+    gap: 2rem;
+}
+
+.size-comparison label {
+    font-size: 12px;
+    opacity: 0.5;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.size-comparison p {
+    font-size: 16px;
+}
+
+#download-link {
+    text-decoration: none;
+    align-self: flex-start;
+}

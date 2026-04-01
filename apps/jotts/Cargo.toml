@@ -1,0 +1,22 @@
+[package]
+name = "jotts"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rusqlite = { workspace = true }
+nanoid = { workspace = true }
+rust-embed = { workspace = true }
+dotenvy = { workspace = true }
+subtle = { workspace = true }
+rand = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+andromeda-auth = { workspace = true }
+askama = "0.15"
+askama_web = { version = "0.15", features = ["axum-0.8"] }
+pulldown-cmark = "0.12"

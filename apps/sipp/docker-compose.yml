@@ -1,0 +1,16 @@
+services:
+  sipp:
+    build:
+      context: ../..
+      dockerfile: apps/sipp/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - SIPP_API_KEY=${SIPP_API_KEY:-changeme}
+      - SIPP_AUTH_ENDPOINTS=api_delete,api_list
+    volumes:
+      - sipp-data:/data
+    restart: unless-stopped
+
+volumes:
+  sipp-data:

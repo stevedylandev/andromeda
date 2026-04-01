@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}PARCELS — {% if let Some(label) = package.label %}{{ label }}{% else %}{{ package.tracking_number }}{% endif %}{% endblock %}
+{% block content %}
+<div class="header">
+  <h1><a href="/" style="text-decoration:none;">PARCELS</a></h1>
+  <nav>
+    <a href="/">← back</a>
+  </nav>
+</div>
+{% if let Some(err) = error %}
+<div class="error">{{ err }}</div>
+{% endif %}
+
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;">
+    {% if let Some(label) = package.label %}
+    <div style="font-size: 16px; font-weight: 700;">{{ label }}</div>
+    {% endif %}
+    <form method="POST" action="/packages/{{ package.id }}/delete"
+          onsubmit="return confirm('Delete this package?')">
+      <button type="submit" style="font-size: 12px; opacity: 0.6; border-color: #555; margin-top: 0.5rem;">delete</button>
+    </form>
+  </div>
+  <div style="opacity: 0.6; margin-bottom: 1rem;">{{ package.tracking_number }}</div>
+
+  <table style="width: auto; margin-bottom: 1.5rem;">
+    <tr>
+      <th style="padding-right: 2rem;">status</th>
+      <td>{% if let Some(s) = package.status %}{{ s }}{% else %}<span class="null">—</span>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>summary</th>
+      <td>{% if let Some(s) = package.status_summary %}{{ s }}{% else %}<span class="null">—</span>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>mail class</th>
+      <td>{% if let Some(m) = package.mail_class %}{{ m }}{% else %}<span class="null">—</span>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>expected delivery</th>
+      <td>{% if let Some(d) = package.expected_delivery %}{{ d }}{% else %}<span class="null">—</span>{% endif %}</td>
+    </tr>
+  </table>
+
+</div>
+
+{% if !events.is_empty() %}
+<div>
+  <div style="opacity: 0.5; font-size: 12px; text-transform: uppercase; margin-bottom: 1rem; border-bottom: 1px solid #333; padding-bottom: 0.5rem;">
+    event history
+  </div>
+  {% for event in events %}
+  <div style="padding: 0.75rem 0; border-bottom: 1px solid #1e1c1f;">
+    <div style="opacity: 0.5; font-size: 12px; margin-bottom: 0.2rem;">
+      {% if let Some(ts) = event.event_timestamp %}{{ ts }}{% else %}<span class="null">—</span>{% endif %}
+    </div>
+    <div style="font-weight: 700;">
+      {% if let Some(et) = event.event_type %}{{ et }}{% else %}<span class="null">—</span>{% endif %}
+    </div>
+    {% if event.event_city.is_some() || event.event_state.is_some() %}
+    <div style="opacity: 0.6; font-size: 13px;">
+      {% if let Some(city) = event.event_city %}{{ city }}{% endif %}{% if event.event_city.is_some() && event.event_state.is_some() %}, {% endif %}{% if let Some(state) = event.event_state %}{{ state }}{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p style="opacity: 0.4;">no events yet. click refresh to load tracking history.</p>
+{% endif %}
+{% endblock %}

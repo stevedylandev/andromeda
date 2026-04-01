@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Jotts{% endblock %}
+{% block content %}
+  {% if notes.is_empty() %}
+    <p class="empty">no notes yet</p>
+  {% endif %}
+  <div class="note-list">
+    {% for note in notes %}
+      <a href="/notes/{{ note.short_id }}" class="note-item">
+        <span class="note-title">{{ note.title }}</span>
+        <time class="note-date" datetime="{{ note.updated_at }}Z">{{ note.updated_at }}</time>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}

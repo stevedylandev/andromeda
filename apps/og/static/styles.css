@@ -1,0 +1,295 @@
+@font-face {
+    font-family: "Commit Mono";
+    src: url("/static/assets/fonts/CommitMono-400-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Commit Mono";
+    src: url("/static/assets/fonts/CommitMono-700-Regular.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    font-family: "Commit Mono", monospace, sans-serif;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+html {
+    background: #121113;
+    color: #ffffff;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+html::-webkit-scrollbar {
+    display: none;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: start;
+    gap: 1.5rem;
+    min-height: 100vh;
+    max-width: 700px;
+    margin: auto;
+    padding: 0 1rem 6rem;
+}
+
+a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+a:hover {
+    opacity: 0.7;
+}
+
+/* === HEADER === */
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1rem;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+/* === INDEX PAGE === */
+
+.index-container {
+    width: 100%;
+}
+
+.description {
+    opacity: 0.7;
+}
+
+.check-form {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.check-form input {
+    flex: 1;
+    background: #121113;
+    color: #ffffff;
+    border: 1px solid white;
+    padding: 0.4rem 0.75rem;
+    font-size: 14px;
+    border-radius: 0;
+    outline: none;
+    width: 100%;
+}
+
+.check-form input::placeholder {
+    opacity: 0.3;
+}
+
+.check-form button {
+    background: #121113;
+    color: #ffffff;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid white;
+    cursor: pointer;
+    width: fit-content;
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 0;
+}
+
+.check-form button:hover {
+    opacity: 0.7;
+}
+
+/* === RESULTS PAGE === */
+
+.results-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+.results-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+}
+
+.results-url a {
+    word-break: break-all;
+}
+
+label, .label {
+    display: block;
+    font-size: 12px;
+    opacity: 0.7;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.results-meta span:last-child {
+    opacity: 0.5;
+    font-size: 12px;
+}
+
+/* === ERROR === */
+
+.error {
+    border-left: 2px solid #ffffff;
+    padding-left: 0.5rem;
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.error h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+/* === PREVIEWS === */
+
+.preview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.preview-section h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    opacity: 0.5;
+}
+
+.image-preview {
+    border: 1px solid #333;
+    overflow: hidden;
+}
+
+.image-preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+/* === TAGS === */
+
+.tag-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.tag-section h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    opacity: 0.5;
+    margin-bottom: 0.5rem;
+}
+
+.tag-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #333;
+    font-size: 14px;
+}
+
+.tag-item.found {
+    border-left: 2px solid #ffffff;
+    padding-left: 0.75rem;
+}
+
+.tag-item.missing {
+    border-left: 2px solid #555;
+    padding-left: 0.75rem;
+    opacity: 0.3;
+}
+
+.tag-key {
+    font-weight: 700;
+    min-width: 140px;
+    max-width: 200px;
+    opacity: 0.7;
+    word-break: break-all;
+}
+
+.tag-value {
+    word-break: break-all;
+    min-width: 0;
+    flex: 1;
+}
+
+.tag-item.missing .tag-value {
+    font-style: italic;
+}
+
+.tag-extra {
+    display: block;
+    font-size: 12px;
+    opacity: 0.5;
+    margin-top: 0.15rem;
+}
+
+.empty-state {
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+/* === BACK LINK === */
+
+.back-link {
+    display: inline-block;
+    font-size: 12px;
+    opacity: 0.5;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+    width: 100%;
+}
+
+.back-link:hover {
+    opacity: 0.7;
+}
+
+/* === RESPONSIVE === */
+
+@media (max-width: 480px) {
+    body {
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+.tag-item {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .tag-key {
+        min-width: unset;
+    }
+}

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Jotts — {{ note.title }}{% endblock %}
+{% block content %}
+  {% if let Some(error) = error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  <form method="POST" action="/notes/{{ note.short_id }}" class="form">
+    <label for="title">title</label>
+    <input type="text" id="title" name="title" value="{{ note.title }}" required>
+    <label for="content">content</label>
+    <textarea id="content" name="content">{{ note.content }}</textarea>
+    <button type="submit">save</button>
+  </form>
+{% endblock %}

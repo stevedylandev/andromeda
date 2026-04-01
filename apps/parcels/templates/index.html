@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}PARCELS{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>PARCELS</h1>
+  <div class="links">
+    <a href="/packages/add">add package</a>
+  </div>
+</div>
+{% if let Some(err) = error %}
+<div class="error">{{ err }}</div>
+{% endif %}
+{% if packages.is_empty() %}
+<p style="opacity: 0.4;">no packages. <a href="/packages/add">add one</a></p>
+{% else %}
+<div class="parcel-list">
+  {% for pkg in packages %}
+  <a href="/packages/{{ pkg.id }}">
+    <div class="parcel-item">
+      {% if let Some(label) = pkg.label %}
+      <span class="parcel-label">{{ label }}</span>
+      <span class="parcel-tracking">{{ pkg.tracking_number }}</span>
+      {% else %}
+      <span class="parcel-label">{{ pkg.tracking_number }}</span>
+      {% endif %}
+      {% if let Some(summary) = pkg.status_summary %}
+      <span class="parcel-meta">{{ summary }}</span>
+      {% else if let Some(status) = pkg.status %}
+      <span class="parcel-meta">{{ status }}</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

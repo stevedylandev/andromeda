@@ -1,0 +1,15 @@
+services:
+  feeds:
+    build:
+      context: ../..
+      dockerfile: apps/feeds/Dockerfile
+    ports:
+      - "4555:4555"
+    volumes:
+      - feeds_data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped
+
+volumes:
+  feeds_data:

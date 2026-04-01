@@ -1,0 +1,41 @@
+[package]
+name = "sipp-so"
+version = "0.1.5"
+edition = "2024"
+description = "Minimal code sharing - single binary for web server, CLI, and TUI"
+license = "MIT"
+repository = "https://github.com/stevedylandev/sipp"
+homepage = "https://sipp.so"
+documentation = "https://github.com/stevedylandev/sipp#readme"
+readme = "README.md"
+keywords = ["cli", "tui", "snippet", "code-sharing", "pastebin"]
+categories = ["command-line-utilities", "web-programming"]
+authors = ["Steve Simkins"]
+exclude = [".github", "*.png", "*.gif"]
+
+[[bin]]
+name = "sipp"
+path = "src/main.rs"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tower-http = { workspace = true, features = ["fs"] }
+nanoid = { workspace = true }
+rust-embed = { workspace = true }
+dotenvy = { workspace = true }
+subtle = { workspace = true }
+rusqlite = { workspace = true }
+askama = "0.15.4"
+askama_web = { version = "0.15.1", features = ["axum-0.8"] }
+ratatui = "0.30"
+crossterm = "0.29"
+arboard = "3"
+syntect = "5"
+reqwest = { version = "0.13", features = ["json", "blocking"] }
+clap = { version = "4", features = ["derive", "env"] }
+toml = "1.0"
+rpassword = "7"
+open = "5.3.3"

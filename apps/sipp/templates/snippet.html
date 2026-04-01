@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="manifest" href="/assets/site.webmanifest">
+
+    <title>{{ name }} | Sipp</title>
+    <meta name="description" content="Minimal Code Sharing">
+
+    <meta property="og:url" content="https://sipp.so">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sipp | {{ name }}">
+    <meta property="og:description" content="Minimal Code Sharing">
+    <meta property="og:image" content="https://sipp.so/assets/og.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="sipp.so">
+    <meta property="twitter:url" content="https://sipp.so">
+    <meta name="twitter:title" content="Sipp | {{ name }}">
+    <meta name="twitter:description" content="Minimal Code Sharing">
+    <meta name="twitter:image" content="https://sipp.so/assets/og.png">
+
+  </head>
+  <body>
+    <div class="nav">
+      <a href="/" class="header">
+        <h1>SIPP</h1>
+      </a>
+
+      <a class="icon" target="_blank" href="https://github.com/stevedylandev/sipp">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <title>GitHub</title>
+          <path d="m21.838 11.677l-9.549-9.58c-.129-.13-.451-.13-.645 0L9 4.742l2.452 2.452c.193-.097.419-.13.645-.13c.903 0 1.58.742 1.58 1.581c0 .226-.032.452-.129.645l1.968 1.968c.194-.097.42-.129.645-.129c.904 0 1.58.742 1.58 1.58c0 .904-.741 1.581-1.58 1.581c-.903 0-1.58-.742-1.58-1.58c0-.226.032-.452.129-.646l-1.968-1.967h-.032v3.71c.58.258 1 .806 1 1.483c0 .904-.742 1.581-1.581 1.581c-.903 0-1.58-.742-1.58-1.58c0-.678.419-1.259 1-1.485v-3.612c-.581-.259-1-.807-1-1.484c0-.226.032-.452.128-.645L8.225 5.613l-6.097 6.064c-.129.13-.129.452 0 .646l9.58 9.58c.13.13.452.13.646 0l9.548-9.58a.59.59 0 0 0-.064-.646"/>
+        </svg>
+      </a>
+    </div>
+
+    <div id="snippetForm">
+        <label id="snippetName">{{ name }}</label>
+        <div class="code-container">{{ highlighted_content|safe }}</div>
+        <textarea id="content" style="display:none;">{{ content }}</textarea>
+      <div class="button-group">
+        <button type="button" id="copyLinkBtn" data-original-text="Copy Link">Copy Link</button>
+        <button type="button" id="copyContentBtn" data-original-text="Copy Content">Copy Content</button>
+        <button type="button" id="createNewBtn">Create New Snippet</button>
+      </div>
+    </div>
+
+    <script>
+      async function copyToClipboard(text, button) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showButtonFeedback(button, '\u2714 Copied', 'success');
+        } catch (error) {
+          console.error('Copy failed:', error);
+          showButtonFeedback(button, '\u2718 Failed', 'error');
+
+          try {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showButtonFeedback(button, '\u2714 Copied', 'success');
+          } catch (fallbackError) {
+            showButtonFeedback(button, '\u2718 Failed', 'error');
+          }
+        }
+      }
+
+      function showButtonFeedback(button, message, type = 'success') {
+        const originalText = button.dataset.originalText || button.textContent;
+        const originalDisabled = button.disabled;
+
+        if (!button.dataset.originalText) {
+          button.dataset.originalText = originalText;
+        }
+
+        button.textContent = message;
+        button.disabled = true;
+        button.classList.add(`copy-${type}`);
+
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.disabled = originalDisabled;
+          button.classList.remove(`copy-${type}`);
+        }, 1000);
+      }
+
+      document.getElementById('copyContentBtn').addEventListener('click', async () => {
+        const content = document.getElementById('content').value;
+        const button = document.getElementById('copyContentBtn');
+        await copyToClipboard(content, button);
+      });
+
+      document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+        const currentUrl = window.location.href;
+        const button = document.getElementById('copyLinkBtn');
+        await copyToClipboard(currentUrl, button);
+      });
+
+      document.getElementById('createNewBtn').addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    </script>
+  </body>
+</html>

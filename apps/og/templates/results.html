@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Results — {{ url }}{% endblock %}
+
+{% block content %}
+<div class="results-container">
+    <div class="results-header">
+        <div class="results-url">
+            <span class="label">URL</span>
+            <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a>
+        </div>
+    </div>
+
+    {% if let Some(err) = error %}
+    <div class="error">
+        <h2>Error</h2>
+        <p>{{ err }}</p>
+    </div>
+    {% else %}
+
+    {% if let Some(image) = og_image %}
+    <div class="preview-section">
+        <h2>Image Preview</h2>
+        <div class="image-preview">
+            <img src="{{ image }}" alt="OG Image preview" loading="lazy">
+        </div>
+    </div>
+    {% endif %}
+
+    {% if let Some(fav) = favicon %}
+    <div class="preview-section">
+        <h2>Favicon</h2>
+        <img src="{{ fav }}" alt="Favicon" width="32" height="32">
+    </div>
+    {% endif %}
+
+    <div class="tag-section">
+        <h2>Found Tags</h2>
+        {% if found_tags.is_empty() %}
+        <p class="empty-state">No OpenGraph tags found.</p>
+        {% else %}
+        {% for (key, value) in &found_tags %}
+        <div class="tag-item found">
+            <span class="tag-key">{{ key }}</span>
+            <span class="tag-value">{{ value }}</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="tag-section">
+        <h2>Missing Tags</h2>
+        {% if missing_tags.is_empty() %}
+        <p class="empty-state">All common tags present.</p>
+        {% else %}
+        {% for tag in &missing_tags %}
+        <div class="tag-item missing">
+            <span class="tag-key">{{ tag }}</span>
+            <span class="tag-value">not found</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if !link_tags.is_empty() %}
+    <div class="tag-section">
+        <h2>Link Tags</h2>
+        {% for (rel, href, extra) in &link_tags %}
+        <div class="tag-item found">
+            <span class="tag-key">{% if rel.is_empty() %}link{% else %}{{ rel }}{% endif %}</span>
+            <span class="tag-value">
+                {% if !href.is_empty() %}
+                <a href="{{ href }}" target="_blank" rel="noopener">{{ href }}</a>
+                {% else %}
+                <span class="tag-extra">no href</span>
+                {% endif %}
+                {% if !extra.is_empty() %}
+                <span class="tag-extra">{{ extra }}</span>
+                {% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}
