@@ -1,6 +1,6 @@
 [package]
 name = "sipp-so"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
 description = "Minimal code sharing - single binary for web server, CLI, and TUI"
 license = "MIT"
