@@ -3,7 +3,7 @@ FROM rust:1-slim-bookworm AS builder
 WORKDIR /app
 
 # Copy workspace manifests
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.toml Cargo.lock .
 COPY crates/auth/Cargo.toml crates/auth/
 COPY apps/sipp/Cargo.toml apps/sipp/
 COPY apps/feeds/Cargo.toml apps/feeds/
