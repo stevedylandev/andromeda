@@ -17,13 +17,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 #[derive(Embed)]
-#[folder = "assets/"]
-struct Assets;
+#[folder = "static/"]
+struct Static;
 
 pub struct AppState {
     sessions: auth::SessionStore,
     admin_password: Option<String>,
     cookie_secure: bool,
+    base_url: String,
 }
 
 struct TemplateFeedItem {
@@ -36,6 +37,7 @@ struct TemplateFeedItem {
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
+    base_url: String,
     items: Vec<TemplateFeedItem>,
     feed_urls: Option<Vec<String>>,
     error: Option<String>,
@@ -69,7 +71,10 @@ fn freshrss_env() -> Option<(String, String, String)> {
     Some((url, username, password))
 }
 
-async fn index_handler(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+async fn index_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> impl IntoResponse {
     let url_query = params
         .get("url")
         .or_else(|| params.get("urls"))
@@ -88,6 +93,7 @@ async fn index_handler(Query(params): Query<HashMap<String, String>>) -> impl In
                 .collect();
 
             IndexTemplate {
+                base_url: state.base_url.clone(),
                 items: template_items,
                 feed_urls,
                 error: None,
@@ -96,6 +102,7 @@ async fn index_handler(Query(params): Query<HashMap<String, String>>) -> impl In
         Err(e) => {
             eprintln!("Error fetching feeds: {e}");
             IndexTemplate {
+                base_url: state.base_url.clone(),
                 items: Vec::new(),
                 feed_urls: None,
                 error: Some("Error loading feeds. Please try again later.".to_string()),
@@ -188,7 +195,7 @@ fn escape_xml(s: &str) -> String {
 }
 
 async fn static_handler(axum::extract::Path(path): axum::extract::Path<String>) -> Response {
-    match Assets::get(&path) {
+    match Static::get(&path) {
         Some(file) => {
             let mime = mime_guess::from_path(&path).first_or_octet_stream();
             (
@@ -327,10 +334,13 @@ async fn main() {
         .map(|v| v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
 
+    let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:4555".to_string());
+
     let state = Arc::new(AppState {
         sessions: auth::new_session_store(),
         admin_password: std::env::var("ADMIN_PASSWORD").ok(),
         cookie_secure,
+        base_url,
     });
 
     let app = Router::new()
@@ -343,7 +353,7 @@ async fn main() {
         )
         .route("/admin/logout", get(logout_handler))
         .route("/admin/add-feed", post(add_feed_handler))
-        .route("/assets/{*path}", get(static_handler))
+        .route("/static/{*path}", get(static_handler))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:4555")
