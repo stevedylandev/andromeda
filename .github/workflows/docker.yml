@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       apps: ${{ steps.filter.outputs.apps }}
+      version: ${{ steps.filter.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,9 +27,28 @@ jobs:
         run: |
           ALL='["sipp","feeds","parcels","jotts","og","shrink"]'
 
-          # Tags always build everything
+          # Map cargo package names to directory names
+          pkg_to_dir() {
+            case "$1" in
+              sipp-so) echo "sipp" ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          # Tags: per-app (app/version) or bare (version)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
+            TAG="${GITHUB_REF#refs/tags/}"
+
+            if [[ "$TAG" == */* ]]; then
+              PKG="${TAG%/*}"
+              VERSION="${TAG##*/}"
+              APP=$(pkg_to_dir "$PKG")
+              echo "apps=[\"${APP}\"]" >> "$GITHUB_OUTPUT"
+              echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            else
+              echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
+              echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+            fi
             exit 0
           fi
 
@@ -68,9 +88,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -87,7 +104,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.app }}
           tags: |
-            type=ref,event=tag
+            type=raw,value=${{ needs.changes.outputs.version }},enable=${{ needs.changes.outputs.version != '' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push
@@ -95,7 +112,6 @@ jobs:
         with:
           context: .
           file: apps/${{ matrix.app }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

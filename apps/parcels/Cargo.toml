@@ -2,6 +2,10 @@
 name = "parcels"
 version = "0.1.0"
 edition = "2024"
+description = "Minimal package tracking"
+license = "MIT"
+repository = "https://github.com/stevedylandev/andromeda"
+homepage = "https://github.com/stevedylandev/andromeda"
 
 [[bin]]
 name = "parcels"
