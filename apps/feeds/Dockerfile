@@ -1,5 +1,6 @@
 # Build from repo root: docker build -t feeds -f apps/feeds/Dockerfile .
 FROM rust:1-slim-bookworm AS builder
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy workspace manifests
@@ -23,7 +24,7 @@ RUN cargo build --release -p feeds
 # Copy real source
 COPY crates/auth/src crates/auth/src
 COPY apps/feeds/src apps/feeds/src
-COPY apps/feeds/assets apps/feeds/assets
+COPY apps/feeds/static apps/feeds/static
 COPY apps/feeds/askama.toml apps/feeds/askama.toml
 
 RUN touch apps/feeds/src/*.rs crates/auth/src/*.rs && cargo build --release -p feeds
