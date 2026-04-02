@@ -28,7 +28,7 @@ You'll need a [USPS Web Tools API](https://developer.usps.com) account to get yo
 | `DATABASE_URL` | SQLite database path (e.g. `sqlite:///app/data/parcels.db`) |
 | `USPS_CLIENT_ID` | USPS OAuth2 client ID | *required* |
 | `USPS_CLIENT_SECRET` | USPS OAuth2 client secret | *required* |
-| `BIND_ADDR` | Server bind address | `0.0.0.0:3012` |
+| `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
 
 ## Overview
@@ -72,7 +72,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-This will start Parcels on port `3012` with a persistent volume for the SQLite database.
+This will start Parcels on port `3000` with a persistent volume for the SQLite database.
 
 ### Binary
 
