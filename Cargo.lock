@@ -1243,7 +1243,7 @@ dependencies = [
 
 [[package]]
 name = "feeds"
-version = "0.1.2"
+version = "0.1.1"
 dependencies = [
  "andromeda-auth",
  "askama 0.13.1",
