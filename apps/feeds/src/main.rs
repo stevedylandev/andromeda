@@ -334,7 +334,7 @@ async fn main() {
         .map(|v| v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
 
-    let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:4555".to_string());
+    let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
     let state = Arc::new(AppState {
         sessions: auth::new_session_store(),
@@ -356,10 +356,16 @@ async fn main() {
         .route("/static/{*path}", get(static_handler))
         .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:4555")
+    let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3000);
+    let addr = format!("{}:{}", host, port);
+    let listener = tokio::net::TcpListener::bind(&addr)
         .await
-        .expect("Failed to bind to port 4555");
+        .unwrap_or_else(|_| panic!("Failed to bind to {}", addr));
 
-    println!("Server running on http://localhost:4555");
+    println!("Server running on http://{}:{}", host, port);
     axum::serve(listener, app).await.unwrap();
 }
