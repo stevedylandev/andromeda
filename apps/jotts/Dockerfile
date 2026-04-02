@@ -1,5 +1,6 @@
 # Build from repo root: docker build -t jotts -f apps/jotts/Dockerfile .
 FROM rust:1-slim-bookworm AS builder
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy workspace manifests
@@ -23,7 +24,6 @@ RUN cargo build --release -p jotts
 # Copy real source
 COPY crates/auth/src crates/auth/src
 COPY apps/jotts/src apps/jotts/src
-COPY apps/jotts/assets apps/jotts/assets
 COPY apps/jotts/static apps/jotts/static
 COPY apps/jotts/templates apps/jotts/templates
 

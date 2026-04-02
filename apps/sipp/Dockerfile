@@ -1,5 +1,6 @@
 # Build from repo root: docker build -t sipp -f apps/sipp/Dockerfile .
 FROM rust:1-slim-bookworm AS builder
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # Copy workspace manifests
@@ -23,7 +24,6 @@ RUN cargo build --release -p sipp-so
 # Copy real source
 COPY crates/auth/src crates/auth/src
 COPY apps/sipp/src apps/sipp/src
-COPY apps/sipp/assets apps/sipp/assets
 COPY apps/sipp/static apps/sipp/static
 COPY apps/sipp/templates apps/sipp/templates
 
