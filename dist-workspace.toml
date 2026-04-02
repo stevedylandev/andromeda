@@ -1,5 +1,12 @@
 [workspace]
-members = ["cargo:apps/sipp"]
+members = [
+    "cargo:apps/sipp",
+    "cargo:apps/feeds",
+    "cargo:apps/parcels",
+    "cargo:apps/jotts",
+    "cargo:apps/og",
+    "cargo:apps/shrink",
+]
 
 # Config for 'dist'
 [dist]

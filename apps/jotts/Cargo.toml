@@ -2,6 +2,10 @@
 name = "jotts"
 version = "0.1.0"
 edition = "2024"
+description = "Minimal markdown note app"
+license = "MIT"
+repository = "https://github.com/stevedylandev/andromeda"
+homepage = "https://github.com/stevedylandev/andromeda"
 
 [dependencies]
 axum = { workspace = true }
