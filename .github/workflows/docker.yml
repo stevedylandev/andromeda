@@ -9,19 +9,62 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  REPO: ${{ github.repository_owner }}
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.filter.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Determine which apps to build
+        id: filter
+        run: |
+          ALL='["sipp","feeds","parcels","jotts","og","shrink"]'
+
+          # Tags always build everything
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed=$(git diff --name-only HEAD~1 HEAD)
+
+          # Workspace-level changes (shared deps, auth crate, CI) rebuild all
+          if echo "$changed" | grep -qE '^(Cargo\.(toml|lock)|crates/|\.github/workflows/docker\.yml)'; then
+            echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          apps=()
+          for app in sipp feeds parcels jotts og shrink; do
+            if echo "$changed" | grep -q "^apps/${app}/"; then
+              apps+=("\"${app}\"")
+            fi
+          done
+
+          if [ ${#apps[@]} -eq 0 ]; then
+            echo 'apps=[]' >> "$GITHUB_OUTPUT"
+          else
+            echo "apps=[$(IFS=,; echo "${apps[*]}")]" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
     name: build (${{ matrix.app }})
-    runs-on: ubuntu-22.04
+    needs: changes
+    if: needs.changes.outputs.apps != '[]'
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
       fail-fast: false
       matrix:
-        app: [sipp, feeds, parcels, jotts, og, shrink]
+        app: ${{ fromJson(needs.changes.outputs.apps) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +85,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.REPO }}/${{ matrix.app }}
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.app }}
           tags: |
             type=ref,event=tag
             type=raw,value=latest,enable={{is_default_branch}}
