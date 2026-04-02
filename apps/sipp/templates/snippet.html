@@ -5,26 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="/static/styles.css" />
     <meta name="theme-color" content="#121113" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
-    <link rel="manifest" href="/assets/site.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
 
     <title>{{ name }} | Sipp</title>
     <meta name="description" content="Minimal Code Sharing">
 
-    <meta property="og:url" content="https://sipp.so">
+    <meta property="og:url" content="{{ base_url }}">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Sipp | {{ name }}">
     <meta property="og:description" content="Minimal Code Sharing">
-    <meta property="og:image" content="https://sipp.so/assets/og.png">
+    <meta property="og:image" content="{{ base_url }}/static/og.png">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="sipp.so">
-    <meta property="twitter:url" content="https://sipp.so">
+    <meta property="twitter:url" content="{{ base_url }}">
     <meta name="twitter:title" content="Sipp | {{ name }}">
     <meta name="twitter:description" content="Minimal Code Sharing">
-    <meta name="twitter:image" content="https://sipp.so/assets/og.png">
+    <meta name="twitter:image" content="{{ base_url }}/static/og.png">
 
   </head>
   <body>

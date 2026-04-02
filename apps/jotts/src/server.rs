@@ -21,10 +21,6 @@ pub struct AppState {
 }
 
 #[derive(Embed)]
-#[folder = "assets/"]
-struct Assets;
-
-#[derive(Embed)]
 #[folder = "static/"]
 struct Static;
 
@@ -99,21 +95,6 @@ fn mime_from_path(path: &str) -> &'static str {
         "otf" => "font/otf",
         "json" | "webmanifest" => "application/json",
         _ => "application/octet-stream",
-    }
-}
-
-async fn serve_asset(Path(path): Path<String>) -> Response {
-    match Assets::get(&path) {
-        Some(file) => {
-            let mime = mime_from_path(&path);
-            (
-                StatusCode::OK,
-                [(axum::http::header::CONTENT_TYPE, HeaderValue::from_static(mime))],
-                file.data.to_vec(),
-            )
-                .into_response()
-        }
-        None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
@@ -397,7 +378,6 @@ pub async fn run(host: String, port: u16) {
         .route("/notes/{short_id}", post(post_update_note))
         .route("/notes/{short_id}/delete", post(post_delete_note))
         // Static assets
-        .route("/assets/{*path}", get(serve_asset))
         .route("/static/{*path}", get(serve_static))
         .with_state(state);
 

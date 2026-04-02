@@ -17,10 +17,6 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 #[derive(Embed)]
-#[folder = "assets/"]
-struct Assets;
-
-#[derive(Embed)]
 #[folder = "static/"]
 struct Static;
 
@@ -56,19 +52,25 @@ struct AppState {
     db: Db,
     highlighter: Arc<Highlighter>,
     server_config: ServerConfig,
+    base_url: String,
 }
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct IndexTemplate;
+struct IndexTemplate {
+    base_url: String,
+}
 
 #[derive(Template)]
 #[template(path = "admin.html")]
-struct AdminTemplate;
+struct AdminTemplate {
+    base_url: String,
+}
 
 #[derive(Template)]
 #[template(path = "snippet.html")]
 struct SnippetTemplate {
+    base_url: String,
     name: String,
     content: String,
     highlighted_content: String,
@@ -80,12 +82,12 @@ struct CreateSnippetForm {
     content: String,
 }
 
-async fn index() -> WebTemplate<IndexTemplate> {
-    WebTemplate(IndexTemplate)
+async fn index(State(state): State<AppState>) -> WebTemplate<IndexTemplate> {
+    WebTemplate(IndexTemplate { base_url: state.base_url.clone() })
 }
 
-async fn admin() -> WebTemplate<AdminTemplate> {
-    WebTemplate(AdminTemplate)
+async fn admin(State(state): State<AppState>) -> WebTemplate<AdminTemplate> {
+    WebTemplate(AdminTemplate { base_url: state.base_url.clone() })
 }
 
 fn is_cli_user_agent(headers: &HeaderMap) -> bool {
@@ -116,6 +118,7 @@ async fn view_snippet(
                 let highlighted_content =
                     state.highlighter.highlight(&snippet.name, &snippet.content);
                 Ok(WebTemplate(SnippetTemplate {
+                    base_url: state.base_url.clone(),
                     name: snippet.name,
                     content: snippet.content,
                     highlighted_content,
@@ -328,16 +331,6 @@ fn mime_from_path(path: &str) -> &'static str {
     }
 }
 
-async fn serve_assets(Path(path): Path<String>) -> Response {
-    match Assets::get(&path) {
-        Some(file) => {
-            let mime = mime_from_path(&path);
-            ([(header::CONTENT_TYPE, mime)], file.data).into_response()
-        }
-        None => StatusCode::NOT_FOUND.into_response(),
-    }
-}
-
 async fn serve_static(Path(path): Path<String>) -> Response {
     match Static::get(&path) {
         Some(file) => {
@@ -374,10 +367,13 @@ pub async fn run(host: String, port: u16) {
 
     println!("Max content size: {} bytes", server_config.max_content_size);
 
+    let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+
     let state = AppState {
         db: db::init_db().expect("Failed to initialize database"),
         highlighter: Arc::new(Highlighter::new()),
         server_config,
+        base_url,
     };
 
     let api_routes = build_api_routes(&state);
@@ -388,7 +384,6 @@ pub async fn run(host: String, port: u16) {
         .route("/s/{short_id}", get(view_snippet))
         .route("/snippets", post(create_snippet))
         .merge(api_routes)
-        .route("/assets/{*path}", get(serve_assets))
         .route("/static/{*path}", get(serve_static))
         .with_state(state);
 
