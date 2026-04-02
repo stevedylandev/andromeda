@@ -349,7 +349,12 @@ async fn main() {
     let app_password = env::var("APP_PASSWORD").expect("APP_PASSWORD must be set");
     let usps_client_id = env::var("USPS_CLIENT_ID").expect("USPS_CLIENT_ID must be set");
     let usps_client_secret = env::var("USPS_CLIENT_SECRET").expect("USPS_CLIENT_SECRET must be set");
-    let bind_addr = env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3012".to_string());
+    let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+    let port: u16 = env::var("PORT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3000);
+    let bind_addr = format!("{}:{}", host, port);
     let cookie_secure = env::var("COOKIE_SECURE")
         .map(|v| v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);

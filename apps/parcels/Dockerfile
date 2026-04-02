@@ -35,5 +35,5 @@ WORKDIR /app
 COPY --from=builder /app/target/release/parcels ./parcels
 COPY --from=builder /app/apps/parcels/static ./static
 COPY --from=builder /app/apps/parcels/templates ./templates
-EXPOSE 3012
+EXPOSE 3000
 CMD ["./parcels"]
