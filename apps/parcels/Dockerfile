@@ -31,9 +31,8 @@ RUN touch apps/parcels/src/*.rs crates/auth/src/*.rs && cargo build --release -p
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-COPY --from=builder /app/target/release/parcels ./parcels
+COPY --from=builder /app/target/release/parcels /usr/local/bin/parcels
+WORKDIR /data
 COPY --from=builder /app/apps/parcels/static ./static
-COPY --from=builder /app/apps/parcels/templates ./templates
 EXPOSE 3000
-CMD ["./parcels"]
+CMD ["parcels"]
