@@ -59,18 +59,11 @@ pub struct TrackingEvent {
 
 // ── Pool Setup ──────────────────────────────────────────────────────────────
 
-pub fn database_path() -> String {
-    std::env::var("PARCELS_DB_PATH").unwrap_or_else(|_| "parcels.db".to_string())
-}
-
-pub fn init_db(path: &str) -> Result<Db, DbError> {
-    if let Some(parent) = std::path::Path::new(path).parent() {
-        if parent != std::path::Path::new("") {
-            std::fs::create_dir_all(parent).ok();
-        }
-    }
-    let conn = Connection::open(path)?;
-    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
+pub fn init_db() -> Db {
+    let path = "parcels.db";
+    let conn = Connection::open(path).expect("Failed to open database");
+    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")
+        .expect("Failed to set PRAGMAs");
     conn.execute_batch("
         CREATE TABLE IF NOT EXISTS packages (
             id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,8 +92,8 @@ pub fn init_db(path: &str) -> Result<Db, DbError> {
             token      TEXT NOT NULL UNIQUE,
             expires_at TEXT NOT NULL
         );
-    ")?;
-    Ok(Arc::new(Mutex::new(conn)))
+    ").expect("Failed to create tables");
+    Arc::new(Mutex::new(conn))
 }
 
 // ── Package Queries ─────────────────────────────────────────────────────────

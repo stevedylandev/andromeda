@@ -345,7 +345,6 @@ async fn main() {
     tracing_subscriber::fmt::init();
     use std::env;
 
-    let database_url = db::database_path();
     let app_password = env::var("APP_PASSWORD").expect("APP_PASSWORD must be set");
     let usps_client_id = env::var("USPS_CLIENT_ID").expect("USPS_CLIENT_ID must be set");
     let usps_client_secret = env::var("USPS_CLIENT_SECRET").expect("USPS_CLIENT_SECRET must be set");
@@ -359,7 +358,7 @@ async fn main() {
         .map(|v| v.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
 
-    let db = db::init_db(&database_url).expect("Failed to open database");
+    let db = db::init_db();
 
     let state = Arc::new(AppState {
         db,
