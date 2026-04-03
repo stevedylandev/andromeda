@@ -342,12 +342,24 @@ pub async fn get_feed_items(
     }
 
     // Priority 3: FreshRSS fallback
-    let freshrss_url = std::env::var("FRESHRSS_URL").map_err(|_| "FRESHRSS_URL not set")?;
-    let username =
-        std::env::var("FRESHRSS_USERNAME").map_err(|_| "FRESHRSS_USERNAME not set")?;
-    let password =
-        std::env::var("FRESHRSS_PASSWORD").map_err(|_| "FRESHRSS_PASSWORD not set")?;
+    if let Some((freshrss_url, username, password)) = crate::freshrss_env() {
+        let items = fetch_freshrss_items(&freshrss_url, &username, &password).await?;
+        return Ok((items, None));
+    }
 
-    let items = fetch_freshrss_items(&freshrss_url, &username, &password).await?;
-    Ok((items, None))
+    // Priority 4: DEFAULT_FEED env var
+    if let Ok(default_feed) = std::env::var("DEFAULT_FEED") {
+        let urls: Vec<String> = default_feed
+            .split(',')
+            .map(|u| u.trim().to_string())
+            .filter(|u| !u.is_empty())
+            .collect();
+
+        if !urls.is_empty() {
+            let items = parse_urls(&urls).await;
+            return Ok((items, Some(urls)));
+        }
+    }
+
+    Err("No feed source configured. Set FRESHRSS_URL/FRESHRSS_USERNAME/FRESHRSS_PASSWORD or DEFAULT_FEED.".to_string())
 }
