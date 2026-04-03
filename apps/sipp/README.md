@@ -200,28 +200,9 @@ While inside the TUI the following actions are available
 
 Since Sipp is a single binary it can be run in virtually any enviornment.
 
-### Systemd
+### Railway
 
-Create a service file at `/etc/systemd/system/sipp.service`:
-
-```ini
-[Unit]
-Description=Sipp snippet server
-After=network.target
-
-[Service]
-ExecStart=/usr/local/bin/sipp server --port 3000 --host 0.0.0.0
-Environment=SIPP_API_KEY=your-secret-key
-WorkingDirectory=/var/lib/sipp
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl enable --now sipp
-```
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Axcf_D?referralCode=JGcIp6)
 
 ### Docker
 
@@ -236,9 +217,3 @@ docker build -t sipp .
 docker run -p 3000:3000 -e SIPP_API_KEY=your-secret-key -v sipp-data:/data sipp
 ```
 
-### Railway
-
-1. Fork this repo and connect your fork to [Railway](https://railway.app)
-2. Set the environment variables `SIPP_API_KEY` and optionally `SIPP_AUTH_ENDPOINTS`
-3. Add a [volume](https://docs.railway.com/guides/volumes) to your service and mount it at `/data`
-4. Set `SIPP_DB_PATH` to `/data/sipp.sqlite` so the database persists across deploys
