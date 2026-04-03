@@ -4,82 +4,60 @@ Minimal code sharing
 
 https://github.com/user-attachments/assets/cadafb70-f796-456d-bfd9-e88704e7132c
 
-## Features
-
-- Single binary for web server and TUI
-- Create snippets and share on the web
-- Raw output for CLI tools — `curl`, `wget`, and `httpie` get plain text automatically
-- Interactive TUI with authenticated access for snippet management
-- Minimal, fast, and low memory consumption
-
 ## Quickstart
-
-**1. Install**
-
-Install via the [releases](https://github.com/stevedylandev/sipp/releases) page, or directly with `cargo`
 
 ```bash
 cargo install sipp-so
-```
-
-To confirm it was installed correctly run the following
-
-```bash
 sipp --help
 ```
 
-**2. Start Server**
-
-For demo purposes you can run this locally, but ideally this would be run in a deployment server with a proper ENV setup with your admin key.
+Start a server and create a snippet:
 
 ```bash
 sipp server --port 3000
 ```
 
-**3. Create a Snippet**
-
-You can either open up `http://localhost:3000` and create a snippet in a web browser, or use the TUI. In the same directory, open a new terminal window and use 
-
 ```bash
 # Path to file
 sipp path/to/file.rs
 
-# Or use the interactive tui 
+# Or use the interactive TUI
 sipp
 ```
 
-## Demo Instance
+## Overview
 
-A small instance running at [sipp.so](https://sipp.so) that can be used for testing and demo purposes.
+A single binary for code sharing with a web server and interactive TUI. A few highlights:
 
-```bash
-sipp -r https://sipp.so
-```
+- Create snippets and share on the web
+- Raw output for CLI tools — `curl`, `wget`, and `httpie` get plain text automatically
+- Interactive TUI with authenticated access for snippet management
+- Minimal, fast, and low memory consumption
 
->[!WARNING]
->All snippets created here are public and might be deleted at any time; host your own instance with your own API key for personal use!
+> [!WARNING]
+> A small demo instance runs at [sipp.so](https://sipp.so). All snippets created there are public and might be deleted at any time; host your own instance with your own API key for personal use!
 
-## Install
+## Usage
 
-Sipp can be installed several ways
+### Install
 
-### Releases
+Sipp can be installed several ways:
+
+#### Releases
 
 Visit the [releases](https://github.com/stevedylandev/sipp/releases) page and install through cURL script and other methods.
 
-### Homebrew
+#### Homebrew
 
 ```
 brew install stevedylandev/tap/sipp-so
 ```
 
-### Cargo
+#### Cargo
 
 ```bash
 cargo install sipp-so
 ```
-
-## Usage
 
 ### CLI
 
@@ -164,7 +142,7 @@ sipp -r https://sipp.so -k your-api-key
 
 #### Local Access
 
-If you are running `sipp` in the same directory as the `sipp.sqlite` file created by the server instance, the TUI will automatically access the datebase locally and you can edit it directly.
+If you are running `sipp` in the same directory as the `sipp.sqlite` file created by the server instance, the TUI will automatically access the database locally and you can edit it directly.
 
 #### Remote Access
 
@@ -196,36 +174,37 @@ While inside the TUI the following actions are available
 | `q` | Quit |
 | `?` | Toggle help |
 
+## Structure
+
+```
+sipp/
+├── src/
+│   ├── main.rs        # CLI argument parsing and entry point
+│   ├── lib.rs         # Library exports
+│   ├── server.rs      # Axum web server, routes, and templates
+│   ├── tui.rs         # Interactive terminal UI
+│   ├── db.rs          # SQLite database layer
+│   ├── backend.rs     # Local/remote backend abstraction
+│   ├── config.rs      # Config file management
+│   └── highlight.rs   # Syntax highlighting with custom themes
+├── templates/         # Askama HTML templates
+│   ├── index.html     # Snippet list
+│   ├── snippet.html   # Single snippet view
+│   └── admin.html     # Admin page
+├── static/            # Fonts, favicons, and styles
+├── Dockerfile
+└── docker-compose.yml
+```
+
 ## Deployment
 
-Since Sipp is a single binary it can be run in virtually any enviornment.
+Since Sipp is a single binary it can be run in virtually any environment.
 
-### Systemd
+### Railway
 
-Create a service file at `/etc/systemd/system/sipp.service`:
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Axcf_D?referralCode=JGcIp6)
 
-```ini
-[Unit]
-Description=Sipp snippet server
-After=network.target
-
-[Service]
-ExecStart=/usr/local/bin/sipp server --port 3000 --host 0.0.0.0
-Environment=SIPP_API_KEY=your-secret-key
-WorkingDirectory=/var/lib/sipp
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-sudo systemctl enable --now sipp
-```
-
-### Docker
-
-A `Dockerfile` and `docker-compose.yml` are included in the repository.
+### Docker (recommended)
 
 ```bash
 # Using Docker Compose (recommended)
@@ -236,9 +215,14 @@ docker build -t sipp .
 docker run -p 3000:3000 -e SIPP_API_KEY=your-secret-key -v sipp-data:/data sipp
 ```
 
-### Railway
+### Binary
 
-1. Fork this repo and connect your fork to [Railway](https://railway.app)
-2. Set the environment variables `SIPP_API_KEY` and optionally `SIPP_AUTH_ENDPOINTS`
-3. Add a [volume](https://docs.railway.com/guides/volumes) to your service and mount it at `/data`
-4. Set `SIPP_DB_PATH` to `/data/sipp.sqlite` so the database persists across deploys
+```bash
+cargo build --release
+```
+
+The resulting binary at `./target/release/sipp` is self-contained with all assets embedded. Copy it to your server with your environment variables configured and run it directly.
+
+## License
+
+[MIT](LICENSE)

@@ -6,14 +6,14 @@ A Rust workspace of minimal, self-hosted web apps. Each app compiles to a single
 
 ## Apps
 
-| App | Description |
-|---|---|
-| [**Sipp**](apps/sipp) | Minimal code sharing with web UI and TUI |
-| [**Feeds**](apps/feeds) | Minimal RSS reader with FreshRSS and OPML support |
-| [**Parcels**](apps/parcels) | Minimal package tracking (USPS) |
-| [**Jotts**](apps/jotts) | Minimal markdown notes app |
-| [**OG**](apps/og) | Open Graph tag inspector |
-| [**Shrink**](apps/shrink) | Image compression and resizing |
+| App | Description | Deploy |
+|---|---|---|
+| [**Sipp**](apps/sipp) | Minimal code sharing with web UI and TUI | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Axcf_D?referralCode=JGcIp6) |
+| [**Feeds**](apps/feeds) | Minimal RSS reader with FreshRSS and OPML support | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Ezvmhx?referralCode=JGcIp6) |
+| [**Parcels**](apps/parcels) | Minimal package tracking (USPS) | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/HNQUs4?referralCode=JGcIp6) |
+| [**Jotts**](apps/jotts) | Minimal markdown notes app | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DLhUhH?referralCode=JGcIp6) |
+| [**OG**](apps/og) | Open Graph tag inspector | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/OdXBt_?referralCode=JGcIp6) |
+| [**Shrink**](apps/shrink) | Image compression and resizing | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/enYUFb?referralCode=JGcIp6) |
 
 ## Shared Crates
 
