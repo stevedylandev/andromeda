@@ -12,7 +12,13 @@ cargo run
 
 The server starts on `http://localhost:3000` by default. Set the `PORT` env var to change it.
 
-## Docker
+## Deployment
+
+### Railway
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/OdXBt_?referralCode=JGcIp6)
+
+### Docker
 
 ```bash
 docker compose up --build
