@@ -4,11 +4,48 @@
 
 Minimal RSS Feeds
 
-## About
+## Quickstart
 
-Feeds is a minimal RSS reader that mimics the original experience of RSS. It's just a list of posts. No categories, no marking a post read or unread, and there is no in-app reading. With this approach you have to read the post on the authors personal website and experience it in it's original context. While this may not work well if you have loads of news feeds, I personally love it for [my approach to blogs](https://blogfeeds.net).
+1. Make sure [Rust](https://www.rust-lang.org/tools/install) is installed
 
-This app is also MIT open sourced and designed to be self-hosted; fork the code and change it to your liking!
+```bash
+rustc --version
+```
+
+2. Clone and build
+
+```bash
+git clone https://github.com/stevedylandev/feeds
+cd feeds
+cargo build
+```
+
+3. Run the dev server
+
+```bash
+cargo run
+# Server running on http://localhost:3000
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `FRESHRSS_URL` | URL of your FreshRSS instance | — |
+| `FRESHRSS_USERNAME` | FreshRSS username | — |
+| `FRESHRSS_PASSWORD` | FreshRSS password | — |
+| `ADMIN_PASSWORD` | Password for the admin panel | — |
+| `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+
+## Overview
+
+Feeds is a minimal RSS reader that mimics the original experience of RSS. It's just a list of posts. No categories, no marking a post read or unread, and there is no in-app reading. With this approach you have to read the post on the author's personal website and experience it in its original context. A few highlights:
+
+- Single Rust binary with embedded assets
+- Multiple feed sources: URL params, OPML file, or FreshRSS API
+- Password-protected admin panel for managing subscriptions
+- Feeds API with JSON and OPML export
+- Dark themed UI with Commit Mono font
 
 ## Usage
 
@@ -67,81 +104,47 @@ The `/feeds` endpoint exports your FreshRSS subscriptions in JSON or OPML format
 /feeds?format=opml
 ```
 
-## Quickstart
+## Structure
 
-1. Make sure [Rust](https://www.rust-lang.org/tools/install) is installed
-
-```bash
-rustc --version
 ```
-
-2. Clone and build
-
-```bash
-git clone https://github.com/stevedylandev/feeds
-cd feeds
-cargo build
+feeds/
+├── src/
+│   ├── main.rs        # Axum server with routing, templates, and static asset serving
+│   ├── feeds.rs       # Feed fetching, OPML parsing, and FreshRSS API integration
+│   ├── auth.rs        # Session-based authentication with constant-time password verification
+│   └── models.rs      # Data structures for feeds and FreshRSS responses
+├── templates/         # Askama HTML templates
+├── assets/            # Static assets embedded at compile time via rust-embed
+├── Dockerfile
+└── docker-compose.yml
 ```
-
-3. Run the dev server
-
-```bash
-cargo run
-# Server running on http://localhost:3000
-```
-
-## Project Structure
-
-The architecture is intentionally simple:
-- **`src/main.rs`** - Axum server with routing, templates, and static asset serving
-- **`src/feeds.rs`** - Feed fetching, OPML parsing, and FreshRSS API integration
-- **`src/auth.rs`** - Session-based authentication with constant-time password verification
-- **`src/models.rs`** - Data structures for feeds and FreshRSS responses
-- **`src/templates/`** - Askama HTML templates
-- **`assets/`** - Static assets embedded at compile time via `rust-embed`
-
-## Environment Variables
-
-| Variable | Description | Required |
-|---|---|---|
-| `FRESHRSS_URL` | URL of your FreshRSS instance | For FreshRSS mode |
-| `FRESHRSS_USERNAME` | FreshRSS username | For FreshRSS mode |
-| `FRESHRSS_PASSWORD` | FreshRSS password | For FreshRSS mode |
-| `ADMIN_PASSWORD` | Password for the admin panel | For admin access |
-| `COOKIE_SECURE` | Set to `true` for HTTPS environments | No |
 
 ## Deployment
 
 Since Feeds compiles to a single binary, deployment is straightforward on any platform.
 
-### Docker
+### Railway
 
-1. Clone the repo
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Ezvmhx?referralCode=JGcIp6)
+
+### Docker (recommended)
 
 ```bash
 git clone https://github.com/stevedylandev/feeds
 cd feeds
+cp .env.sample .env
+# Edit .env with your credentials
+docker compose up -d
 ```
 
-2. Build and run the Docker image
+### Binary
 
 ```bash
-docker build -t feeds .
-docker run -p 3000:3000 --env-file .env feeds
+cargo build --release
 ```
 
-Or use `docker-compose`
+The resulting binary at `./target/release/feeds` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
 
-```bash
-docker-compose up -d
-```
+## License
 
-### Railway
-
-1. Fork the repo from GitHub to your own account
-
-2. Login to [Railway](https://railway.com) and create a new project
-
-3. Select Feeds from your repos
-
-4. Railway will auto-detect the Rust project and build it
+[MIT](LICENSE)
