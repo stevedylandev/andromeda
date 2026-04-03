@@ -25,7 +25,7 @@ You'll need a [USPS Web Tools API](https://developer.usps.com) account to get yo
 | Variable | Description | Default |
 |---|---|---|
 | `APP_PASSWORD` | Password for login authentication | *required* |
-| `DATABASE_URL` | SQLite database path (e.g. `sqlite:///app/data/parcels.db`) |
+| `PARCELS_DB_PATH` | SQLite database file path | `parcels.db` |
 | `USPS_CLIENT_ID` | USPS OAuth2 client ID | *required* |
 | `USPS_CLIENT_SECRET` | USPS OAuth2 client secret | *required* |
 | `PORT` | Server port | `3000` |
