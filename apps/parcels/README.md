@@ -4,8 +4,8 @@
 
 A minimal package tracking app
 
->[!NOTE]
->Parcels currently only supports USPS tracking. If you're interested in adding other providers please feel free to open an issue
+>[!WARNING]
+>This app originally used USPS, but starting April 1st 2026, it has become much harder to obtain/maintain API keys. Please see the [opened issue](#4) on the matter. 
 
 ## Quickstart
 
