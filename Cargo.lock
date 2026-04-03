@@ -2731,7 +2731,7 @@ dependencies = [
 
 [[package]]
 name = "parcels"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "andromeda-auth",
  "anyhow",

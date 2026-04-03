@@ -60,12 +60,7 @@ pub struct TrackingEvent {
 // ── Pool Setup ──────────────────────────────────────────────────────────────
 
 pub fn database_path() -> String {
-    let raw = std::env::var("DATABASE_URL").unwrap_or_else(|_| "parcels.db".to_string());
-    // Strip sqlite:// or sqlite:/// prefix if present
-    raw.strip_prefix("sqlite:///")
-        .or_else(|| raw.strip_prefix("sqlite://"))
-        .unwrap_or(&raw)
-        .to_string()
+    std::env::var("PARCELS_DB_PATH").unwrap_or_else(|_| "parcels.db".to_string())
 }
 
 pub fn init_db(path: &str) -> Result<Db, DbError> {
