@@ -114,6 +114,10 @@ The architecture is intentionally simple:
 
 Since Feeds compiles to a single binary, deployment is straightforward on any platform.
 
+### Railway
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Ezvmhx?referralCode=JGcIp6)
+
 ### Docker
 
 1. Clone the repo
@@ -136,12 +140,3 @@ Or use `docker-compose`
 docker-compose up -d
 ```
 
-### Railway
-
-1. Fork the repo from GitHub to your own account
-
-2. Login to [Railway](https://railway.com) and create a new project
-
-3. Select Feeds from your repos
-
-4. Railway will auto-detect the Rust project and build it
