@@ -7,11 +7,23 @@
   </div>
   <div class="note-actions">
     <a href="/notes/{{ note.short_id }}/edit">edit</a>
+    <button type="button" class="link-button" id="copy-md-btn" onclick="copyMarkdown()">copy</button>
     <form method="POST" action="/notes/{{ note.short_id }}/delete" class="inline-form">
       <button type="submit" class="link-button" onclick="return confirm('delete this note?')">delete</button>
     </form>
   </div>
+  <template id="raw-md">{{ note.content }}</template>
   <article class="markdown-body">
     {{ rendered_content|safe }}
   </article>
+  <script>
+    function copyMarkdown() {
+      const md = document.getElementById("raw-md").content.textContent;
+      const btn = document.getElementById("copy-md-btn");
+      navigator.clipboard.writeText(md).then(() => {
+        btn.textContent = "copied!";
+        setTimeout(() => { btn.textContent = "copy"; }, 1500);
+      });
+    }
+  </script>
 {% endblock %}
