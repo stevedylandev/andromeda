@@ -1,11 +1,5 @@
 {% extends "base.html" %}
 {% block title %}{% if wine.is_some() %}Edit{% else %}New{% endif %} Wine - Cellar{% endblock %}
-{% block nav %}
-  <nav class="links">
-    <a href="/admin">back</a>
-    <a href="/admin/logout">logout</a>
-  </nav>
-{% endblock %}
 {% block content %}
   {% if let Some(error) = error %}
     <p class="error">{{ error }}</p>
