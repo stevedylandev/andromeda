@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/cellar/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - CELLAR_PASSWORD=${CELLAR_PASSWORD:-changeme}
+      - CELLAR_DB_PATH=/data/cellar.sqlite
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - COOKIE_SECURE=false
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+    volumes:
+      - cellar-data:/data
+    restart: unless-stopped
+
+volumes:
+  cellar-data:

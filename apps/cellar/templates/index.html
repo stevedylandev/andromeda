@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Cellar{% endblock %}
+{% block content %}
+  {% if wines.is_empty() %}
+    <p class="empty">no wines yet</p>
+  {% endif %}
+  <div class="wine-list">
+    {% for item in wines %}
+    <a href="/wines/{{ item.wine.short_id }}" class="wine-card">
+      <div class="wine-pentagon">
+        {{ item.pentagon_svg|safe }}
+      </div>
+      <div class="wine-info">
+        <span class="wine-name">{{ item.wine.name }}</span>
+        <span class="wine-meta">{{ item.wine.origin }}{% if !item.wine.grape.is_empty() %} &middot; {{ item.wine.grape }}{% endif %}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% endblock %}

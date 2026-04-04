@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{% if wine.is_some() %}Edit{% else %}New{% endif %} Wine - Cellar{% endblock %}
+{% block nav %}
+  <nav class="links">
+    <a href="/admin">back</a>
+    <a href="/admin/logout">logout</a>
+  </nav>
+{% endblock %}
+{% block content %}
+  {% if let Some(error) = error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  <form method="POST" enctype="multipart/form-data"
+    action="{% if let Some(w) = wine %}/admin/edit/{{ w.short_id }}{% else %}/admin/new{% endif %}"
+    class="form">
+
+    <label for="image">image</label>
+    <div class="image-upload-row">
+      <input type="file" id="image" name="image" accept="image/*">
+      {% if has_anthropic_key %}
+      <button type="button" id="analyze-btn" onclick="analyzeImage()">analyze</button>
+      {% endif %}
+    </div>
+
+    <label for="name">name</label>
+    <input type="text" id="name" name="name" required
+      value="{% if let Some(w) = wine %}{{ w.name }}{% endif %}">
+
+    <label for="origin">origin</label>
+    <input type="text" id="origin" name="origin"
+      value="{% if let Some(w) = wine %}{{ w.origin }}{% endif %}">
+
+    <label for="grape">grape</label>
+    <input type="text" id="grape" name="grape"
+      value="{% if let Some(w) = wine %}{{ w.grape }}{% endif %}">
+
+    <label for="notes">notes</label>
+    <textarea id="notes" name="notes" rows="5">{% if let Some(w) = wine %}{{ w.notes }}{% endif %}</textarea>
+
+    <label for="background">background</label>
+    <textarea id="background" name="background" rows="5">{% if let Some(w) = wine %}{{ w.background }}{% endif %}</textarea>
+
+    <div class="score-group">
+      <div class="score-row">
+        <label for="sweetness">sweetness</label>
+        <input type="range" id="sweetness" name="sweetness" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.sweetness }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="sweetness">{% if let Some(w) = wine %}{{ w.sweetness }}{% else %}3{% endif %}</span>
+      </div>
+      <div class="score-row">
+        <label for="acidity">acidity</label>
+        <input type="range" id="acidity" name="acidity" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.acidity }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="acidity">{% if let Some(w) = wine %}{{ w.acidity }}{% else %}3{% endif %}</span>
+      </div>
+      <div class="score-row">
+        <label for="tannin">tannin</label>
+        <input type="range" id="tannin" name="tannin" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.tannin }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="tannin">{% if let Some(w) = wine %}{{ w.tannin }}{% else %}3{% endif %}</span>
+      </div>
+      <div class="score-row">
+        <label for="alcohol">alcohol</label>
+        <input type="range" id="alcohol" name="alcohol" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.alcohol }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="alcohol">{% if let Some(w) = wine %}{{ w.alcohol }}{% else %}3{% endif %}</span>
+      </div>
+      <div class="score-row">
+        <label for="body">body</label>
+        <input type="range" id="body" name="body" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.body }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="body">{% if let Some(w) = wine %}{{ w.body }}{% else %}3{% endif %}</span>
+      </div>
+    </div>
+
+    <button type="submit">{% if wine.is_some() %}update{% else %}create{% endif %}</button>
+  </form>
+
+  <script>
+    document.querySelectorAll('input[type="range"]').forEach(function(input) {
+      input.addEventListener('input', function() {
+        var span = document.querySelector('.score-value[data-for="' + this.id + '"]');
+        if (span) span.textContent = this.value;
+      });
+    });
+
+    {% if has_anthropic_key %}
+    async function analyzeImage() {
+      var fileInput = document.getElementById('image');
+      if (!fileInput.files.length) return;
+      var formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+      var btn = document.getElementById('analyze-btn');
+      btn.textContent = 'analyzing...';
+      btn.disabled = true;
+      try {
+        var res = await fetch('/admin/analyze-image', { method: 'POST', body: formData });
+        if (res.ok) {
+          var data = await res.json();
+          if (data.name) document.getElementById('name').value = data.name;
+          if (data.origin) document.getElementById('origin').value = data.origin;
+          if (data.grape) document.getElementById('grape').value = data.grape;
+          if (data.background) document.getElementById('background').value = data.background;
+        }
+      } catch (e) {
+        console.error('Analysis failed:', e);
+      } finally {
+        btn.textContent = 'analyze';
+        btn.disabled = false;
+      }
+    }
+    {% endif %}
+  </script>
+{% endblock %}
