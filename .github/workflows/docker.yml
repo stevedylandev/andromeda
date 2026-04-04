@@ -61,7 +61,7 @@ jobs:
           fi
 
           apps=()
-          for app in sipp feeds parcels jotts og shrink; do
+          for app in cellar sipp feeds parcels jotts og shrink; do
             if echo "$changed" | grep -q "^apps/${app}/"; then
               apps+=("\"${app}\"")
             fi
