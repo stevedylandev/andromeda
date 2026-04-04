@@ -1,4 +1,5 @@
 use askama::Template;
+use image::ImageDecoder;
 use askama_web::WebTemplate;
 use axum::{
     extract::{DefaultBodyLimit, Multipart, Path, Query, State},
@@ -424,6 +425,26 @@ async fn get_edit_wine(
     }
 }
 
+// --- Image processing ---
+
+fn process_image(data: &[u8]) -> Result<Vec<u8>, String> {
+    let reader = image::ImageReader::new(std::io::Cursor::new(data))
+        .with_guessed_format()
+        .map_err(|e| format!("Failed to read image: {}", e))?;
+    let mut decoder = reader
+        .into_decoder()
+        .map_err(|e| format!("Failed to create decoder: {}", e))?;
+    let orientation = decoder.orientation().unwrap_or(image::metadata::Orientation::NoTransforms);
+    let mut img = image::DynamicImage::from_decoder(decoder)
+        .map_err(|e| format!("Failed to decode image: {}", e))?;
+    img.apply_orientation(orientation);
+    let mut output = Vec::new();
+    let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut output, 75);
+    img.write_with_encoder(encoder)
+        .map_err(|e| format!("JPEG encoding failed: {}", e))?;
+    Ok(output)
+}
+
 // --- Multipart parsing ---
 
 struct WineFormData {
@@ -459,11 +480,11 @@ async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, 
         let field_name = field.name().unwrap_or("").to_string();
         match field_name.as_str() {
             "image" => {
-                let content_type = field.content_type().unwrap_or("application/octet-stream").to_string();
                 let bytes = field.bytes().await.map_err(|e| format!("Failed to read image: {}", e))?;
                 if !bytes.is_empty() {
-                    image = Some(bytes.to_vec());
-                    image_mime = Some(content_type);
+                    let processed = process_image(&bytes)?;
+                    image = Some(processed);
+                    image_mime = Some("image/jpeg".to_string());
                 }
             }
             "name" => name = field.text().await.unwrap_or_default(),
