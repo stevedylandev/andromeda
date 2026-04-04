@@ -1,0 +1,27 @@
+[package]
+name = "cellar"
+version = "0.1.0"
+edition = "2024"
+description = "Personal wine tasting log"
+license = "MIT"
+repository = "https://github.com/stevedylandev/andromeda"
+homepage = "https://github.com/stevedylandev/andromeda"
+
+[dependencies]
+axum = { workspace = true, features = ["multipart"] }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rusqlite = { workspace = true }
+nanoid = { workspace = true }
+rust-embed = { workspace = true }
+dotenvy = { workspace = true }
+subtle = { workspace = true }
+rand = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+andromeda-auth = { workspace = true }
+askama = "0.15"
+askama_web = { version = "0.15", features = ["axum-0.8"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+base64 = "0.22"

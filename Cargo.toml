@@ -6,6 +6,7 @@ members = [
     "apps/jotts",
     "apps/og",
     "apps/shrink",
+    "apps/cellar",
     "crates/auth",
 ]
 resolver = "3"

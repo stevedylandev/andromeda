@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ wine.name }} - Cellar{% endblock %}
+{% block content %}
+  <div class="wine-detail">
+    <h1 class="wine-detail-name">{{ wine.name }}</h1>
+    <div class="wine-detail-top">
+      {% if wine.has_image %}
+      <div class="wine-image-wrap">
+        <img src="/wines/{{ wine.short_id }}/image" alt="{{ wine.name }}" class="wine-image">
+      </div>
+      {% endif %}
+      <div class="wine-detail-chart">
+        {{ pentagon_svg|safe }}
+      </div>
+    </div>
+    <div class="wine-detail-meta">
+      {% if !wine.origin.is_empty() %}
+      <div class="meta-row">
+        <span class="meta-label">origin</span>
+        <span>{{ wine.origin }}</span>
+      </div>
+      {% endif %}
+      {% if !wine.grape.is_empty() %}
+      <div class="meta-row">
+        <span class="meta-label">grape</span>
+        <span>{{ wine.grape }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% if !wine.notes.is_empty() %}
+    <div class="wine-detail-notes">
+      <span class="meta-label">notes</span>
+      <p>{{ wine.notes }}</p>
+    </div>
+    {% endif %}
+    {% if !wine.background.is_empty() %}
+    <div class="wine-detail-notes">
+      <span class="meta-label">background</span>
+      <p>{{ wine.background }}</p>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}

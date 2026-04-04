@@ -1,0 +1,400 @@
+@font-face {
+  font-family: "Commit Mono";
+  src: url("/static/fonts/CommitMono-400-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Commit Mono";
+  src: url("/static/fonts/CommitMono-700-Regular.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Commit Mono", monospace, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html {
+  background: #121113;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start;
+  gap: 1.5rem;
+  min-height: 100vh;
+  max-width: 700px;
+  margin: auto;
+  padding: 0 1rem;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.7;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 2rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12px;
+}
+
+/* Main content */
+
+main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Forms */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+input, textarea {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid white;
+  padding: 0.4rem 0.75rem;
+  font-size: 16px;
+  width: 100%;
+  border-radius: 0;
+}
+
+input[type="file"] {
+  border: none;
+  padding: 0;
+  font-size: 12px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  background: #121113;
+  color: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid white;
+  cursor: pointer;
+  width: fit-content;
+  font-size: 14px;
+  border-radius: 0;
+}
+
+button:hover {
+  opacity: 0.7;
+}
+
+button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Error */
+
+.error {
+  color: #ffffff;
+  border-left: 2px solid #ffffff;
+  padding-left: 0.5rem;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.empty {
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+/* Wine list (public) */
+
+.wine-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.wine-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 12px 0;
+  border-bottom: 1px solid #333;
+  text-decoration: none;
+}
+
+.wine-card:hover {
+  opacity: 0.7;
+}
+
+.wine-pentagon {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+}
+
+.wine-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wine-name {
+  font-size: 16px;
+}
+
+.wine-meta {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+/* Wine detail (public) */
+
+.wine-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  padding-bottom: 4rem;
+}
+
+.wine-detail-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .wine-detail-top {
+    grid-template-columns: 1fr;
+  }
+  .wine-image {
+    max-height: none;
+    width: 100%;
+  }
+}
+
+.wine-image-wrap {
+  width: 100%;
+}
+
+.wine-image {
+  width: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.wine-detail-name {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.wine-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-row {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 14px;
+}
+
+.meta-label {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.wine-detail-chart {
+  display: flex;
+  justify-content: center;
+}
+
+.wine-detail-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.wine-detail-notes p {
+  white-space: pre-wrap;
+}
+
+/* Admin list */
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.admin-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+}
+
+.admin-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-item-name {
+  font-size: 16px;
+}
+
+.admin-item-meta {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 1rem;
+  font-size: 12px;
+}
+
+.inline-form {
+  display: inline;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.link-button:hover {
+  opacity: 0.7;
+}
+
+/* Score inputs */
+
+.image-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.score-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.score-row label {
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.score-row input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: #555;
+  border: none;
+  padding: 0;
+}
+
+.score-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.score-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.score-value {
+  width: 16px;
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+}

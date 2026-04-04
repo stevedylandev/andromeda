@@ -6,6 +6,7 @@ members = [
     "cargo:apps/jotts",
     "cargo:apps/og",
     "cargo:apps/shrink",
+    "cargo:apps/cellar",
 ]
 
 # Config for 'dist'

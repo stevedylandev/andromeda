@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cellar</title>
+  <meta name="theme-color" content="#121113" />
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="header">
+    <span class="logo">CELLAR</span>
+  </header>
+  <main>
+    {% if let Some(error) = error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+    <form method="POST" action="/admin/login" class="form">
+      <label for="password">password</label>
+      <input type="password" id="password" name="password" autofocus required>
+      <button type="submit">login</button>
+    </form>
+  </main>
+</body>
+</html>
