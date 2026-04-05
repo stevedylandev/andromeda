@@ -27,7 +27,11 @@ impl FromRequestParts<Arc<AppState>> for AuthSession {
                 return Ok(AuthSession);
             }
         }
-        Err(Redirect::to("/admin/login").into_response())
+        let path = parts.uri.path_and_query()
+            .map(|pq| pq.as_str())
+            .unwrap_or(parts.uri.path());
+        let login_url = format!("/admin/login?next={}", urlencoding(path));
+        Err(Redirect::to(&login_url).into_response())
     }
 }
 
@@ -58,6 +62,21 @@ pub fn chrono_now() -> String {
         "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
         year, month, day, hours, minutes, seconds
     )
+}
+
+fn urlencoding(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for b in s.bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' => {
+                out.push(b as char);
+            }
+            _ => {
+                out.push_str(&format!("%{:02X}", b));
+            }
+        }
+    }
+    out
 }
 
 fn days_to_ymd(mut days: i64) -> (i64, i64, i64) {
