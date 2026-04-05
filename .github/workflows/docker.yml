@@ -25,7 +25,7 @@ jobs:
       - name: Determine which apps to build
         id: filter
         run: |
-          ALL='["cellar","sipp","feeds","parcels","jotts","og","shrink"]'
+          ALL='["cellar","sipp","feeds","parcels","jotts","og","shrink","backup"]'
 
           # Map cargo package names to directory names
           pkg_to_dir() {
@@ -61,7 +61,7 @@ jobs:
           fi
 
           apps=()
-          for app in cellar sipp feeds parcels jotts og shrink; do
+          for app in cellar sipp feeds parcels jotts og shrink backup; do
             if echo "$changed" | grep -q "^apps/${app}/"; then
               apps+=("\"${app}\"")
             fi
