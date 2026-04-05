@@ -1,0 +1,86 @@
+services:
+  feeds:
+    image: ghcr.io/stevedylandev/andromeda/feeds:latest
+    restart: unless-stopped
+    ports:
+      - "4555:3000"
+    volumes:
+      - feeds_data:/app/data
+    env_file: apps/feeds/.env
+
+  jotts:
+    image: ghcr.io/stevedylandev/andromeda/jotts:latest
+    restart: unless-stopped
+    ports:
+      - "3030:3030"
+    volumes:
+      - jotts_data:/data
+    env_file: apps/jotts/.env
+
+  og:
+    image: ghcr.io/stevedylandev/andromeda/og:latest
+    restart: unless-stopped
+    ports:
+      - "3456:3000"
+    volumes:
+      - og_db_data:/app/data
+
+  sipp:
+    image: ghcr.io/stevedylandev/andromeda/sipp:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - sipp_data:/data
+    env_file: apps/sipp/.env
+
+  shrink:
+    image: ghcr.io/stevedylandev/andromeda/shrink:latest
+    restart: unless-stopped
+    ports:
+      - "3565:3000"
+
+  cellar:
+    image: ghcr.io/stevedylandev/andromeda/cellar:latest
+    restart: unless-stopped
+    ports:
+      - "6754:3000"
+    volumes:
+      - cellar_data:/data
+    env_file: apps/cellar/.env
+
+  watchtower:
+    image: containrrr/watchtower:1.7.1
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - DOCKER_API_VERSION=1.44
+    command: --interval 300
+  backup:
+    image: ghcr.io/stevedylandev/andromeda/backup:latest
+    volumes:
+      - jotts_data:/data/jotts:ro
+      - sipp_data:/data/sipp:ro
+      - cellar_data:/data/cellar:ro
+    env_file: apps/backup/.env
+    restart: unless-stopped
+
+volumes:
+  feeds_data:
+    external: true
+    name: feeds_feeds_data
+  jotts_data:
+    external: true
+    name: jotts_jotts-data
+  og_db_data:
+    external: true
+    name: og_db_data
+  sipp_data:
+    external: true
+    name: sipp-rust_sipp-data
+  cellar_data:
+    external: true
+    name: cellar_cellar_data
