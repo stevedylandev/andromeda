@@ -644,7 +644,7 @@ dependencies = [
 
 [[package]]
 name = "cellar"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "andromeda-auth",
  "askama 0.15.6",
@@ -1915,6 +1915,17 @@ checksum = "525e9ff3e1a4be2fbea1fdf0e98686a6d98b4d8f937e1bf7402245af1909e8c3"
 dependencies = [
  "byteorder-lite",
  "quick-error",
+]
+
+[[package]]
+name = "img-parts"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6b4e24cfdc6f897b582508e3c382eaf5378076898f80500a80d10d761ae85e90"
+dependencies = [
+ "bytes",
+ "crc32fast",
+ "miniz_oxide",
 ]
 
 [[package]]
@@ -3923,6 +3934,7 @@ dependencies = [
  "askama 0.15.6",
  "axum",
  "image",
+ "img-parts",
  "serde",
  "tokio",
  "tower-http",
