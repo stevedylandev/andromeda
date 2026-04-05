@@ -16,3 +16,4 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 askama = "0.15"
 image = "0.25"
+img-parts = "0.3"
