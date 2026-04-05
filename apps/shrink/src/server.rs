@@ -7,6 +7,8 @@ use axum::{
     routing::{get, post},
 };
 use axum::extract::DefaultBodyLimit;
+use img_parts::ImageEXIF;
+use img_parts::jpeg::Jpeg;
 use tower_http::services::ServeDir;
 
 #[derive(Template)]
@@ -64,16 +66,22 @@ async fn post_compress(mut multipart: Multipart) -> Result<Response, (StatusCode
                     .map_err(|e| (StatusCode::BAD_REQUEST, format!("Failed to read width: {}", e)))?;
                 width = text.parse::<u32>().unwrap_or(0);
             }
-            _ => {}
+_ => {}
         }
     }
 
     let file_data = file_data.ok_or((StatusCode::BAD_REQUEST, "No file provided".to_string()))?;
 
-    let result = tokio::task::spawn_blocking(move || compress_image(&file_data, quality, width))
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Task failed: {}", e)))?
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Compression failed: {}", e)))?;
+    let result =
+        tokio::task::spawn_blocking(move || compress_image(&file_data, quality, width))
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Task failed: {}", e)))?
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Compression failed: {}", e),
+                )
+            })?;
 
     let download_name = build_download_filename(&original_filename, "jpg");
 
@@ -92,6 +100,11 @@ async fn post_compress(mut multipart: Multipart) -> Result<Response, (StatusCode
 }
 
 fn compress_image(data: &[u8], quality: u8, width: u32) -> Result<Vec<u8>, String> {
+    // Extract EXIF from original before re-encoding destroys it
+    let original_exif = Jpeg::from_bytes(data.to_vec().into())
+        .ok()
+        .and_then(|j| j.exif().map(|e| e.to_vec()));
+
     let img =
         image::load_from_memory(data).map_err(|e| format!("Failed to decode image: {}", e))?;
 
@@ -108,7 +121,88 @@ fn compress_image(data: &[u8], quality: u8, width: u32) -> Result<Vec<u8>, Strin
     img.write_with_encoder(encoder)
         .map_err(|e| format!("JPEG encoding failed: {}", e))?;
 
-    Ok(output)
+    // Re-inject EXIF into the compressed output (always strip GPS data)
+    if let Some(exif_bytes) = original_exif {
+        let exif = strip_gps_from_exif(&exif_bytes);
+
+        let mut out_jpeg = Jpeg::from_bytes(output.into())
+            .map_err(|e| format!("Failed to parse compressed JPEG: {}", e))?;
+        out_jpeg.set_exif(Some(exif.into()));
+        let mut final_output = Vec::new();
+        out_jpeg
+            .encoder()
+            .write_to(&mut final_output)
+            .map_err(|e| format!("Failed to write JPEG with EXIF: {}", e))?;
+        Ok(final_output)
+    } else {
+        Ok(output)
+    }
+}
+
+/// Strips GPS data from raw EXIF bytes by zeroing the GPS IFD entry count.
+/// Preserves all other metadata (camera, lens, settings, etc.) and offsets.
+fn strip_gps_from_exif(exif: &[u8]) -> Vec<u8> {
+    let mut data = exif.to_vec();
+
+    // img-parts strips the "Exif\0\0" prefix, so bytes start with TIFF header (II/MM)
+    let tiff_start = if data.len() >= 14 && &data[0..4] == b"Exif" {
+        6
+    } else if data.len() >= 8 && (&data[0..2] == b"II" || &data[0..2] == b"MM") {
+        0
+    } else {
+        return data;
+    };
+    let big_endian = &data[tiff_start..tiff_start + 2] == b"MM";
+
+    let read_u16 = |d: &[u8], off: usize| -> u16 {
+        if big_endian {
+            u16::from_be_bytes([d[off], d[off + 1]])
+        } else {
+            u16::from_le_bytes([d[off], d[off + 1]])
+        }
+    };
+
+    let read_u32 = |d: &[u8], off: usize| -> u32 {
+        if big_endian {
+            u32::from_be_bytes([d[off], d[off + 1], d[off + 2], d[off + 3]])
+        } else {
+            u32::from_le_bytes([d[off], d[off + 1], d[off + 2], d[off + 3]])
+        }
+    };
+
+    // IFD0 offset (relative to TIFF start)
+    let ifd0_rel = read_u32(&data, tiff_start + 4) as usize;
+    let ifd0_off = tiff_start + ifd0_rel;
+    if ifd0_off + 2 > data.len() {
+        return data;
+    }
+
+    let entry_count = read_u16(&data, ifd0_off) as usize;
+
+    for i in 0..entry_count {
+        let entry_off = ifd0_off + 2 + i * 12;
+        if entry_off + 12 > data.len() {
+            break;
+        }
+        let tag = read_u16(&data, entry_off);
+        if tag == 0x8825 {
+            // GPS IFD pointer — read the offset, then zero out the GPS IFD entry count
+            let gps_ifd_rel = read_u32(&data, entry_off + 8) as usize;
+            let gps_ifd_off = tiff_start + gps_ifd_rel;
+            if gps_ifd_off + 2 <= data.len() {
+                let zero = if big_endian {
+                    0u16.to_be_bytes()
+                } else {
+                    0u16.to_le_bytes()
+                };
+                data[gps_ifd_off] = zero[0];
+                data[gps_ifd_off + 1] = zero[1];
+            }
+            break;
+        }
+    }
+
+    data
 }
 
 fn build_download_filename(original: &str, new_ext: &str) -> String {
