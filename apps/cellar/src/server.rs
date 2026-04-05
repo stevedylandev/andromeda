@@ -37,6 +37,7 @@ struct BaseTemplate;
 #[template(path = "login.html")]
 struct LoginTemplate {
     error: Option<String>,
+    next: Option<String>,
 }
 
 struct WineWithSvg {
@@ -76,6 +77,7 @@ struct WineFormTemplate {
 #[derive(serde::Deserialize, Default)]
 pub struct FlashQuery {
     pub error: Option<String>,
+    pub next: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -226,15 +228,17 @@ fn build_pentagon_svg(
 // --- Auth handlers ---
 
 async fn get_login(Query(q): Query<FlashQuery>) -> Response {
-    WebTemplate(LoginTemplate { error: q.error }).into_response()
+    WebTemplate(LoginTemplate { error: q.error, next: q.next }).into_response()
 }
 
 async fn post_login(
+    Query(q): Query<FlashQuery>,
     State(state): State<Arc<AppState>>,
     axum::extract::Form(form): axum::extract::Form<LoginForm>,
 ) -> Response {
+    let next = q.next.as_deref().unwrap_or("/admin");
     if !auth::verify_password(&form.password, &state.app_password) {
-        return Redirect::to("/admin/login?error=Invalid+password").into_response();
+        return Redirect::to(&format!("/admin/login?error=Invalid+password&next={}", urlencoded(next))).into_response();
     }
 
     let token = auth::generate_session_token();
@@ -268,7 +272,9 @@ async fn post_login(
     let _ = db::prune_expired_sessions(&state.db);
 
     let cookie = auth::build_session_cookie(&token, state.cookie_secure);
-    let mut resp = Redirect::to("/admin").into_response();
+    // Only allow relative redirects to prevent open redirect
+    let redirect_to = if next.starts_with('/') { next } else { "/admin" };
+    let mut resp = Redirect::to(redirect_to).into_response();
     resp.headers_mut().insert(
         axum::http::header::SET_COOKIE,
         HeaderValue::from_str(&cookie).unwrap(),
