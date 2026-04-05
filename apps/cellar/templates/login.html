@@ -15,7 +15,7 @@
     {% if let Some(error) = error %}
       <p class="error">{{ error }}</p>
     {% endif %}
-    <form method="POST" action="/admin/login" class="form">
+    <form method="POST" action="/admin/login{% if let Some(next) = next %}?next={{ next }}{% endif %}" class="form">
       <label for="password">password</label>
       <input type="password" id="password" name="password" autofocus required>
       <button type="submit">login</button>
