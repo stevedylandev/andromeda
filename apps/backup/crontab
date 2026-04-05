@@ -1,0 +1,1 @@
+0 */6 * * * . /etc/environment && /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1

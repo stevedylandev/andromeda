@@ -1,0 +1,20 @@
+services:
+  backup:
+    build: .
+    volumes:
+      - jotts-data:/data/jotts:ro
+      - sipp-data:/data/sipp:ro
+      - cellar-data:/data/cellar:ro
+    env_file: .env
+    restart: unless-stopped
+
+volumes:
+  jotts-data:
+    external: true
+    name: ${JOTTS_VOLUME:-jotts_jotts-data}
+  sipp-data:
+    external: true
+    name: ${SIPP_VOLUME:-sipp_sipp-data}
+  cellar-data:
+    external: true
+    name: ${CELLAR_VOLUME:-cellar_cellar-data}
