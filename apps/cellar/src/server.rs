@@ -56,6 +56,7 @@ struct IndexTemplate {
 struct WineDetailTemplate {
     wine: Wine,
     pentagon_svg: String,
+    bars_svg: String,
 }
 
 #[derive(Template)]
@@ -143,7 +144,7 @@ fn build_pentagon_svg(
         .collect();
 
     let mut svg = format!(
-        r#"<svg viewBox="0 0 {s} {s}" width="{s}" height="{s}" xmlns="http://www.w3.org/2000/svg">"#,
+        r#"<svg viewBox="0 0 {s} {s}" width="100%" xmlns="http://www.w3.org/2000/svg">"#,
         s = size
     );
 
@@ -218,6 +219,80 @@ fn build_pentagon_svg(
                 r#"<text x="{:.1}" y="{:.1}" fill="white" fill-opacity="0.5" font-size="9" font-family="Commit Mono, monospace" text-anchor="middle">{}</text>"#,
                 lx, ly, label
             ));
+        }
+    }
+
+    svg.push_str("</svg>");
+    svg
+}
+
+fn build_bars_svg(
+    clarity: i32,
+    color_intensity: i32,
+    aroma_intensity: i32,
+    nose_complexity: i32,
+    width: f64,
+) -> String {
+    let bar_height = 4.0;
+    let row_height = 22.0;
+    let section_gap = 14.0;
+    let label_width = 100.0;
+    let track_left = label_width + 4.0;
+    let track_width = width - track_left - 10.0;
+    let header_size = 9.0;
+
+    let sections: &[(&str, &[(&str, i32)])] = &[
+        ("Appearance", &[("Clarity", clarity), ("Intensity", color_intensity)]),
+        ("Nose", &[("Aroma", aroma_intensity), ("Complexity", nose_complexity)]),
+    ];
+
+    let total_rows: usize = sections.iter().map(|(_, attrs)| attrs.len()).sum();
+    let total_height = (sections.len() as f64) * (header_size + 8.0)
+        + (total_rows as f64) * row_height
+        + section_gap;
+
+    let mut svg = format!(
+        r#"<svg viewBox="0 0 {w} {h}" width="100%" xmlns="http://www.w3.org/2000/svg">"#,
+        w = width,
+        h = total_height
+    );
+
+    let mut y = 4.0;
+
+    for (si, (section_name, attrs)) in sections.iter().enumerate() {
+        if si > 0 {
+            y += section_gap;
+        }
+
+        svg.push_str(&format!(
+            r#"<text x="0" y="{:.1}" fill="white" fill-opacity="0.4" font-size="{}" font-family="Commit Mono, monospace" text-transform="uppercase" letter-spacing="1">{}</text>"#,
+            y + header_size, header_size, section_name
+        ));
+        y += header_size + 8.0;
+
+        for (label, score) in *attrs {
+            let bar_y = y + (row_height - bar_height) / 2.0;
+            let fill_width = (*score as f64 / 5.0) * track_width;
+
+            svg.push_str(&format!(
+                r#"<text x="0" y="{:.1}" fill="white" fill-opacity="0.5" font-size="9" font-family="Commit Mono, monospace">{}</text>"#,
+                y + row_height / 2.0 + 3.0, label
+            ));
+
+            svg.push_str(&format!(
+                r#"<rect x="{:.1}" y="{:.1}" width="{:.1}" height="{:.1}" rx="2" fill="white" fill-opacity="0.08"/>"#,
+                track_left, bar_y, track_width, bar_height
+            ));
+
+            if fill_width > 0.0 {
+                svg.push_str(&format!(
+                    r#"<rect x="{:.1}" y="{:.1}" width="{:.1}" height="{:.1}" rx="2" fill="white" fill-opacity="0.6"/>"#,
+                    track_left, bar_y, fill_width, bar_height
+                ));
+
+            }
+
+            y += row_height;
         }
     }
 
@@ -348,7 +423,14 @@ async fn get_wine_detail(
                 250.0,
                 true,
             );
-            WebTemplate(WineDetailTemplate { wine, pentagon_svg }).into_response()
+            let bars_svg = build_bars_svg(
+                wine.clarity,
+                wine.color_intensity,
+                wine.aroma_intensity,
+                wine.nose_complexity,
+                250.0,
+            );
+            WebTemplate(WineDetailTemplate { wine, pentagon_svg, bars_svg }).into_response()
         }
         Ok(None) => (StatusCode::NOT_FOUND, Html("Wine not found".to_string())).into_response(),
         Err(e) => {
@@ -466,6 +548,10 @@ struct WineFormData {
     tannin: i32,
     alcohol: i32,
     body: i32,
+    clarity: i32,
+    color_intensity: i32,
+    aroma_intensity: i32,
+    nose_complexity: i32,
 }
 
 async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, String> {
@@ -481,6 +567,10 @@ async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, 
     let mut tannin = 3;
     let mut alcohol = 3;
     let mut body = 3;
+    let mut clarity = 3;
+    let mut color_intensity = 3;
+    let mut aroma_intensity = 3;
+    let mut nose_complexity = 3;
 
     while let Ok(Some(field)) = multipart.next_field().await {
         let field_name = field.name().unwrap_or("").to_string();
@@ -503,6 +593,10 @@ async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, 
             "tannin" => tannin = field.text().await.unwrap_or_default().parse().unwrap_or(3),
             "alcohol" => alcohol = field.text().await.unwrap_or_default().parse().unwrap_or(3),
             "body" => body = field.text().await.unwrap_or_default().parse().unwrap_or(3),
+            "clarity" => clarity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
+            "color_intensity" => color_intensity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
+            "aroma_intensity" => aroma_intensity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
+            "nose_complexity" => nose_complexity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
             _ => {}
         }
     }
@@ -526,6 +620,10 @@ async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, 
         tannin: clamp(tannin),
         alcohol: clamp(alcohol),
         body: clamp(body),
+        clarity: clamp(clarity),
+        color_intensity: clamp(color_intensity),
+        aroma_intensity: clamp(aroma_intensity),
+        nose_complexity: clamp(nose_complexity),
     })
 }
 
@@ -554,6 +652,10 @@ async fn post_new_wine(
         data.tannin,
         data.alcohol,
         data.body,
+        data.clarity,
+        data.color_intensity,
+        data.aroma_intensity,
+        data.nose_complexity,
         &data.background,
     ) {
         Ok(wine) => Redirect::to(&format!("/wines/{}", wine.short_id)).into_response(),
@@ -590,6 +692,10 @@ async fn post_edit_wine(
         data.tannin,
         data.alcohol,
         data.body,
+        data.clarity,
+        data.color_intensity,
+        data.aroma_intensity,
+        data.nose_complexity,
         &data.background,
     ) {
         Ok(Some(_)) => {

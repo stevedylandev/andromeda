@@ -44,6 +44,10 @@ pub struct Wine {
     pub tannin: i32,
     pub alcohol: i32,
     pub body: i32,
+    pub clarity: i32,
+    pub color_intensity: i32,
+    pub aroma_intensity: i32,
+    pub nose_complexity: i32,
     pub background: String,
     pub created_at: String,
 }
@@ -81,6 +85,12 @@ pub fn init_db() -> Db {
     // Migration: add background column if it doesn't exist
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN background TEXT NOT NULL DEFAULT ''", []);
 
+    // Migration: add appearance and nose tasting attributes
+    let _ = conn.execute("ALTER TABLE wines ADD COLUMN clarity INTEGER NOT NULL DEFAULT 3", []);
+    let _ = conn.execute("ALTER TABLE wines ADD COLUMN color_intensity INTEGER NOT NULL DEFAULT 3", []);
+    let _ = conn.execute("ALTER TABLE wines ADD COLUMN aroma_intensity INTEGER NOT NULL DEFAULT 3", []);
+    let _ = conn.execute("ALTER TABLE wines ADD COLUMN nose_complexity INTEGER NOT NULL DEFAULT 3", []);
+
     Arc::new(Mutex::new(conn))
 }
 
@@ -99,13 +109,17 @@ fn wine_from_row(row: &rusqlite::Row) -> rusqlite::Result<Wine> {
         tannin: row.get(10)?,
         alcohol: row.get(11)?,
         body: row.get(12)?,
-        background: row.get(13)?,
-        created_at: row.get(14)?,
+        clarity: row.get(13)?,
+        color_intensity: row.get(14)?,
+        aroma_intensity: row.get(15)?,
+        nose_complexity: row.get(16)?,
+        background: row.get(17)?,
+        created_at: row.get(18)?,
     })
 }
 
 const WINE_COLUMNS: &str =
-    "id, short_id, name, origin, grape, notes, (image IS NOT NULL) AS has_image, image_mime, sweetness, acidity, tannin, alcohol, body, background, created_at";
+    "id, short_id, name, origin, grape, notes, (image IS NOT NULL) AS has_image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, created_at";
 
 pub fn create_wine(
     db: &Db,
@@ -120,14 +134,18 @@ pub fn create_wine(
     tannin: i32,
     alcohol: i32,
     body: i32,
+    clarity: i32,
+    color_intensity: i32,
+    aroma_intensity: i32,
+    nose_complexity: i32,
     background: &str,
 ) -> Result<Wine, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let short_id = nanoid!(10);
     conn.execute(
-        "INSERT INTO wines (short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, background)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
-        params![short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, background],
+        "INSERT INTO wines (short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+        params![short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background],
     )?;
     let id = conn.last_insert_rowid();
     let wine = conn.query_row(
@@ -195,12 +213,16 @@ pub fn update_wine(
     tannin: i32,
     alcohol: i32,
     body: i32,
+    clarity: i32,
+    color_intensity: i32,
+    aroma_intensity: i32,
+    nose_complexity: i32,
     background: &str,
 ) -> Result<Option<Wine>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let rows = conn.execute(
-        "UPDATE wines SET name = ?1, origin = ?2, grape = ?3, notes = ?4, sweetness = ?5, acidity = ?6, tannin = ?7, alcohol = ?8, body = ?9, background = ?10 WHERE short_id = ?11",
-        params![name, origin, grape, notes, sweetness, acidity, tannin, alcohol, body, background, short_id],
+        "UPDATE wines SET name = ?1, origin = ?2, grape = ?3, notes = ?4, sweetness = ?5, acidity = ?6, tannin = ?7, alcohol = ?8, body = ?9, clarity = ?10, color_intensity = ?11, aroma_intensity = ?12, nose_complexity = ?13, background = ?14 WHERE short_id = ?15",
+        params![name, origin, grape, notes, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, short_id],
     )?;
     if rows == 0 {
         return Ok(None);
