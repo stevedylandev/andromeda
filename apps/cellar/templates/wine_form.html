@@ -35,6 +35,35 @@
     <textarea id="background" name="background" rows="5">{% if let Some(w) = wine %}{{ w.background }}{% endif %}</textarea>
 
     <div class="score-group">
+      <div class="score-section-label">appearance</div>
+      <div class="score-row">
+        <label for="clarity">clarity</label>
+        <input type="range" id="clarity" name="clarity" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.clarity }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="clarity">{% if let Some(w) = wine %}{{ w.clarity }}{% else %}3{% endif %}</span>
+      </div>
+      <div class="score-row">
+        <label for="color_intensity">intensity</label>
+        <input type="range" id="color_intensity" name="color_intensity" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.color_intensity }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="color_intensity">{% if let Some(w) = wine %}{{ w.color_intensity }}{% else %}3{% endif %}</span>
+      </div>
+
+      <div class="score-section-label">nose</div>
+      <div class="score-row">
+        <label for="aroma_intensity">aroma</label>
+        <input type="range" id="aroma_intensity" name="aroma_intensity" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.aroma_intensity }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="aroma_intensity">{% if let Some(w) = wine %}{{ w.aroma_intensity }}{% else %}3{% endif %}</span>
+      </div>
+      <div class="score-row">
+        <label for="nose_complexity">complexity</label>
+        <input type="range" id="nose_complexity" name="nose_complexity" min="1" max="5"
+          value="{% if let Some(w) = wine %}{{ w.nose_complexity }}{% else %}3{% endif %}">
+        <span class="score-value" data-for="nose_complexity">{% if let Some(w) = wine %}{{ w.nose_complexity }}{% else %}3{% endif %}</span>
+      </div>
+
+      <div class="score-section-label">palate</div>
       <div class="score-row">
         <label for="sweetness">sweetness</label>
         <input type="range" id="sweetness" name="sweetness" min="1" max="5"
