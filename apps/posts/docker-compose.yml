@@ -8,6 +8,8 @@ services:
     environment:
       - POSTS_PASSWORD=${POSTS_PASSWORD:-changeme}
       - POSTS_DB_PATH=/data/posts.sqlite
+      - UPLOADS_DIR=/data/uploads
+      - SITE_URL=${SITE_URL:-http://localhost:3000}
       - COOKIE_SECURE=false
       - HOST=0.0.0.0
       - PORT=${PORT:-3000}

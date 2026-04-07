@@ -18,6 +18,9 @@
 {% block content %}
   <div class="post-header">
     <h1>{{ post.title }}</h1>
+    {% if post.meta_description.is_some() %}
+      <p class="post-description">{{ post.meta_description.as_deref().unwrap_or_default() }}</p>
+    {% endif %}
     {% if post.published_date.is_some() %}
       <time class="post-date">{{ post.published_date.as_deref().unwrap_or_default() }}</time>
     {% endif %}

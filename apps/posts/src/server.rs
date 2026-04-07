@@ -1,7 +1,7 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::{
-    extract::{Form, Path, Query, State},
+    extract::{DefaultBodyLimit, Form, Multipart, Path, Query, State},
     http::{HeaderValue, StatusCode, Uri},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
@@ -12,13 +12,15 @@ use rust_embed::Embed;
 use std::sync::Arc;
 
 use crate::auth;
-use crate::db::{self, Db, Page, Post};
+use crate::db::{self, Db, Page, Post, UploadedFile};
 
 #[derive(Clone)]
 pub struct AppState {
     pub db: Db,
     pub app_password: String,
     pub cookie_secure: bool,
+    pub uploads_dir: String,
+    pub site_url: String,
 }
 
 #[derive(Embed)]
@@ -107,6 +109,15 @@ struct AdminSettingsTemplate {
     success: bool,
 }
 
+#[derive(Template)]
+#[template(path = "admin_files.html")]
+struct AdminFilesTemplate {
+    files: Vec<UploadedFile>,
+    site_url: String,
+    error: Option<String>,
+    success: bool,
+}
+
 // --- Query/Form structs ---
 
 #[derive(serde::Deserialize, Default)]
@@ -160,7 +171,7 @@ fn parse_attributes(text: &str) -> ParsedAttributes {
                 "slug" => attrs.slug = value,
                 "alias" => attrs.alias = value,
                 "published_date" => attrs.published_date = value,
-                "meta_description" => attrs.meta_description = value,
+                "description" | "meta_description" => attrs.meta_description = value,
                 "meta_image" => attrs.meta_image = value,
                 "lang" => attrs.lang = value,
                 "tags" => attrs.tags = value,
@@ -197,12 +208,18 @@ fn mime_from_path(path: &str) -> &'static str {
         "js" => "application/javascript",
         "html" => "text/html",
         "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
         "ico" => "image/x-icon",
         "svg" => "image/svg+xml",
         "woff" | "woff2" => "font/woff2",
         "ttf" => "font/ttf",
         "otf" => "font/otf",
         "json" | "webmanifest" => "application/json",
+        "pdf" => "application/pdf",
+        "mp4" => "video/mp4",
+        "webm" => "video/webm",
         _ => "application/octet-stream",
     }
 }
@@ -745,6 +762,139 @@ async fn admin_post_settings(
     Redirect::to("/admin/settings?success=true").into_response()
 }
 
+// --- Admin file handlers ---
+
+async fn admin_files(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Query(q): Query<FlashQuery>,
+) -> Response {
+    match db::get_all_files(&state.db) {
+        Ok(files) => WebTemplate(AdminFilesTemplate {
+            files,
+            site_url: state.site_url.clone(),
+            error: q.error,
+            success: q.success,
+        })
+        .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to list files: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
+        }
+    }
+}
+
+async fn admin_upload_file(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> Response {
+    let mut file_data: Option<(String, String, Vec<u8>)> = None;
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        if field.name() == Some("file") {
+            let original_name = field
+                .file_name()
+                .unwrap_or("upload")
+                .to_string();
+            let content_type = field
+                .content_type()
+                .unwrap_or("application/octet-stream")
+                .to_string();
+            match field.bytes().await {
+                Ok(bytes) => {
+                    file_data = Some((original_name, content_type, bytes.to_vec()));
+                }
+                Err(e) => {
+                    tracing::error!("Failed to read upload: {}", e);
+                    return Redirect::to("/admin/files?error=Failed+to+read+upload").into_response();
+                }
+            }
+        }
+    }
+
+    let (original_name, content_type, bytes) = match file_data {
+        Some(d) => d,
+        None => return Redirect::to("/admin/files?error=No+file+provided").into_response(),
+    };
+
+    let max_size: usize = 10 * 1024 * 1024;
+    if bytes.len() > max_size {
+        return Redirect::to("/admin/files?error=File+exceeds+10MB+limit").into_response();
+    }
+
+    let ext = original_name
+        .rsplit('.')
+        .next()
+        .filter(|e| !e.is_empty() && *e != original_name)
+        .unwrap_or("");
+    let id = nanoid::nanoid!(10);
+    let stored_name = if ext.is_empty() {
+        id
+    } else {
+        format!("{}.{}", id, ext)
+    };
+
+    let path = std::path::PathBuf::from(&state.uploads_dir).join(&stored_name);
+    if let Err(e) = tokio::fs::write(&path, &bytes).await {
+        tracing::error!("Failed to write file: {}", e);
+        return Redirect::to("/admin/files?error=Failed+to+save+file").into_response();
+    }
+
+    match db::create_file(&state.db, &stored_name, &original_name, &content_type, bytes.len() as i64) {
+        Ok(_) => Redirect::to("/admin/files?success=true").into_response(),
+        Err(e) => {
+            tracing::error!("Failed to record file: {}", e);
+            let _ = tokio::fs::remove_file(&path).await;
+            Redirect::to("/admin/files?error=Failed+to+record+file").into_response()
+        }
+    }
+}
+
+async fn admin_delete_file(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::delete_file(&state.db, &short_id) {
+        Ok(Some(file)) => {
+            let path = std::path::PathBuf::from(&state.uploads_dir).join(&file.filename);
+            if let Err(e) = tokio::fs::remove_file(&path).await {
+                tracing::warn!("Failed to delete file from disk: {}", e);
+            }
+            Redirect::to("/admin/files").into_response()
+        }
+        Ok(None) => Redirect::to("/admin/files").into_response(),
+        Err(e) => {
+            tracing::error!("Failed to delete file: {}", e);
+            Redirect::to("/admin/files").into_response()
+        }
+    }
+}
+
+async fn serve_uploaded_file(
+    State(state): State<Arc<AppState>>,
+    Path(filename): Path<String>,
+) -> Response {
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+
+    let path = std::path::PathBuf::from(&state.uploads_dir).join(&filename);
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => {
+            let mime = mime_from_path(&filename);
+            (
+                StatusCode::OK,
+                [(axum::http::header::CONTENT_TYPE, HeaderValue::from_static(mime))],
+                bytes,
+            )
+                .into_response()
+        }
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
 // --- RSS feed handler ---
 
 fn xml_escape(s: &str) -> String {
@@ -761,8 +911,7 @@ async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
         .ok()
         .flatten()
         .unwrap_or_default();
-    let site_url = std::env::var("SITE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
-    let site_url = site_url.trim_end_matches('/');
+    let site_url = &state.site_url;
 
     let posts = match db::get_published_posts(&state.db) {
         Ok(posts) => posts,
@@ -861,10 +1010,22 @@ pub async fn run(host: String, port: u16) {
         .map(|v| v == "true")
         .unwrap_or(false);
 
+    let uploads_dir = std::env::var("UPLOADS_DIR").unwrap_or_else(|_| "uploads".to_string());
+    tokio::fs::create_dir_all(&uploads_dir)
+        .await
+        .expect("Failed to create uploads directory");
+
+    let site_url = std::env::var("SITE_URL")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string())
+        .trim_end_matches('/')
+        .to_string();
+
     let state = Arc::new(AppState {
         db,
         app_password,
         cookie_secure,
+        uploads_dir,
+        site_url,
     });
 
     let app = Router::new()
@@ -893,11 +1054,18 @@ pub async fn run(host: String, port: u16) {
         .route("/admin/pages/{id}/delete", post(admin_delete_page))
         // Admin settings
         .route("/admin/settings", get(admin_get_settings).post(admin_post_settings))
+        // Admin files
+        .route("/admin/files", get(admin_files))
+        .route("/admin/files/upload", post(admin_upload_file))
+        .route("/admin/files/{id}/delete", post(admin_delete_file))
+        // Public files
+        .route("/files/{filename}", get(serve_uploaded_file))
         // Static assets
         .route("/static/{*path}", get(serve_static))
         // Fallback
         .fallback(get(fallback_handler))
-        .with_state(state);
+        .with_state(state)
+        .layer(DefaultBodyLimit::max(11 * 1024 * 1024));
 
     let addr = format!("{}:{}", host, port);
     tracing::info!("Listening on http://{}", addr);

@@ -61,6 +61,17 @@ pub struct Page {
     pub updated_at: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UploadedFile {
+    pub id: i64,
+    pub short_id: String,
+    pub filename: String,
+    pub original_name: String,
+    pub content_type: String,
+    pub size: i64,
+    pub created_at: String,
+}
+
 pub fn init_db() -> Db {
     let path = std::env::var("POSTS_DB_PATH").unwrap_or_else(|_| "posts.sqlite".to_string());
     let conn = Connection::open(&path).expect("Failed to open database");
@@ -105,6 +116,16 @@ pub fn init_db() -> Db {
         CREATE TABLE IF NOT EXISTS settings (
             key   TEXT PRIMARY KEY,
             value TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS files (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            short_id      TEXT NOT NULL UNIQUE,
+            filename      TEXT NOT NULL UNIQUE,
+            original_name TEXT NOT NULL,
+            content_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
+            size          INTEGER NOT NULL,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
         );"
     )
     .expect("Failed to create tables");
@@ -504,4 +525,68 @@ pub fn prune_expired_sessions(db: &Db) -> Result<(), DbError> {
         [],
     )?;
     Ok(())
+}
+
+// --- File CRUD ---
+
+fn row_to_file(row: &rusqlite::Row) -> rusqlite::Result<UploadedFile> {
+    Ok(UploadedFile {
+        id: row.get(0)?,
+        short_id: row.get(1)?,
+        filename: row.get(2)?,
+        original_name: row.get(3)?,
+        content_type: row.get(4)?,
+        size: row.get(5)?,
+        created_at: row.get(6)?,
+    })
+}
+
+const FILE_COLS: &str = "id, short_id, filename, original_name, content_type, size, created_at";
+
+pub fn create_file(
+    db: &Db,
+    filename: &str,
+    original_name: &str,
+    content_type: &str,
+    size: i64,
+) -> Result<UploadedFile, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let short_id = nanoid!(10);
+    conn.execute(
+        "INSERT INTO files (short_id, filename, original_name, content_type, size) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![short_id, filename, original_name, content_type, size],
+    )?;
+    let id = conn.last_insert_rowid();
+    let file = conn.query_row(
+        &format!("SELECT {} FROM files WHERE id = ?1", FILE_COLS),
+        params![id],
+        row_to_file,
+    )?;
+    Ok(file)
+}
+
+pub fn get_all_files(db: &Db) -> Result<Vec<UploadedFile>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let mut stmt = conn.prepare(
+        &format!("SELECT {} FROM files ORDER BY id DESC", FILE_COLS),
+    )?;
+    let files = stmt
+        .query_map([], row_to_file)?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(files)
+}
+
+pub fn delete_file(db: &Db, short_id: &str) -> Result<Option<UploadedFile>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let file = match conn.query_row(
+        &format!("SELECT {} FROM files WHERE short_id = ?1", FILE_COLS),
+        params![short_id],
+        row_to_file,
+    ) {
+        Ok(f) => f,
+        Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
+        Err(e) => return Err(DbError::Sqlite(e)),
+    };
+    conn.execute("DELETE FROM files WHERE short_id = ?1", params![short_id])?;
+    Ok(Some(file))
 }

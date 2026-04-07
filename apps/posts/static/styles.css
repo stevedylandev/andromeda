@@ -41,7 +41,7 @@ body {
   min-height: 100vh;
   max-width: 700px;
   margin: auto;
-  padding: 0 1rem;
+  padding: 0 1rem 4rem;
 }
 
 @media (max-width: 480px) {
@@ -221,6 +221,11 @@ button:hover, .btn:hover {
 
 .post-title {
   font-size: 16px;
+}
+
+.post-description {
+  font-style: italic;
+  opacity: 0.7;
 }
 
 .post-date {
@@ -584,4 +589,27 @@ button:hover, .btn:hover {
   font-size: 12px;
   color: white;
   line-height: 1;
+}
+
+/* File upload input */
+
+input[type="file"] {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid white;
+  padding: 0.4rem 0.75rem;
+  font-size: 14px;
+  width: 100%;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid #555;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  font-family: "Commit Mono", monospace;
+  font-size: 12px;
+  margin-right: 0.5rem;
 }
