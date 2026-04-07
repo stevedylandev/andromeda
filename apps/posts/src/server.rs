@@ -745,6 +745,86 @@ async fn admin_post_settings(
     Redirect::to("/admin/settings?success=true").into_response()
 }
 
+// --- RSS feed handler ---
+
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
+    let blog_title = get_blog_title(&state.db);
+    let blog_description = db::get_setting(&state.db, "blog_description")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let site_url = std::env::var("SITE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
+    let site_url = site_url.trim_end_matches('/');
+
+    let posts = match db::get_published_posts(&state.db) {
+        Ok(posts) => posts,
+        Err(e) => {
+            tracing::error!("Failed to get posts for RSS: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response();
+        }
+    };
+
+    let mut items = String::new();
+    for post in &posts {
+        let link = format!("{}/posts/{}", site_url, xml_escape(&post.slug));
+        let title = xml_escape(&post.title);
+        let description = match &post.meta_description {
+            Some(d) if !d.is_empty() => xml_escape(d),
+            _ => {
+                let plain: String = post.content.chars().take(200).collect();
+                xml_escape(&plain)
+            }
+        };
+        let pub_date = post.published_date.as_deref().unwrap_or(&post.created_at);
+        let guid = format!("{}/posts/{}", site_url, xml_escape(&post.slug));
+
+        items.push_str(&format!(
+            "    <item>\n      <title>{title}</title>\n      <link>{link}</link>\n      <guid>{guid}</guid>\n      <description>{description}</description>\n      <pubDate>{pub_date}</pubDate>\n    </item>\n"
+        ));
+    }
+
+    let last_build = posts
+        .first()
+        .and_then(|p| p.published_date.as_deref())
+        .unwrap_or("");
+
+    let xml = format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{title}</title>
+    <link>{site_url}</link>
+    <description>{desc}</description>
+    <lastBuildDate>{last_build}</lastBuildDate>
+    <atom:link href="{site_url}/feed.xml" rel="self" type="application/rss+xml"/>
+{items}  </channel>
+</rss>"#,
+        title = xml_escape(&blog_title),
+        site_url = site_url,
+        desc = xml_escape(&blog_description),
+        last_build = last_build,
+        items = items,
+    );
+
+    (
+        StatusCode::OK,
+        [(
+            axum::http::header::CONTENT_TYPE,
+            HeaderValue::from_static("application/rss+xml; charset=utf-8"),
+        )],
+        xml,
+    )
+        .into_response()
+}
+
 // --- Date helper ---
 
 fn days_to_ymd(mut days: i64) -> (i64, i64, i64) {
@@ -792,6 +872,7 @@ pub async fn run(host: String, port: u16) {
         .route("/", get(public_index))
         .route("/posts/{slug}", get(public_post))
         .route("/pages/{slug}", get(public_page))
+        .route("/feed.xml", get(rss_feed))
         // Admin auth
         .route("/admin/login", get(get_login).post(post_login))
         .route("/admin/logout", get(get_logout))
