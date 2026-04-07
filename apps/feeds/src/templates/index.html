@@ -26,9 +26,12 @@
     <meta name="twitter:image" content="{{ base_url }}/static/og.png">
   </head>
   <body>
-    <a href="/" class="header">
-      <h1>FEEDS</h1>
-    </a>
+    <div class="header">
+      <a href="/" class="logo"><h1>FEEDS</h1></a>
+      <nav class="links">
+        <a href="/admin">add</a>
+      </nav>
+    </div>
 
     {% if let Some(urls) = feed_urls %}
     <div id="feed-urls">
