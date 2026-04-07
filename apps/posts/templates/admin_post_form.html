@@ -26,7 +26,7 @@ alias: {{ p.alias.as_deref().unwrap_or_default() }}
 meta_image: {{ p.meta_image.as_deref().unwrap_or_default() }}
 {%- endif %}
 {%- if p.meta_description.is_some() %}
-meta_description: {{ p.meta_description.as_deref().unwrap_or_default() }}
+description: {{ p.meta_description.as_deref().unwrap_or_default() }}
 {%- endif %}</textarea>
         <details class="available-fields">
           <summary>available fields</summary>
@@ -38,7 +38,7 @@ meta_description: {{ p.meta_description.as_deref().unwrap_or_default() }}
             <span>tags: rust, web, tutorial</span>
             <span>alias: /old/path</span>
             <span>meta_image: https://example.com/image.jpg</span>
-            <span>meta_description: A short summary of the post</span>
+            <span>description: A short summary of the post</span>
           </div>
         </details>
         <label for="content">content</label>
@@ -61,7 +61,7 @@ meta_description: {{ p.meta_description.as_deref().unwrap_or_default() }}
             <span>tags: rust, web, tutorial</span>
             <span>alias: /old/path</span>
             <span>meta_image: https://example.com/image.jpg</span>
-            <span>meta_description: A short summary of the post</span>
+            <span>description: A short summary of the post</span>
           </div>
         </details>
         <label for="content">content</label>
