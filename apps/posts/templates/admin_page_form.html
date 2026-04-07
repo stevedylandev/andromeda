@@ -1,0 +1,80 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin — {% if page.is_some() %}Edit Page{% else %}New Page{% endif %}{% endblock %}
+{% block content %}
+  <h2>{% if page.is_some() %}Edit Page{% else %}New Page{% endif %}</h2>
+  {% if let Some(error) = error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  {% match page %}
+    {% when Some with (p) %}
+      <form method="POST" action="/admin/pages/{{ p.short_id }}" class="form">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="title">title</label>
+            <input type="text" id="title" name="title" value="{{ p.title }}" required>
+          </div>
+          <div class="form-field">
+            <label for="slug">slug</label>
+            <input type="text" id="slug" name="slug" value="{{ p.slug }}" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="nav_order">nav order</label>
+            <input type="number" id="nav_order" name="nav_order" value="{{ p.nav_order }}">
+          </div>
+          <div class="form-field checkbox-field">
+            <label>
+              <input type="checkbox" id="is_published" name="is_published" {% if p.is_published %}checked{% endif %}>
+              published
+            </label>
+          </div>
+        </div>
+        <label for="content">content</label>
+        <textarea id="content" name="content" class="post-content">{{ p.content }}</textarea>
+        <button type="submit">save</button>
+      </form>
+    {% when None %}
+      <form method="POST" action="/admin/pages/create" class="form">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="title">title</label>
+            <input type="text" id="title" name="title" required autofocus>
+          </div>
+          <div class="form-field">
+            <label for="slug">slug</label>
+            <input type="text" id="slug" name="slug" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="nav_order">nav order</label>
+            <input type="number" id="nav_order" name="nav_order" value="0">
+          </div>
+          <div class="form-field checkbox-field">
+            <label>
+              <input type="checkbox" id="is_published" name="is_published">
+              published
+            </label>
+          </div>
+        </div>
+        <label for="content">content</label>
+        <textarea id="content" name="content" class="post-content" placeholder="write markdown here..."></textarea>
+        <button type="submit">save</button>
+      </form>
+  {% endmatch %}
+  <script>
+    const titleInput = document.getElementById('title');
+    const slugInput = document.getElementById('slug');
+    let slugEdited = slugInput.value !== '';
+    slugInput.addEventListener('input', () => { slugEdited = true; });
+    titleInput.addEventListener('input', () => {
+      if (!slugEdited) {
+        slugInput.value = titleInput.value
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+      }
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin — Settings{% endblock %}
+{% block content %}
+  <h2>Settings</h2>
+  {% if success %}
+    <p class="success">Settings saved.</p>
+  {% endif %}
+  <form method="POST" action="/admin/settings" class="form">
+    <label for="blog_title">blog title</label>
+    <input type="text" id="blog_title" name="blog_title" value="{{ blog_title }}" required>
+    <label for="blog_description">blog description</label>
+    <input type="text" id="blog_description" name="blog_description" value="{{ blog_description }}">
+    <label for="intro_content">intro content (markdown, shown on homepage)</label>
+    <textarea id="intro_content" name="intro_content" class="post-content">{{ intro_content }}</textarea>
+    <button type="submit">save</button>
+  </form>
+{% endblock %}

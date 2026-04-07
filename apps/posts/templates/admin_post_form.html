@@ -1,0 +1,75 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin — {% if post.is_some() %}Edit Post{% else %}New Post{% endif %}{% endblock %}
+{% block content %}
+  <h2>{% if post.is_some() %}Edit Post{% else %}New Post{% endif %}</h2>
+  {% if let Some(error) = error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+  {% match post %}
+    {% when Some with (p) %}
+      <form method="POST" action="/admin/posts/{{ p.short_id }}" class="form post-form">
+        <textarea name="attributes" class="attributes-textarea">title: {{ p.title }}
+slug: {{ p.slug }}
+{%- if p.published_date.is_some() %}
+published_date: {{ p.published_date.as_deref().unwrap_or_default() }}
+{%- endif %}
+{%- if p.lang != "en" %}
+lang: {{ p.lang }}
+{%- endif %}
+{%- if p.tags.is_some() %}
+tags: {{ p.tags.as_deref().unwrap_or_default() }}
+{%- endif %}
+{%- if p.alias.is_some() %}
+alias: {{ p.alias.as_deref().unwrap_or_default() }}
+{%- endif %}
+{%- if p.meta_image.is_some() %}
+meta_image: {{ p.meta_image.as_deref().unwrap_or_default() }}
+{%- endif %}
+{%- if p.meta_description.is_some() %}
+meta_description: {{ p.meta_description.as_deref().unwrap_or_default() }}
+{%- endif %}</textarea>
+        <details class="available-fields">
+          <summary>available fields</summary>
+          <div class="fields-list">
+            <span>title: My Post Title</span>
+            <span>slug: my-post-title</span>
+            <span>published_date: 2025-01-15 14:30:00</span>
+            <span>lang: en</span>
+            <span>tags: rust, web, tutorial</span>
+            <span>alias: /old/path</span>
+            <span>meta_image: https://example.com/image.jpg</span>
+            <span>meta_description: A short summary of the post</span>
+          </div>
+        </details>
+        <label for="content">content</label>
+        <textarea id="content" name="content" class="post-content">{{ p.content }}</textarea>
+        <div class="form-actions">
+          <button type="submit" name="action" value="draft">save draft</button>
+          <button type="submit" name="action" value="publish">publish</button>
+        </div>
+      </form>
+    {% when None %}
+      <form method="POST" action="/admin/posts" class="form post-form">
+        <textarea name="attributes" class="attributes-textarea">title: </textarea>
+        <details class="available-fields">
+          <summary>available fields</summary>
+          <div class="fields-list">
+            <span>title: My Post Title</span>
+            <span>slug: my-post-title</span>
+            <span>published_date: 2025-01-15 14:30:00</span>
+            <span>lang: en</span>
+            <span>tags: rust, web, tutorial</span>
+            <span>alias: /old/path</span>
+            <span>meta_image: https://example.com/image.jpg</span>
+            <span>meta_description: A short summary of the post</span>
+          </div>
+        </details>
+        <label for="content">content</label>
+        <textarea id="content" name="content" class="post-content" placeholder="write markdown here..."></textarea>
+        <div class="form-actions">
+          <button type="submit" name="action" value="draft">save draft</button>
+          <button type="submit" name="action" value="publish">publish</button>
+        </div>
+      </form>
+  {% endmatch %}
+{% endblock %}
