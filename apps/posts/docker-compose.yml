@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/posts/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - POSTS_PASSWORD=${POSTS_PASSWORD:-changeme}
+      - POSTS_DB_PATH=/data/posts.sqlite
+      - COOKIE_SECURE=false
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+    volumes:
+      - posts-data:/data
+    restart: unless-stopped
+
+volumes:
+  posts-data:

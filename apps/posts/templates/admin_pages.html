@@ -1,0 +1,34 @@
+{% extends "admin_base.html" %}
+{% block title %}Admin — Pages{% endblock %}
+{% block content %}
+  <div class="admin-toolbar">
+    <h2>Pages</h2>
+    <a href="/admin/pages/new" class="btn">new page</a>
+  </div>
+  {% if pages.is_empty() %}
+    <p class="empty">no pages yet</p>
+  {% else %}
+    <div class="admin-list">
+      {% for page in pages %}
+        <div class="admin-list-item">
+          <div class="admin-list-info">
+            <a href="/admin/pages/{{ page.short_id }}/edit" class="admin-list-title">{{ page.title }}</a>
+            <div class="admin-list-meta">
+              <span class="status-badge {% if page.is_published %}status-published{% else %}status-draft{% endif %}">
+                {% if page.is_published %}published{% else %}draft{% endif %}
+              </span>
+              <span class="admin-list-date">/pages/{{ page.slug }}</span>
+              <span class="admin-list-date">order: {{ page.nav_order }}</span>
+            </div>
+          </div>
+          <div class="admin-list-actions">
+            <a href="/admin/pages/{{ page.short_id }}/edit">edit</a>
+            <form method="POST" action="/admin/pages/{{ page.short_id }}/delete" class="inline-form">
+              <button type="submit" class="link-button danger" onclick="return confirm('Delete this page?')">delete</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endblock %}
