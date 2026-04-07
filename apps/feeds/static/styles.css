@@ -35,7 +35,7 @@ body {
 }
 
 .logo {
-	text-decoration: none;
+	text-decoration: none !important;
 }
 
 .links {
@@ -43,6 +43,7 @@ body {
 	align-items: center;
 	gap: 0.75rem;
 	font-size: 12px;
+	text-decoration: none;
 }
 
 .about {
@@ -65,7 +66,7 @@ button {
 a {
 	background: #121113;
 	color: #ffffff;
-	text-decoration: none;
+	text-decoration: none !important;
 }
 
 ul {
