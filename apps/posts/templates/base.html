@@ -8,14 +8,14 @@
   <meta name="theme-color" content="#121113" />
   {% block meta %}{% endblock %}
   <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/custom-styles.css">
 </head>
 <body>
   <header class="header">
     <a href="/" class="logo">{{ blog_title }}</a>
     <nav class="links">
-      <a href="/">blog</a>
-      {% for page in nav_pages %}
-        <a href="/pages/{{ page.slug }}">{{ page.title }}</a>
+      {% for link in nav_links %}
+        <a href="{{ link.url }}">{{ link.label }}</a>
       {% endfor %}
     </nav>
   </header>

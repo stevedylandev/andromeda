@@ -14,6 +14,12 @@ use std::sync::Arc;
 use crate::auth;
 use crate::db::{self, Db, Page, Post, UploadedFile};
 
+#[derive(Debug, Clone)]
+pub struct NavLink {
+    pub label: String,
+    pub url: String,
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub db: Db,
@@ -33,7 +39,7 @@ struct Static;
 #[template(path = "base.html")]
 struct BaseTemplate {
     blog_title: String,
-    nav_pages: Vec<Page>,
+    nav_links: Vec<NavLink>,
 }
 
 #[derive(Template)]
@@ -53,14 +59,14 @@ struct IndexTemplate {
     blog_description: String,
     intro_html: String,
     posts: Vec<Post>,
-    nav_pages: Vec<Page>,
+    nav_links: Vec<NavLink>,
 }
 
 #[derive(Template)]
 #[template(path = "post.html")]
 struct PostTemplate {
     blog_title: String,
-    nav_pages: Vec<Page>,
+    nav_links: Vec<NavLink>,
     post: Post,
     rendered_content: String,
 }
@@ -69,7 +75,7 @@ struct PostTemplate {
 #[template(path = "page.html")]
 struct PageTemplate {
     blog_title: String,
-    nav_pages: Vec<Page>,
+    nav_links: Vec<NavLink>,
     page: Page,
     rendered_content: String,
 }
@@ -106,7 +112,18 @@ struct AdminSettingsTemplate {
     blog_title: String,
     blog_description: String,
     intro_content: String,
+    nav_links: String,
+    custom_css: String,
+    default_css: String,
     success: bool,
+}
+
+#[derive(Template)]
+#[template(path = "posts.html")]
+struct PostsListTemplate {
+    blog_title: String,
+    nav_links: Vec<NavLink>,
+    posts: Vec<Post>,
 }
 
 #[derive(Template)]
@@ -184,13 +201,35 @@ fn parse_attributes(text: &str) -> ParsedAttributes {
 
 #[derive(serde::Deserialize)]
 struct PageForm {
+    attributes: String,
+    content: String,
+}
+
+struct ParsedPageAttributes {
     title: String,
     slug: String,
-    content: String,
-    #[serde(default)]
-    is_published: Option<String>,
-    #[serde(default)]
-    nav_order: i64,
+    is_published: bool,
+}
+
+fn parse_page_attributes(text: &str) -> ParsedPageAttributes {
+    let mut attrs = ParsedPageAttributes {
+        title: String::new(),
+        slug: String::new(),
+        is_published: false,
+    };
+    for line in text.lines() {
+        if let Some((key, value)) = line.split_once(':') {
+            let key = key.trim().to_lowercase();
+            let value = value.trim().to_string();
+            match key.as_str() {
+                "title" => attrs.title = value,
+                "slug" => attrs.slug = value,
+                "published" => attrs.is_published = value == "true",
+                _ => {}
+            }
+        }
+    }
+    attrs
 }
 
 #[derive(serde::Deserialize)]
@@ -198,6 +237,8 @@ struct SettingsForm {
     blog_title: String,
     blog_description: String,
     intro_content: String,
+    nav_links: String,
+    custom_css: String,
 }
 
 // --- Helpers ---
@@ -273,8 +314,60 @@ fn get_blog_title(db: &Db) -> String {
         .unwrap_or_else(|| "My Blog".to_string())
 }
 
-fn get_nav_pages(db: &Db) -> Vec<Page> {
-    db::get_published_pages(db).unwrap_or_default()
+fn parse_nav_links(input: &str) -> Vec<NavLink> {
+    let mut links = Vec::new();
+    let mut chars = input.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '[' {
+            let label: String = chars.by_ref().take_while(|&ch| ch != ']').collect();
+            if chars.peek() == Some(&'(') {
+                chars.next();
+                let url: String = chars.by_ref().take_while(|&ch| ch != ')').collect();
+                if !label.is_empty() && !url.is_empty() {
+                    links.push(NavLink { label, url });
+                }
+            }
+        }
+    }
+    links
+}
+
+fn get_nav_links(db: &Db) -> Vec<NavLink> {
+    let raw = db::get_setting(db, "nav_links")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    parse_nav_links(&raw)
+}
+
+fn render_latest_posts_embed(posts: &[&Post]) -> String {
+    let mut html = String::from("<div class=\"post-list\">");
+    for post in posts {
+        html.push_str(&format!(
+            r#"<a href="/posts/{slug}" class="post-item"><div class="post-item-info"><span class="post-title">{title}</span>"#,
+            slug = post.slug,
+            title = post.title,
+        ));
+        if let Some(ref tags) = post.tags {
+            if !tags.is_empty() {
+                html.push_str(r#"<span class="post-tags">"#);
+                for tag in tags.split(',') {
+                    let tag = tag.trim();
+                    if !tag.is_empty() {
+                        html.push_str(&format!(r#"<span class="tag">{}</span>"#, tag));
+                    }
+                }
+                html.push_str("</span>");
+            }
+        }
+        html.push_str("</div>");
+        if let Some(ref date) = post.published_date {
+            html.push_str(&format!(r#"<time class="post-date">{}</time>"#, date));
+        }
+        html.push_str("</a>");
+    }
+    html.push_str("</div>");
+    html
 }
 
 // --- Static file handler ---
@@ -374,18 +467,28 @@ async fn public_index(State(state): State<Arc<AppState>>) -> Response {
         .ok()
         .flatten()
         .unwrap_or_default();
-    let intro_html = render_markdown(&intro_content);
-    let nav_pages = get_nav_pages(&state.db);
+    let nav_links = get_nav_links(&state.db);
 
     match db::get_published_posts(&state.db) {
-        Ok(posts) => WebTemplate(IndexTemplate {
-            blog_title,
-            blog_description,
-            intro_html,
-            posts,
-            nav_pages,
-        })
-        .into_response(),
+        Ok(posts) => {
+            let mut intro_html = render_markdown(&intro_content);
+
+            if intro_content.contains("{{latest_posts}}") {
+                let latest: Vec<&Post> = posts.iter().take(5).collect();
+                let embed_html = render_latest_posts_embed(&latest);
+                intro_html = intro_html.replace("<p>{{latest_posts}}</p>", &embed_html);
+                intro_html = intro_html.replace("{{latest_posts}}", &embed_html);
+            }
+
+            WebTemplate(IndexTemplate {
+                blog_title,
+                blog_description,
+                intro_html,
+                posts,
+                nav_links,
+            })
+            .into_response()
+        }
         Err(e) => {
             tracing::error!("Failed to list posts: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
@@ -401,10 +504,10 @@ async fn public_post(
         Ok(Some(post)) if post.status == "published" => {
             let rendered_content = render_markdown(&post.content);
             let blog_title = get_blog_title(&state.db);
-            let nav_pages = get_nav_pages(&state.db);
+            let nav_links = get_nav_links(&state.db);
             WebTemplate(PostTemplate {
                 blog_title,
-                nav_pages,
+                nav_links,
                 post,
                 rendered_content,
             })
@@ -426,10 +529,10 @@ async fn public_page(
         Ok(Some(page)) if page.is_published => {
             let rendered_content = render_markdown(&page.content);
             let blog_title = get_blog_title(&state.db);
-            let nav_pages = get_nav_pages(&state.db);
+            let nav_links = get_nav_links(&state.db);
             WebTemplate(PageTemplate {
                 blog_title,
-                nav_pages,
+                nav_links,
                 page,
                 rendered_content,
             })
@@ -441,6 +544,37 @@ async fn public_page(
             (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
         }
     }
+}
+
+async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
+    let blog_title = get_blog_title(&state.db);
+    let nav_links = get_nav_links(&state.db);
+
+    match db::get_published_posts(&state.db) {
+        Ok(posts) => WebTemplate(PostsListTemplate {
+            blog_title,
+            nav_links,
+            posts,
+        })
+        .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to list posts: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
+        }
+    }
+}
+
+async fn serve_custom_css(State(state): State<Arc<AppState>>) -> Response {
+    let css = db::get_setting(&state.db, "custom_css")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    (
+        StatusCode::OK,
+        [(axum::http::header::CONTENT_TYPE, HeaderValue::from_static("text/css"))],
+        css,
+    )
+        .into_response()
 }
 
 async fn fallback_handler(
@@ -654,15 +788,14 @@ async fn admin_create_page(
     State(state): State<Arc<AppState>>,
     Form(form): Form<PageForm>,
 ) -> Response {
-    let title = form.title.trim();
-    let slug = form.slug.trim();
+    let attrs = parse_page_attributes(&form.attributes);
+    let title = attrs.title.trim().to_string();
+    let slug = attrs.slug.trim().to_string();
     if title.is_empty() || slug.is_empty() {
         return Redirect::to("/admin/pages/new?error=Title+and+slug+are+required").into_response();
     }
 
-    let is_published = form.is_published.as_deref() == Some("on");
-
-    match db::create_page(&state.db, title, slug, &form.content, is_published, form.nav_order) {
+    match db::create_page(&state.db, &title, &slug, &form.content, attrs.is_published, 0) {
         Ok(_) => Redirect::to("/admin/pages").into_response(),
         Err(e) => {
             tracing::error!("Failed to create page: {}", e);
@@ -697,16 +830,15 @@ async fn admin_update_page(
     Path(short_id): Path<String>,
     Form(form): Form<PageForm>,
 ) -> Response {
-    let title = form.title.trim();
-    let slug = form.slug.trim();
+    let attrs = parse_page_attributes(&form.attributes);
+    let title = attrs.title.trim().to_string();
+    let slug = attrs.slug.trim().to_string();
     if title.is_empty() || slug.is_empty() {
         return Redirect::to(&format!("/admin/pages/{}/edit?error=Title+and+slug+are+required", short_id))
             .into_response();
     }
 
-    let is_published = form.is_published.as_deref() == Some("on");
-
-    match db::update_page(&state.db, &short_id, title, slug, &form.content, is_published, form.nav_order) {
+    match db::update_page(&state.db, &short_id, &title, &slug, &form.content, attrs.is_published, 0) {
         Ok(Some(_)) => Redirect::to("/admin/pages").into_response(),
         Ok(None) => (StatusCode::NOT_FOUND, Html("Page not found".to_string())).into_response(),
         Err(e) => {
@@ -741,11 +873,19 @@ async fn admin_get_settings(
     let blog_title = db::get_setting(&state.db, "blog_title").ok().flatten().unwrap_or_default();
     let blog_description = db::get_setting(&state.db, "blog_description").ok().flatten().unwrap_or_default();
     let intro_content = db::get_setting(&state.db, "intro_content").ok().flatten().unwrap_or_default();
+    let nav_links = db::get_setting(&state.db, "nav_links").ok().flatten().unwrap_or_default();
+    let custom_css = db::get_setting(&state.db, "custom_css").ok().flatten().unwrap_or_default();
+    let default_css = Static::get("styles.css")
+        .map(|f| String::from_utf8_lossy(&f.data).into_owned())
+        .unwrap_or_default();
 
     WebTemplate(AdminSettingsTemplate {
         blog_title,
         blog_description,
         intro_content,
+        nav_links,
+        custom_css,
+        default_css,
         success: q.success,
     })
     .into_response()
@@ -759,6 +899,8 @@ async fn admin_post_settings(
     let _ = db::set_setting(&state.db, "blog_title", form.blog_title.trim());
     let _ = db::set_setting(&state.db, "blog_description", form.blog_description.trim());
     let _ = db::set_setting(&state.db, "intro_content", &form.intro_content);
+    let _ = db::set_setting(&state.db, "nav_links", &form.nav_links);
+    let _ = db::set_setting(&state.db, "custom_css", &form.custom_css);
     Redirect::to("/admin/settings?success=true").into_response()
 }
 
@@ -1031,7 +1173,9 @@ pub async fn run(host: String, port: u16) {
     let app = Router::new()
         // Public routes
         .route("/", get(public_index))
+        .route("/posts", get(public_posts_list))
         .route("/posts/{slug}", get(public_post))
+        .route("/custom-styles.css", get(serve_custom_css))
         .route("/pages/{slug}", get(public_page))
         .route("/feed.xml", get(rss_feed))
         // Admin auth
