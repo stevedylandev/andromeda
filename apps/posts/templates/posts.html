@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Posts — {{ blog_title }}{% endblock %}
+{% block content %}
+  <h1>Posts</h1>
+  {% if posts.is_empty() %}
+    <p class="empty">no posts yet</p>
+  {% endif %}
+  <div class="post-list">
+    {% for post in posts %}
+      <a href="/posts/{{ post.slug }}" class="post-item post-item-enhanced">
+        <div class="post-item-info">
+          <span class="post-title">{{ post.title }}</span>
+          {% if post.meta_description.is_some() %}
+            {% let desc = post.meta_description.as_deref().unwrap_or_default() %}
+            {% if !desc.is_empty() %}
+              <span class="post-excerpt">{{ desc }}</span>
+            {% endif %}
+          {% endif %}
+          {% if post.tags.is_some() %}
+            <span class="post-tags">
+              {% for tag in post.tags.as_deref().unwrap_or_default().split(',') %}
+                {% if !tag.trim().is_empty() %}
+                  <span class="tag">{{ tag.trim() }}</span>
+                {% endif %}
+              {% endfor %}
+            </span>
+          {% endif %}
+        </div>
+        {% if post.published_date.is_some() %}
+          <time class="post-date">{{ post.published_date.as_deref().unwrap_or_default() }}</time>
+        {% endif %}
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -146,6 +146,16 @@ pub fn init_db() -> Db {
         [],
     )
     .ok();
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES ('nav_links', '[blog](/) [posts](/posts)')",
+        [],
+    )
+    .ok();
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_css', '')",
+        [],
+    )
+    .ok();
 
     Arc::new(Mutex::new(conn))
 }

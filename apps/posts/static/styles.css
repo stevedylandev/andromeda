@@ -613,3 +613,79 @@ input[type="file"]::file-selector-button {
   font-size: 12px;
   margin-right: 0.5rem;
 }
+
+.post-excerpt {
+  font-size: 12px;
+  opacity: 0.6;
+  line-height: 1.4;
+}
+
+.post-item-enhanced .post-item-info {
+  gap: 0.25rem;
+}
+
+.nav-links-input {
+  min-height: 40px;
+  height: 40px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.switch-label {
+  font-size: 14px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #333;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: #888;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.switch input:checked + .switch-slider {
+  background: #555;
+}
+
+.switch input:checked + .switch-slider::before {
+  transform: translateX(16px);
+  background: #ffffff;
+}
+
+.hidden {
+  display: none;
+}
