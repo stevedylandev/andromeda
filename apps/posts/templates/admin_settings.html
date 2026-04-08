@@ -12,6 +12,10 @@
     <input type="text" id="blog_description" name="blog_description" value="{{ blog_description }}">
     <label for="nav_links">navigation links (format: [label](url) [label2](url2))</label>
     <textarea id="nav_links" name="nav_links" class="nav-links-input">{{ nav_links }}</textarea>
+    <label for="favicon_url">favicon URL (leave empty for default)</label>
+    <input type="text" id="favicon_url" name="favicon_url" value="{{ favicon_url }}" placeholder="https://example.com/favicon.png">
+    <label for="og_image_url">default OG image URL (used when posts don't have their own)</label>
+    <input type="text" id="og_image_url" name="og_image_url" value="{{ og_image_url }}" placeholder="https://example.com/og.png">
     <label for="intro_content">intro content (markdown, shown on homepage — use &#123;&#123;latest_posts&#125;&#125; to embed recent posts)</label>
     <textarea id="intro_content" name="intro_content" class="post-content">{{ intro_content }}</textarea>
     <div class="switch-row">

@@ -40,6 +40,8 @@ struct Static;
 struct BaseTemplate {
     blog_title: String,
     nav_links: Vec<NavLink>,
+    favicon_url: String,
+    og_image_url: String,
 }
 
 #[derive(Template)]
@@ -60,6 +62,8 @@ struct IndexTemplate {
     intro_html: String,
     posts: Vec<Post>,
     nav_links: Vec<NavLink>,
+    favicon_url: String,
+    og_image_url: String,
 }
 
 #[derive(Template)]
@@ -69,6 +73,8 @@ struct PostTemplate {
     nav_links: Vec<NavLink>,
     post: Post,
     rendered_content: String,
+    favicon_url: String,
+    og_image_url: String,
 }
 
 #[derive(Template)]
@@ -78,6 +84,8 @@ struct PageTemplate {
     nav_links: Vec<NavLink>,
     page: Page,
     rendered_content: String,
+    favicon_url: String,
+    og_image_url: String,
 }
 
 #[derive(Template)]
@@ -115,6 +123,8 @@ struct AdminSettingsTemplate {
     nav_links: String,
     custom_css: String,
     default_css: String,
+    favicon_url: String,
+    og_image_url: String,
     success: bool,
 }
 
@@ -124,6 +134,8 @@ struct PostsListTemplate {
     blog_title: String,
     nav_links: Vec<NavLink>,
     posts: Vec<Post>,
+    favicon_url: String,
+    og_image_url: String,
 }
 
 #[derive(Template)]
@@ -239,6 +251,8 @@ struct SettingsForm {
     intro_content: String,
     nav_links: String,
     custom_css: String,
+    favicon_url: String,
+    og_image_url: String,
 }
 
 // --- Helpers ---
@@ -338,6 +352,20 @@ fn get_nav_links(db: &Db) -> Vec<NavLink> {
         .flatten()
         .unwrap_or_default();
     parse_nav_links(&raw)
+}
+
+fn get_favicon_url(db: &Db) -> String {
+    db::get_setting(db, "favicon_url")
+        .ok()
+        .flatten()
+        .unwrap_or_default()
+}
+
+fn get_og_image_url(db: &Db) -> String {
+    db::get_setting(db, "og_image_url")
+        .ok()
+        .flatten()
+        .unwrap_or_default()
 }
 
 fn render_latest_posts_embed(posts: &[&Post]) -> String {
@@ -480,12 +508,16 @@ async fn public_index(State(state): State<Arc<AppState>>) -> Response {
                 intro_html = intro_html.replace("{{latest_posts}}", &embed_html);
             }
 
+            let favicon_url = get_favicon_url(&state.db);
+            let og_image_url = get_og_image_url(&state.db);
             WebTemplate(IndexTemplate {
                 blog_title,
                 blog_description,
                 intro_html,
                 posts,
                 nav_links,
+                favicon_url,
+                og_image_url,
             })
             .into_response()
         }
@@ -505,11 +537,15 @@ async fn public_post(
             let rendered_content = render_markdown(&post.content);
             let blog_title = get_blog_title(&state.db);
             let nav_links = get_nav_links(&state.db);
+            let favicon_url = get_favicon_url(&state.db);
+            let og_image_url = get_og_image_url(&state.db);
             WebTemplate(PostTemplate {
                 blog_title,
                 nav_links,
                 post,
                 rendered_content,
+                favicon_url,
+                og_image_url,
             })
             .into_response()
         }
@@ -530,11 +566,15 @@ async fn public_page(
             let rendered_content = render_markdown(&page.content);
             let blog_title = get_blog_title(&state.db);
             let nav_links = get_nav_links(&state.db);
+            let favicon_url = get_favicon_url(&state.db);
+            let og_image_url = get_og_image_url(&state.db);
             WebTemplate(PageTemplate {
                 blog_title,
                 nav_links,
                 page,
                 rendered_content,
+                favicon_url,
+                og_image_url,
             })
             .into_response()
         }
@@ -549,12 +589,16 @@ async fn public_page(
 async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
     let blog_title = get_blog_title(&state.db);
     let nav_links = get_nav_links(&state.db);
+    let favicon_url = get_favicon_url(&state.db);
+    let og_image_url = get_og_image_url(&state.db);
 
     match db::get_published_posts(&state.db) {
         Ok(posts) => WebTemplate(PostsListTemplate {
             blog_title,
             nav_links,
             posts,
+            favicon_url,
+            og_image_url,
         })
         .into_response(),
         Err(e) => {
@@ -875,6 +919,8 @@ async fn admin_get_settings(
     let intro_content = db::get_setting(&state.db, "intro_content").ok().flatten().unwrap_or_default();
     let nav_links = db::get_setting(&state.db, "nav_links").ok().flatten().unwrap_or_default();
     let custom_css = db::get_setting(&state.db, "custom_css").ok().flatten().unwrap_or_default();
+    let favicon_url = db::get_setting(&state.db, "favicon_url").ok().flatten().unwrap_or_default();
+    let og_image_url = db::get_setting(&state.db, "og_image_url").ok().flatten().unwrap_or_default();
     let default_css = Static::get("styles.css")
         .map(|f| String::from_utf8_lossy(&f.data).into_owned())
         .unwrap_or_default();
@@ -886,6 +932,8 @@ async fn admin_get_settings(
         nav_links,
         custom_css,
         default_css,
+        favicon_url,
+        og_image_url,
         success: q.success,
     })
     .into_response()
@@ -901,6 +949,8 @@ async fn admin_post_settings(
     let _ = db::set_setting(&state.db, "intro_content", &form.intro_content);
     let _ = db::set_setting(&state.db, "nav_links", &form.nav_links);
     let _ = db::set_setting(&state.db, "custom_css", &form.custom_css);
+    let _ = db::set_setting(&state.db, "favicon_url", form.favicon_url.trim());
+    let _ = db::set_setting(&state.db, "og_image_url", form.og_image_url.trim());
     Redirect::to("/admin/settings?success=true").into_response()
 }
 
