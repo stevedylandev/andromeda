@@ -1,0 +1,64 @@
+# Shrink
+
+A minimal image compression app
+
+## Overview
+
+A simple self-hosted tool for compressing and resizing images. Upload an image, set your desired quality and optional width, and download the compressed JPEG.
+
+- Single Rust binary
+- Compress images to JPEG with configurable quality (1-100)
+- Optional resize by width (preserves aspect ratio)
+- 20MB upload limit
+
+## Quickstart
+
+```bash
+git clone https://github.com/stevedylandev/andromeda.git
+cd andromeda
+cargo run -p shrink
+```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `HOST` | Server bind host | `127.0.0.1` |
+| `PORT` | Server bind port | `3000` |
+
+## Structure
+
+```
+shrink/
+├── src/
+│   ├── main.rs        # Entry point and server startup
+│   └── server.rs      # Axum routes and image compression logic
+├── templates/
+│   └── index.html     # Upload UI
+├── static/            # Fonts and static assets
+├── Dockerfile
+└── docker-compose.yml
+```
+
+## Deployment
+
+### Railway
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/enYUFb?referralCode=JGcIp6)
+
+### Docker
+
+```bash
+cd apps/shrink
+docker compose up -d
+```
+
+This will start Shrink on port `3000`.
+
+### Binary
+
+```bash
+cargo build --release -p shrink
+```
+
+The resulting binary is self-contained. Copy it to your server and run it directly.

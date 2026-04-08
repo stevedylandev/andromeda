@@ -1,0 +1,78 @@
+# Skills
+
+Andromeda apps are scaffolded using [Claude Code](https://claude.ai/code) with a custom skill called `rust-crud`. This page explains how to use it to build your own apps in the same style.
+
+## What is rust-crud?
+
+`rust-crud` is a Claude Code skill that scaffolds a complete Rust CRUD web application matching the Andromeda stack:
+
+- Axum web server with routing
+- SQLite database with rusqlite
+- Askama HTML templates
+- API key authentication
+- Embedded static assets via rust-embed
+- Dockerfile and docker-compose.yml for deployment
+
+## Using the Skill
+
+In Claude Code, invoke the skill when you want to create a new app:
+
+```
+/rust-crud
+```
+
+Describe what you want to build and the skill will generate a complete, working app that follows the same patterns as every other Andromeda app.
+
+## Building Your Own App
+
+If you want to add a new app to the workspace manually, follow these steps:
+
+### 1. Create the app directory
+
+```bash
+mkdir -p apps/my-app/src
+mkdir -p apps/my-app/templates
+mkdir -p apps/my-app/static
+```
+
+### 2. Add to workspace
+
+Add your app to the root `Cargo.toml` workspace members:
+
+```toml
+[workspace]
+members = [
+    "apps/my-app",
+    # ...existing apps
+]
+```
+
+### 3. Set up Cargo.toml
+
+```toml
+[package]
+name = "my-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+askama = "0.12"
+askama_axum = "0.4"
+rust-embed = "8"
+tower-http = { version = "0.6", features = ["cors"] }
+serde = { version = "1", features = ["derive"] }
+dotenvy = "0.15"
+```
+
+### 4. Follow the pattern
+
+Use the [Stack](/diy/stack) page as a reference for how to structure your `main.rs`, `server.rs`, and `db.rs` files. Look at any existing app in `apps/` for a working example.
+
+### 5. Build and run
+
+```bash
+cargo run -p my-app
+```
