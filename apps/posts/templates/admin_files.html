@@ -21,6 +21,9 @@
     <div class="admin-list">
       {% for file in files %}
         <div class="admin-list-item">
+          {% if file.content_type.starts_with("image/") %}
+            <img src="/files/{{ file.filename }}" class="file-thumbnail" alt="{{ file.original_name }}">
+          {% endif %}
           <div class="admin-list-info">
             <span class="admin-list-title">{{ file.original_name }}</span>
             <div class="admin-list-meta">

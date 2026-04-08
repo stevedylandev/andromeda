@@ -686,6 +686,57 @@ input[type="file"]::file-selector-button {
   background: #ffffff;
 }
 
+/* File thumbnails */
+
+.file-thumbnail {
+  max-width: 60px;
+  max-height: 60px;
+  object-fit: cover;
+  border: 1px solid #333;
+  flex-shrink: 0;
+}
+
+/* Footer */
+
+.footer {
+  width: 100%;
+  border-top: 1px solid #333;
+  padding-top: 1rem;
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.rss-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.rss-link:hover {
+  opacity: 0.8;
+}
+
+/* Export buttons */
+
+a.btn {
+  display: inline-block;
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid white;
+  padding: 0.4rem 0.75rem;
+  font-size: 14px;
+  font-family: "Commit Mono", monospace;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.btn:hover {
+  opacity: 0.7;
+}
+
 .hidden {
   display: none;
 }

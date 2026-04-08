@@ -42,5 +42,8 @@ rand = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
+# Archive
+zip = "2"
+
 # Workspace crates
 andromeda-auth = { path = "crates/auth" }

@@ -44,8 +44,13 @@ description: {{ p.meta_description.as_deref().unwrap_or_default() }}
         <label for="content">content</label>
         <textarea id="content" name="content" class="post-content">{{ p.content }}</textarea>
         <div class="form-actions">
-          <button type="submit" name="action" value="draft">save draft</button>
-          <button type="submit" name="action" value="publish">publish</button>
+          {% if p.status == "published" %}
+            <button type="submit" name="action" value="publish">update</button>
+            <button type="submit" name="action" value="draft">unpublish</button>
+          {% else %}
+            <button type="submit" name="action" value="draft">save draft</button>
+            <button type="submit" name="action" value="publish">publish</button>
+          {% endif %}
         </div>
       </form>
     {% when None %}

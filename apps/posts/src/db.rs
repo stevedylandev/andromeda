@@ -278,6 +278,7 @@ pub fn update_post(
     title: &str,
     slug: &str,
     content: &str,
+    status: &str,
     alias: Option<&str>,
     canonical_url: Option<&str>,
     published_date: Option<&str>,
@@ -287,11 +288,17 @@ pub fn update_post(
     tags: Option<&str>,
 ) -> Result<Option<Post>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let effective_published_date = if status == "published" {
+        Some(published_date.unwrap_or(""))
+    } else {
+        published_date
+    };
     let rows = conn.execute(
-        "UPDATE posts SET title = ?1, slug = ?2, content = ?3, alias = ?4, canonical_url = ?5,
-         published_date = ?6, meta_description = ?7, meta_image = ?8, lang = ?9, tags = ?10,
-         updated_at = datetime('now') WHERE short_id = ?11",
-        params![title, slug, content, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, short_id],
+        "UPDATE posts SET title = ?1, slug = ?2, content = ?3, status = ?4, alias = ?5, canonical_url = ?6,
+         published_date = CASE WHEN ?4 = 'published' THEN COALESCE(?7, published_date, datetime('now')) ELSE ?7 END,
+         meta_description = ?8, meta_image = ?9, lang = ?10, tags = ?11,
+         updated_at = datetime('now') WHERE short_id = ?12",
+        params![title, slug, content, status, alias, canonical_url, effective_published_date, meta_description, meta_image, lang, tags, short_id],
     )?;
     if rows == 0 {
         return Ok(None);
