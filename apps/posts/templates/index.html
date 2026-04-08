@@ -26,15 +26,6 @@
       <a href="/posts/{{ post.slug }}" class="post-item">
         <div class="post-item-info">
           <span class="post-title">{{ post.title }}</span>
-          {% if post.tags.is_some() %}
-            <span class="post-tags">
-              {% for tag in post.tags.as_deref().unwrap_or_default().split(',') %}
-                {% if !tag.trim().is_empty() %}
-                  <span class="tag">{{ tag.trim() }}</span>
-                {% endif %}
-              {% endfor %}
-            </span>
-          {% endif %}
         </div>
         {% if post.published_date.is_some() %}
           <time class="post-date">{{ post.published_date.as_deref().unwrap_or_default() }}</time>
