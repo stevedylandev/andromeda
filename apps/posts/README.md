@@ -1,5 +1,7 @@
 # Posts
 
+![cover](https://assets.andromeda.build/posts-demo.png)
+
 A minimal CMS blog with admin interface
 
 ## Quickstart
