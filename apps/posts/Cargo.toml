@@ -1,6 +1,6 @@
 [package]
 name = "posts"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 description = "CMS blog with admin interface"
 license = "MIT"
