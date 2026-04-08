@@ -4,3 +4,4 @@
 .env
 .DS_Store
 apps/posts/uploads
+docs/node_modules
