@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import type { ReactNode } from "react";
 
 export type ButtonProps = {
@@ -7,40 +6,40 @@ export type ButtonProps = {
 	href?: string;
 	variant?: "accent";
 	type?: "button" | "submit" | "reset" | "link";
-	onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void; // Add this
-	onMouseOver?: (event: React.MouseEvent<HTMLButtonElement>) => void; // Add this too for hover
-	onMouseOut?: (event: React.MouseEvent<HTMLButtonElement>) => void; // And this
+	onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+};
+
+const baseStyle: React.CSSProperties = {
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	padding: "0.4rem 0.75rem",
+	fontSize: "14px",
+	fontFamily: '"Commit Mono", monospace, sans-serif',
+	background: "#121113",
+	color: "#ffffff",
+	border: "1px solid white",
+	borderRadius: 0,
+	cursor: "pointer",
+	textDecoration: "none",
+	width: "fit-content",
 };
 
 export function Button({
 	children,
-	className,
 	href,
-	variant,
 	type = "button",
 }: ButtonProps) {
-	const baseClassName = clsx(
-		className,
-		"inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 hover:opacity-90",
-		variant === "accent"
-			? "hover:opacity-90 focus:ring-orange-400 text-zinc-900 bg-[#ffb757]"
-			: "bg-zinc-900! text-zinc-200! hover:bg-zinc-800! focus:ring-gray-500!",
-	);
-
 	if (type === "link") {
 		return (
-			<a href={href} className={baseClassName}>
+			<a href={href} style={baseStyle}>
 				{children}
 			</a>
 		);
 	}
 
 	return (
-		<button
-			type={type}
-			className={baseClassName}
-			{...(type !== "submit" && href ? { href } : {})}
-		>
+		<button type={type} style={baseStyle}>
 			{children}
 		</button>
 	);

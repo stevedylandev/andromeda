@@ -1,5 +1,61 @@
 @import "tailwindcss";
 
+@font-face {
+	font-family: "Commit Mono";
+	src: url("/CommitMono-400-Regular.otf") format("opentype");
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: "Commit Mono";
+	src: url("/CommitMono-700-Regular.otf") format("opentype");
+	font-weight: 700;
+	font-style: normal;
+}
+
+* {
+	font-family: "Commit Mono", monospace, sans-serif;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+	display: none;
+}
+
+/* Sidebar section titles */
+.vocs_Sidebar_sectionTitle {
+	text-transform: uppercase;
+	opacity: 0.5;
+	font-weight: 400;
+	font-size: 12px;
+}
+
+/* Table headers */
+th {
+	text-transform: uppercase;
+}
+
+/* Interactive elements */
+button, input, textarea, select {
+	background: #121113;
+	color: #ffffff;
+	border: 1px solid white;
+	padding: 0.4rem 0.75rem;
+	font-size: 14px;
+	border-radius: 0;
+}
+
+button:hover {
+	opacity: 0.7;
+}
+
+a:hover {
+	opacity: 0.7;
+}
+
+/* Homepage logo */
 .vocs_HomePage_logo {
 	height: auto !important;
 	width: 100% !important;
