@@ -37,8 +37,11 @@ th {
 	text-transform: uppercase;
 }
 
-/* Interactive elements */
-button, input, textarea, select {
+/* Interactive elements (exclude Vocs internal components) */
+.vocs_Content button,
+.vocs_Content input,
+.vocs_Content textarea,
+.vocs_Content select {
 	background: #121113;
 	color: #ffffff;
 	border: 1px solid white;
@@ -47,7 +50,7 @@ button, input, textarea, select {
 	border-radius: 0;
 }
 
-button:hover {
+.vocs_Content button:hover {
 	opacity: 0.7;
 }
 
