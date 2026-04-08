@@ -12,10 +12,11 @@ COPY apps/jotts/Cargo.toml apps/jotts/
 COPY apps/og/Cargo.toml apps/og/
 COPY apps/shrink/Cargo.toml apps/shrink/
 COPY apps/cellar/Cargo.toml apps/cellar/
+COPY apps/posts/Cargo.toml apps/posts/
 
 # Create stubs for dependency caching
 RUN mkdir -p crates/auth/src && echo '' > crates/auth/src/lib.rs \
-    && for app in sipp feeds parcels jotts og shrink cellar; do \
+    && for app in sipp feeds parcels jotts og shrink cellar posts; do \
          mkdir -p apps/$app/src && echo 'fn main() {}' > apps/$app/src/main.rs; \
        done
 
