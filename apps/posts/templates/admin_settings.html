@@ -29,6 +29,10 @@
       <label for="custom_css">custom CSS (overrides default styles)</label>
       <textarea id="custom_css" name="custom_css" class="post-content">{% if custom_css.is_empty() %}{{ default_css }}{% else %}{{ custom_css }}{% endif %}</textarea>
     </div>
+    <label for="custom_header">custom header (markdown or HTML, shown above nav on all pages)</label>
+    <textarea id="custom_header" name="custom_header" class="nav-links-input">{{ custom_header }}</textarea>
+    <label for="custom_footer">custom footer (markdown or HTML, shown at bottom of all pages)</label>
+    <textarea id="custom_footer" name="custom_footer" class="post-content">{{ custom_footer }}</textarea>
     <button type="submit">save</button>
   </form>
   <h3>Data Export</h3>
