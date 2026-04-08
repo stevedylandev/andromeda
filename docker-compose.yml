@@ -59,6 +59,15 @@ services:
       - WATCHTOWER_INCLUDE_RESTARTING=true
       - DOCKER_API_VERSION=1.44
     command: --interval 300
+  posts:
+    image: ghcr.io/stevedylandev/andromeda/posts:latest
+    restart: unless-stopped
+    ports:
+      - "3535:3000"
+    volumes:
+      - posts_data:/data
+    env_file: apps/posts/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
@@ -84,3 +93,6 @@ volumes:
   cellar_data:
     external: true
     name: cellar_cellar_data
+  posts_data:
+    external: true
+    name: posts_posts-data
