@@ -3,3 +3,4 @@
 *.db
 .env
 .DS_Store
+apps/posts/uploads

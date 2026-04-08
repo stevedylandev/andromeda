@@ -1267,7 +1267,7 @@ dependencies = [
 
 [[package]]
 name = "feeds"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "andromeda-auth",
  "askama 0.13.1",
@@ -2970,6 +2970,28 @@ name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
+
+[[package]]
+name = "posts"
+version = "0.1.0"
+dependencies = [
+ "andromeda-auth",
+ "askama 0.15.6",
+ "askama_web",
+ "axum",
+ "dotenvy",
+ "nanoid",
+ "pulldown-cmark",
+ "rand 0.8.5",
+ "rusqlite",
+ "rust-embed",
+ "serde",
+ "serde_json",
+ "subtle",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "potential_utf"

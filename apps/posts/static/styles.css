@@ -1,0 +1,691 @@
+@font-face {
+  font-family: "Commit Mono";
+  src: url("/static/fonts/CommitMono-400-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Commit Mono";
+  src: url("/static/fonts/CommitMono-700-Regular.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Commit Mono", monospace, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html {
+  background: #121113;
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start;
+  gap: 1.5rem;
+  min-height: 100vh;
+  max-width: 700px;
+  margin: auto;
+  padding: 0 1rem 4rem;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 0.7;
+}
+
+/* Header */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 2rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12px;
+}
+
+/* Main content */
+
+main {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Forms */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+label {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+input, textarea, select {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid white;
+  padding: 0.4rem 0.75rem;
+  font-size: 16px;
+  width: 100%;
+  border-radius: 0;
+}
+
+textarea {
+  min-height: 400px;
+  resize: vertical;
+}
+
+textarea.post-content {
+  min-height: 500px;
+}
+
+textarea.attributes-textarea {
+  min-height: 80px;
+}
+
+.available-fields {
+  margin-top: 0.5rem;
+}
+
+.available-fields > summary {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.fields-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+button, .btn {
+  background: #121113;
+  color: #ffffff;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid white;
+  cursor: pointer;
+  width: fit-content;
+  font-size: 14px;
+  border-radius: 0;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button:hover, .btn:hover {
+  opacity: 0.7;
+}
+
+/* Error / Success */
+
+.error {
+  color: #ffffff;
+  border-left: 2px solid #ffffff;
+  padding-left: 0.5rem;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.success {
+  color: #ffffff;
+  border-left: 2px solid #555;
+  padding-left: 0.5rem;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.empty {
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+/* Post list (public) */
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.post-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  text-decoration: none;
+}
+
+.post-item:hover {
+  opacity: 0.7;
+}
+
+.post-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.post-title {
+  font-size: 16px;
+}
+
+.post-description {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.post-date {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+/* Tags */
+
+.post-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  font-size: 11px;
+  opacity: 0.5;
+  background: #1e1c1f;
+  padding: 1px 6px;
+  border: 1px solid #333;
+}
+
+/* Post header (public single) */
+
+.post-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.post-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Intro */
+
+.intro {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+}
+
+/* Inline form */
+
+.inline-form {
+  display: inline;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+}
+
+.link-button:hover {
+  opacity: 0.7;
+}
+
+.link-button.danger {
+  opacity: 0.5;
+}
+
+.link-button.danger:hover {
+  opacity: 0.3;
+}
+
+/* Admin toolbar */
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.admin-toolbar h2 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Admin list */
+
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.admin-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  gap: 1rem;
+}
+
+.admin-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.admin-list-title {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-list-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.admin-list-date {
+  font-size: 11px;
+  opacity: 0.4;
+}
+
+.admin-list-actions {
+  display: flex;
+  gap: 1rem;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Status badges */
+
+.status-badge {
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid #333;
+}
+
+.status-published {
+  opacity: 1;
+  border-color: #555;
+}
+
+.status-draft {
+  opacity: 0.4;
+}
+
+/* Form layout */
+
+.form-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.form-row .form-field {
+  flex: 1;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.checkbox-field {
+  justify-content: flex-end;
+}
+
+.checkbox-field label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 14px;
+  opacity: 1;
+  cursor: pointer;
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 1px solid white;
+  border-radius: 0;
+  cursor: pointer;
+  position: relative;
+}
+
+.checkbox-field input[type="checkbox"]:checked::after {
+  content: '✔︎';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: white;
+  line-height: 1;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    flex-direction: column;
+  }
+
+  .admin-list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+/* Markdown rendered content */
+
+.markdown-body {
+  width: 100%;
+  line-height: 1.6;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.markdown-body h1 { font-size: 18px; }
+.markdown-body h2 { font-size: 16px; }
+.markdown-body h3 { font-size: 15px; }
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 { font-size: 14px; }
+
+.markdown-body p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-body code {
+  background: #1e1c1f;
+  padding: 2px 4px;
+  font-size: 13px;
+}
+
+.markdown-body pre {
+  background: #1e1c1f;
+  padding: 12px;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+  border: 1px solid #333;
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown-body blockquote {
+  border-left: 2px solid #555;
+  padding-left: 12px;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #333;
+  padding: 6px;
+  text-align: left;
+}
+
+.markdown-body th {
+  font-weight: 700;
+  text-transform: uppercase;
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 1rem 0;
+}
+
+.markdown-body a {
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+}
+
+.markdown-body li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -1.5rem;
+}
+
+.markdown-body input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: transparent;
+  border: 1px solid white;
+  border-radius: 0;
+  padding: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+  cursor: pointer;
+}
+
+.markdown-body input[type="checkbox"]:checked::after {
+  content: '✔︎';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: white;
+  line-height: 1;
+}
+
+/* File upload input */
+
+input[type="file"] {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid white;
+  padding: 0.4rem 0.75rem;
+  font-size: 14px;
+  width: 100%;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid #555;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  font-family: "Commit Mono", monospace;
+  font-size: 12px;
+  margin-right: 0.5rem;
+}
+
+.post-excerpt {
+  font-size: 12px;
+  opacity: 0.6;
+  line-height: 1.4;
+}
+
+.post-item-enhanced .post-item-info {
+  gap: 0.25rem;
+}
+
+.nav-links-input {
+  min-height: 40px;
+  height: 40px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.switch-label {
+  font-size: 14px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #333;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background: #888;
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.switch input:checked + .switch-slider {
+  background: #555;
+}
+
+.switch input:checked + .switch-slider::before {
+  transform: translateX(16px);
+  background: #ffffff;
+}
+
+.hidden {
+  display: none;
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ blog_title }}{% endblock %}</title>
+  <link rel="icon" href="/static/favicons/favicon.ico">
+  <meta name="theme-color" content="#121113" />
+  {% block meta %}{% endblock %}
+  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/custom-styles.css">
+</head>
+<body>
+  <header class="header">
+    <a href="/" class="logo">{{ blog_title }}</a>
+    <nav class="links">
+      {% for link in nav_links %}
+        <a href="{{ link.url }}">{{ link.label }}</a>
+      {% endfor %}
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
