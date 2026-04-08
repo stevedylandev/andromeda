@@ -1,8 +1,21 @@
-.vocs_DocsLayout_content {
+.vocs_DocsLayout_content:has(.landing) {
+	background: #121113 !important;
+	padding-top: 0 !important;
+}
+
+.vocs_Content:has(.landing) {
+	height: 100%;
 	background: #121113 !important;
 }
 
-.vocs_Content {
-	height: 100%;
-	background: #121113 !important;
+:has(.landing) .vocs_Footer {
+	display: none !important;
+}
+
+:has(.landing) .vocs_DesktopTopNav,
+:has(.landing) .vocs_DesktopTopNav_withLogo,
+:has(.landing) .vocs_MobileTopNav,
+:has(.landing) .vocs_DocsLayout_gutterTop,
+:has(.landing) .vocs_DocsLayout_gutterTop_sticky {
+	display: none !important;
 }
