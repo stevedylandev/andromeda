@@ -9,12 +9,15 @@
     <meta property="og:image" content="{{ post.meta_image.as_deref().unwrap_or_default() }}">
   {% else if !og_image_url.is_empty() %}
     <meta property="og:image" content="{{ og_image_url }}">
+  {% else %}
+    <meta property="og:image" content="{{ site_url }}/static/og.png">
   {% endif %}
   {% if post.canonical_url.is_some() %}
     <link rel="canonical" href="{{ post.canonical_url.as_deref().unwrap_or_default() }}">
   {% endif %}
   <meta property="og:title" content="{{ post.title }}">
   <meta property="og:type" content="article">
+  <meta property="og:url" content="{{ site_url }}/posts/{{ post.slug }}">
   <meta property="article:published_time" content="{{ post.published_date.as_deref().unwrap_or_default() }}">
 {% endblock %}
 {% block content %}
