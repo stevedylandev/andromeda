@@ -156,6 +156,16 @@ pub fn init_db() -> Db {
         [],
     )
     .ok();
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES ('favicon_url', '')",
+        [],
+    )
+    .ok();
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES ('og_image_url', '')",
+        [],
+    )
+    .ok();
 
     Arc::new(Mutex::new(conn))
 }
