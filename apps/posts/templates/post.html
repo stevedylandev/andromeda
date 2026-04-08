@@ -5,8 +5,10 @@
     <meta name="description" content="{{ post.meta_description.as_deref().unwrap_or_default() }}">
     <meta property="og:description" content="{{ post.meta_description.as_deref().unwrap_or_default() }}">
   {% endif %}
-  {% if post.meta_image.is_some() %}
+  {% if post.meta_image.is_some() && !post.meta_image.as_deref().unwrap_or_default().is_empty() %}
     <meta property="og:image" content="{{ post.meta_image.as_deref().unwrap_or_default() }}">
+  {% else if !og_image_url.is_empty() %}
+    <meta property="og:image" content="{{ og_image_url }}">
   {% endif %}
   {% if post.canonical_url.is_some() %}
     <link rel="canonical" href="{{ post.canonical_url.as_deref().unwrap_or_default() }}">
