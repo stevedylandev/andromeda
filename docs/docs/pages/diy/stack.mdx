@@ -1,0 +1,67 @@
+# Stack
+
+Every app in Andromeda is built on the same Rust stack. This page covers the core dependencies and how they fit together.
+
+## Core Dependencies
+
+### Axum
+
+[Axum](https://github.com/tokio-rs/axum) is the web framework powering every app. It provides routing, request extraction, middleware, and response handling. All apps follow a similar pattern:
+
+```rust
+let app = Router::new()
+    .route("/", get(index))
+    .route("/api/items", post(create_item))
+    .with_state(app_state);
+```
+
+### SQLite (rusqlite)
+
+[rusqlite](https://github.com/rusqlite/rusqlite) provides the storage layer. Each app creates its own SQLite database file, keeping data local and portable. No external database server needed.
+
+### Askama
+
+[Askama](https://github.com/djc/askama) handles HTML templating with compile-time checked templates. Templates live in a `templates/` directory and are type-safe Rust structs:
+
+```rust
+#[derive(Template)]
+#[template(path = "index.html")]
+struct IndexTemplate {
+    items: Vec<Item>,
+}
+```
+
+### rust-embed
+
+[rust-embed](https://github.com/pyrossh/rust-embed) embeds static assets (CSS, fonts, images) directly into the binary at compile time. This is what makes each app a single, self-contained binary with no external file dependencies.
+
+### Tokio
+
+[Tokio](https://tokio.rs) provides the async runtime that Axum runs on.
+
+## Shared Crate: andromeda-auth
+
+The `andromeda-auth` crate provides session-based password authentication used across apps that require login. It handles:
+
+- Constant-time password verification
+- Session cookie management
+- Secure cookie configuration via `COOKIE_SECURE` env var
+
+## App Pattern
+
+Every app follows a consistent structure:
+
+```
+app/
+├── src/
+│   ├── main.rs        # Entry point, env vars, starts server
+│   ├── server.rs      # Axum routes and handlers
+│   ├── db.rs          # SQLite database layer
+│   └── auth.rs        # Authentication (if needed)
+├── templates/         # Askama HTML templates
+├── static/            # Fonts, favicons, styles
+├── Dockerfile
+└── docker-compose.yml
+```
+
+This consistency means once you understand one app, you can navigate any of them.

@@ -1,0 +1,55 @@
+# Quickstart
+
+Get up and running with any Andromeda app in minutes.
+
+## Prerequisites
+
+Make sure [Rust](https://www.rust-lang.org/tools/install) is installed:
+
+```bash
+rustc --version
+```
+
+## Clone the Workspace
+
+```bash
+git clone https://github.com/stevedylandev/andromeda.git
+cd andromeda
+```
+
+## Build All Apps
+
+```bash
+cargo build --release
+```
+
+## Run a Specific App
+
+Each app is a workspace member. Run any of them with `cargo run -p`:
+
+```bash
+cargo run -p sipp -- server --port 3000
+cargo run -p feeds
+cargo run -p parcels
+cargo run -p jotts
+cargo run -p og
+cargo run -p shrink
+```
+
+Most apps start on `http://localhost:3000` by default. Check each app's page for specific environment variables and configuration.
+
+## Environment Variables
+
+Most apps use a `.env` file for configuration. Copy the example file and fill in your values:
+
+```bash
+cp apps/<app-name>/.env.example .env
+```
+
+## Deployment
+
+Every app compiles to a single binary with embedded assets, making deployment straightforward. Each app supports:
+
+- **Railway** - one-click deploy buttons on each app's page
+- **Docker** - `docker compose up -d`
+- **Binary** - copy the binary to your server and run it directly

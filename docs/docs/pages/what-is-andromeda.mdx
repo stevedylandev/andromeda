@@ -1,0 +1,36 @@
+# What is Andromeda
+
+Andromeda is a Rust workspace of minimal, self-hosted web apps. Each app compiles to a single binary powered by [Axum](https://github.com/tokio-rs/axum), [SQLite](https://github.com/rusqlite/rusqlite), and [Askama](https://github.com/djc/askama) templates.
+
+## Philosophy
+
+Every app in Andromeda follows the same principles:
+
+- **Single binary** - Each app compiles to one small binary (~7MB) with all assets embedded at compile time
+- **Minimal resource usage** - Apps average around ~10MB of RAM
+- **Self-hosted** - You own your data and run it on your own infrastructure
+- **Simple deployment** - One binary, one optional `.env` file, no external dependencies
+- **Consistent stack** - All apps share the same Rust stack so patterns are transferable
+
+## Apps
+
+| App | Description |
+|---|---|
+| [Sipp](/apps/sipp) | Code sharing with web UI and TUI |
+| [Feeds](/apps/feeds) | RSS reader with FreshRSS and OPML support |
+| [Parcels](/apps/parcels) | Package tracking (USPS) |
+| [Jotts](/apps/jotts) | Markdown notes |
+| [OG](/apps/og) | Open Graph tag inspector |
+| [Shrink](/apps/shrink) | Image compression and resizing |
+
+## Shared Crates
+
+| Crate | Description |
+|---|---|
+| `andromeda-auth` | Session-based password authentication |
+
+The `andromeda-auth` crate provides a shared authentication layer used across apps that require login, including session cookies and constant-time password verification.
+
+## License
+
+[MIT](https://github.com/stevedylandev/andromeda/blob/main/LICENSE)
