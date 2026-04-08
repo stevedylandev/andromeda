@@ -42,6 +42,8 @@ struct BaseTemplate {
     nav_links: Vec<NavLink>,
     favicon_url: String,
     og_image_url: String,
+    header_html: String,
+    footer_html: String,
 }
 
 #[derive(Template)]
@@ -65,6 +67,8 @@ struct IndexTemplate {
     favicon_url: String,
     og_image_url: String,
     site_url: String,
+    header_html: String,
+    footer_html: String,
 }
 
 #[derive(Template)]
@@ -77,6 +81,8 @@ struct PostTemplate {
     favicon_url: String,
     og_image_url: String,
     site_url: String,
+    header_html: String,
+    footer_html: String,
 }
 
 #[derive(Template)]
@@ -89,6 +95,8 @@ struct PageTemplate {
     favicon_url: String,
     og_image_url: String,
     site_url: String,
+    header_html: String,
+    footer_html: String,
 }
 
 #[derive(Template)]
@@ -128,6 +136,8 @@ struct AdminSettingsTemplate {
     default_css: String,
     favicon_url: String,
     og_image_url: String,
+    custom_header: String,
+    custom_footer: String,
     success: bool,
 }
 
@@ -140,6 +150,8 @@ struct PostsListTemplate {
     favicon_url: String,
     og_image_url: String,
     site_url: String,
+    header_html: String,
+    footer_html: String,
 }
 
 #[derive(Template)]
@@ -257,6 +269,8 @@ struct SettingsForm {
     custom_css: String,
     favicon_url: String,
     og_image_url: String,
+    custom_header: String,
+    custom_footer: String,
 }
 
 // --- Helpers ---
@@ -281,6 +295,20 @@ fn mime_from_path(path: &str) -> &'static str {
         "webm" => "video/webm",
         _ => "application/octet-stream",
     }
+}
+
+fn get_header_footer_html(db: &db::Db) -> (String, String) {
+    let custom_header = db::get_setting(db, "custom_header")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let custom_footer = db::get_setting(db, "custom_footer")
+        .ok()
+        .flatten()
+        .unwrap_or_default();
+    let header_html = render_markdown(&custom_header);
+    let footer_html = render_markdown(&custom_footer);
+    (header_html, footer_html)
 }
 
 fn render_markdown(content: &str) -> String {
@@ -514,6 +542,7 @@ async fn public_index(State(state): State<Arc<AppState>>) -> Response {
 
             let favicon_url = get_favicon_url(&state.db);
             let og_image_url = get_og_image_url(&state.db);
+            let (header_html, footer_html) = get_header_footer_html(&state.db);
             WebTemplate(IndexTemplate {
                 blog_title,
                 blog_description,
@@ -523,6 +552,8 @@ async fn public_index(State(state): State<Arc<AppState>>) -> Response {
                 favicon_url,
                 og_image_url,
                 site_url: state.site_url.clone(),
+                header_html,
+                footer_html,
             })
             .into_response()
         }
@@ -544,6 +575,7 @@ async fn public_post(
             let nav_links = get_nav_links(&state.db);
             let favicon_url = get_favicon_url(&state.db);
             let og_image_url = get_og_image_url(&state.db);
+            let (header_html, footer_html) = get_header_footer_html(&state.db);
             WebTemplate(PostTemplate {
                 blog_title,
                 nav_links,
@@ -552,6 +584,8 @@ async fn public_post(
                 favicon_url,
                 og_image_url,
                 site_url: state.site_url.clone(),
+                header_html,
+                footer_html,
             })
             .into_response()
         }
@@ -574,6 +608,7 @@ async fn public_page(
             let nav_links = get_nav_links(&state.db);
             let favicon_url = get_favicon_url(&state.db);
             let og_image_url = get_og_image_url(&state.db);
+            let (header_html, footer_html) = get_header_footer_html(&state.db);
             WebTemplate(PageTemplate {
                 blog_title,
                 nav_links,
@@ -582,6 +617,8 @@ async fn public_page(
                 favicon_url,
                 og_image_url,
                 site_url: state.site_url.clone(),
+                header_html,
+                footer_html,
             })
             .into_response()
         }
@@ -599,6 +636,8 @@ async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
     let favicon_url = get_favicon_url(&state.db);
     let og_image_url = get_og_image_url(&state.db);
 
+    let (header_html, footer_html) = get_header_footer_html(&state.db);
+
     match db::get_published_posts(&state.db) {
         Ok(posts) => WebTemplate(PostsListTemplate {
             blog_title,
@@ -607,6 +646,8 @@ async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
             favicon_url,
             og_image_url,
             site_url: state.site_url.clone(),
+            header_html,
+            footer_html,
         })
         .into_response(),
         Err(e) => {
@@ -946,6 +987,8 @@ async fn admin_get_settings(
     let custom_css = db::get_setting(&state.db, "custom_css").ok().flatten().unwrap_or_default();
     let favicon_url = db::get_setting(&state.db, "favicon_url").ok().flatten().unwrap_or_default();
     let og_image_url = db::get_setting(&state.db, "og_image_url").ok().flatten().unwrap_or_default();
+    let custom_header = db::get_setting(&state.db, "custom_header").ok().flatten().unwrap_or_default();
+    let custom_footer = db::get_setting(&state.db, "custom_footer").ok().flatten().unwrap_or_default();
     let default_css = Static::get("styles.css")
         .map(|f| String::from_utf8_lossy(&f.data).into_owned())
         .unwrap_or_default();
@@ -959,6 +1002,8 @@ async fn admin_get_settings(
         default_css,
         favicon_url,
         og_image_url,
+        custom_header,
+        custom_footer,
         success: q.success,
     })
     .into_response()
@@ -976,6 +1021,8 @@ async fn admin_post_settings(
     let _ = db::set_setting(&state.db, "custom_css", &form.custom_css);
     let _ = db::set_setting(&state.db, "favicon_url", form.favicon_url.trim());
     let _ = db::set_setting(&state.db, "og_image_url", form.og_image_url.trim());
+    let _ = db::set_setting(&state.db, "custom_header", &form.custom_header);
+    let _ = db::set_setting(&state.db, "custom_footer", &form.custom_footer);
     Redirect::to("/admin/settings?success=true").into_response()
 }
 
