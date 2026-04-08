@@ -5,6 +5,7 @@ services:
       - jotts-data:/data/jotts:ro
       - sipp-data:/data/sipp:ro
       - cellar-data:/data/cellar:ro
+      - posts-data:/data/posts:ro
     env_file: .env
     restart: unless-stopped
 
@@ -18,3 +19,6 @@ volumes:
   cellar-data:
     external: true
     name: ${CELLAR_VOLUME:-cellar_cellar-data}
+  posts-data:
+    external: true
+    name: ${POSTS_VOLUME:-posts_posts-data}

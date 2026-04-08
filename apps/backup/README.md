@@ -1,6 +1,6 @@
 # Backup
 
-Automated SQLite backups for Jotts, Sipp, and Cellar to Cloudflare R2. Runs every 6 hours via cron inside a Docker container and prunes backups older than 30 days.
+Automated SQLite backups for Jotts, Sipp, Cellar, and Posts to Cloudflare R2. Runs every 6 hours via cron inside a Docker container and prunes backups older than 30 days.
 
 ## Setup
 
@@ -44,6 +44,7 @@ R2_BUCKET=andromeda-backups
 JOTTS_VOLUME=jotts_jotts-data
 SIPP_VOLUME=sipp_sipp-data
 CELLAR_VOLUME=cellar_cellar-data
+POSTS_VOLUME=posts_posts-data
 ```
 
 Run `docker volume ls` to check the actual names on your host.
@@ -81,6 +82,7 @@ docker run -d --restart unless-stopped \
   -v jotts_jotts-data:/data/jotts:ro \
   -v sipp_sipp-data:/data/sipp:ro \
   -v cellar_cellar-data:/data/cellar:ro \
+  -v posts_posts-data:/data/posts:ro \
   ghcr.io/stevedylandev/andromeda-backup:latest
 ```
 
@@ -148,3 +150,4 @@ docker compose -f /path/to/jotts/docker-compose.yml up -d
 | `JOTTS_VOLUME` | `jotts_jotts-data` | Docker volume name for Jotts data |
 | `SIPP_VOLUME` | `sipp_sipp-data` | Docker volume name for Sipp data |
 | `CELLAR_VOLUME` | `cellar_cellar-data` | Docker volume name for Cellar data |
+| `POSTS_VOLUME` | `posts_posts-data` | Docker volume name for Posts data |
