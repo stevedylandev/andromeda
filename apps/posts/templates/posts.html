@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Posts — {{ blog_title }}{% endblock %}
+{% block meta %}
+  {% if !og_image_url.is_empty() %}
+    <meta property="og:image" content="{{ og_image_url }}">
+  {% endif %}
+{% endblock %}
 {% block content %}
   <h1>Posts</h1>
   {% if posts.is_empty() %}
