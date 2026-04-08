@@ -5,8 +5,11 @@
   <meta property="og:title" content="{{ blog_title }}">
   <meta property="og:description" content="{{ blog_description }}">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ site_url }}">
   {% if !og_image_url.is_empty() %}
     <meta property="og:image" content="{{ og_image_url }}">
+  {% else %}
+    <meta property="og:image" content="{{ site_url }}/static/og.png">
   {% endif %}
 {% endblock %}
 {% block content %}
