@@ -835,6 +835,14 @@ async fn admin_new_page(
     .into_response()
 }
 
+const RESERVED_PAGE_SLUGS: &[&str] = &[
+    "posts", "admin", "feed.xml", "custom-styles.css", "static", "files",
+];
+
+fn is_reserved_page_slug(slug: &str) -> bool {
+    RESERVED_PAGE_SLUGS.contains(&slug)
+}
+
 async fn admin_create_page(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
@@ -845,6 +853,9 @@ async fn admin_create_page(
     let slug = attrs.slug.trim().to_string();
     if title.is_empty() || slug.is_empty() {
         return Redirect::to("/admin/pages/new?error=Title+and+slug+are+required").into_response();
+    }
+    if is_reserved_page_slug(&slug) {
+        return Redirect::to("/admin/pages/new?error=That+slug+is+reserved").into_response();
     }
 
     match db::create_page(&state.db, &title, &slug, &form.content, attrs.is_published, 0) {
@@ -887,6 +898,10 @@ async fn admin_update_page(
     let slug = attrs.slug.trim().to_string();
     if title.is_empty() || slug.is_empty() {
         return Redirect::to(&format!("/admin/pages/{}/edit?error=Title+and+slug+are+required", short_id))
+            .into_response();
+    }
+    if is_reserved_page_slug(&slug) {
+        return Redirect::to(&format!("/admin/pages/{}/edit?error=That+slug+is+reserved", short_id))
             .into_response();
     }
 
@@ -1234,7 +1249,7 @@ pub async fn run(host: String, port: u16) {
         .route("/posts", get(public_posts_list))
         .route("/posts/{slug}", get(public_post))
         .route("/custom-styles.css", get(serve_custom_css))
-        .route("/pages/{slug}", get(public_page))
+        .route("/{slug}", get(public_page))
         .route("/feed.xml", get(rss_feed))
         // Admin auth
         .route("/admin/login", get(get_login).post(post_login))

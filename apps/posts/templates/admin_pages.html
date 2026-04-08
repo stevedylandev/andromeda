@@ -17,7 +17,7 @@
               <span class="status-badge {% if page.is_published %}status-published{% else %}status-draft{% endif %}">
                 {% if page.is_published %}published{% else %}draft{% endif %}
               </span>
-              <span class="admin-list-date">/pages/{{ page.slug }}</span>
+              <span class="admin-list-date">/{{ page.slug }}</span>
               <span class="admin-list-date">order: {{ page.nav_order }}</span>
             </div>
           </div>
