@@ -64,6 +64,7 @@ struct IndexTemplate {
     nav_links: Vec<NavLink>,
     favicon_url: String,
     og_image_url: String,
+    site_url: String,
 }
 
 #[derive(Template)]
@@ -75,6 +76,7 @@ struct PostTemplate {
     rendered_content: String,
     favicon_url: String,
     og_image_url: String,
+    site_url: String,
 }
 
 #[derive(Template)]
@@ -86,6 +88,7 @@ struct PageTemplate {
     rendered_content: String,
     favicon_url: String,
     og_image_url: String,
+    site_url: String,
 }
 
 #[derive(Template)]
@@ -136,6 +139,7 @@ struct PostsListTemplate {
     posts: Vec<Post>,
     favicon_url: String,
     og_image_url: String,
+    site_url: String,
 }
 
 #[derive(Template)]
@@ -518,6 +522,7 @@ async fn public_index(State(state): State<Arc<AppState>>) -> Response {
                 nav_links,
                 favicon_url,
                 og_image_url,
+                site_url: state.site_url.clone(),
             })
             .into_response()
         }
@@ -546,6 +551,7 @@ async fn public_post(
                 rendered_content,
                 favicon_url,
                 og_image_url,
+                site_url: state.site_url.clone(),
             })
             .into_response()
         }
@@ -575,6 +581,7 @@ async fn public_page(
                 rendered_content,
                 favicon_url,
                 og_image_url,
+                site_url: state.site_url.clone(),
             })
             .into_response()
         }
@@ -599,6 +606,7 @@ async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
             posts,
             favicon_url,
             og_image_url,
+            site_url: state.site_url.clone(),
         })
         .into_response(),
         Err(e) => {
