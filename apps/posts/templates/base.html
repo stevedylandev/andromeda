@@ -39,5 +39,15 @@
   <footer class="footer">
     {{ footer_html|safe }}
   </footer>
+  <script>
+    document.querySelectorAll('.post-date').forEach(el => {
+      const d = new Date(el.textContent.trim());
+      if (!isNaN(d)) {
+        const day = String(d.getDate()).padStart(2, '0');
+        const mon = d.toLocaleString('en-US', { month: 'short' });
+        el.textContent = `${day} ${mon}, ${d.getFullYear()}`;
+      }
+    });
+  </script>
 </body>
 </html>
