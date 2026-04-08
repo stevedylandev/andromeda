@@ -24,3 +24,4 @@ andromeda-auth = { workspace = true }
 askama = "0.15"
 askama_web = { version = "0.15", features = ["axum-0.8"] }
 pulldown-cmark = "0.12"
+zip = { workspace = true }

@@ -750,11 +750,12 @@ async fn admin_update_post(
         attrs.slug.trim().to_string()
     };
 
+    let status = if form.action == "publish" { "published" } else { "draft" };
     let lang = if attrs.lang.trim().is_empty() { "en" } else { attrs.lang.trim() };
     let published_date = if attrs.published_date.trim().is_empty() {
-        now_datetime()
+        None
     } else {
-        attrs.published_date.trim().to_string()
+        Some(attrs.published_date.trim().to_string())
     };
 
     match db::update_post(
@@ -763,9 +764,10 @@ async fn admin_update_post(
         title,
         &slug,
         &form.content,
+        status,
         opt_str(&attrs.alias),
         None,
-        Some(&published_date),
+        published_date.as_deref(),
         opt_str(&attrs.meta_description),
         opt_str(&attrs.meta_image),
         lang,
@@ -1189,6 +1191,158 @@ async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
         .into_response()
 }
 
+// --- Download/export handlers ---
+
+async fn admin_download_posts(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    let posts = match db::get_all_posts(&state.db) {
+        Ok(posts) => posts,
+        Err(e) => {
+            tracing::error!("Failed to get posts for export: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response();
+        }
+    };
+
+    let result = tokio::task::spawn_blocking(move || {
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut zip = zip::ZipWriter::new(&mut buf);
+            let options = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Deflated);
+            for post in &posts {
+                let filename = format!("{}.md", post.slug);
+                let mut frontmatter = format!(
+                    "---\ntitle: {}\nslug: {}\nstatus: {}",
+                    post.title, post.slug, post.status
+                );
+                if let Some(ref pd) = post.published_date {
+                    frontmatter.push_str(&format!("\npublished_date: {}", pd));
+                }
+                if let Some(ref tags) = post.tags {
+                    frontmatter.push_str(&format!("\ntags: {}", tags));
+                }
+                frontmatter.push_str(&format!("\nlang: {}", post.lang));
+                if let Some(ref alias) = post.alias {
+                    frontmatter.push_str(&format!("\nalias: {}", alias));
+                }
+                if let Some(ref meta_image) = post.meta_image {
+                    frontmatter.push_str(&format!("\nmeta_image: {}", meta_image));
+                }
+                if let Some(ref meta_desc) = post.meta_description {
+                    frontmatter.push_str(&format!("\ndescription: {}", meta_desc));
+                }
+                frontmatter.push_str("\n---\n\n");
+                let content = format!("{}{}", frontmatter, post.content);
+                if let Err(e) = zip.start_file(&filename, options) {
+                    tracing::warn!("Failed to add {} to zip: {}", filename, e);
+                    continue;
+                }
+                if let Err(e) = std::io::Write::write_all(&mut zip, content.as_bytes()) {
+                    tracing::warn!("Failed to write {} to zip: {}", filename, e);
+                }
+            }
+            let _ = zip.finish();
+        }
+        buf.into_inner()
+    })
+    .await;
+
+    match result {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [
+                (axum::http::header::CONTENT_TYPE, "application/zip"),
+                (
+                    axum::http::header::CONTENT_DISPOSITION,
+                    "attachment; filename=\"posts.zip\"",
+                ),
+            ],
+            bytes,
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to create posts zip: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Export failed").into_response()
+        }
+    }
+}
+
+async fn admin_download_uploads(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    let files = match db::get_all_files(&state.db) {
+        Ok(files) => files,
+        Err(e) => {
+            tracing::error!("Failed to get files for export: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response();
+        }
+    };
+
+    let uploads_dir = state.uploads_dir.clone();
+    let mut file_data: Vec<(String, Vec<u8>)> = Vec::new();
+    let mut seen_names = std::collections::HashSet::new();
+    for file in &files {
+        let path = std::path::PathBuf::from(&uploads_dir).join(&file.filename);
+        match tokio::fs::read(&path).await {
+            Ok(bytes) => {
+                let name = if seen_names.contains(&file.original_name) {
+                    format!("{}_{}", file.short_id, file.original_name)
+                } else {
+                    file.original_name.clone()
+                };
+                seen_names.insert(file.original_name.clone());
+                file_data.push((name, bytes));
+            }
+            Err(e) => {
+                tracing::warn!("Skipping file {} ({}): {}", file.original_name, file.filename, e);
+            }
+        }
+    }
+
+    let result = tokio::task::spawn_blocking(move || {
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut zip = zip::ZipWriter::new(&mut buf);
+            let options = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Stored);
+            for (name, bytes) in &file_data {
+                if let Err(e) = zip.start_file(name, options) {
+                    tracing::warn!("Failed to add {} to zip: {}", name, e);
+                    continue;
+                }
+                if let Err(e) = std::io::Write::write_all(&mut zip, bytes) {
+                    tracing::warn!("Failed to write {} to zip: {}", name, e);
+                }
+            }
+            let _ = zip.finish();
+        }
+        buf.into_inner()
+    })
+    .await;
+
+    match result {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [
+                (axum::http::header::CONTENT_TYPE, "application/zip"),
+                (
+                    axum::http::header::CONTENT_DISPOSITION,
+                    "attachment; filename=\"uploads.zip\"",
+                ),
+            ],
+            bytes,
+        )
+            .into_response(),
+        Err(e) => {
+            tracing::error!("Failed to create uploads zip: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Export failed").into_response()
+        }
+    }
+}
+
 // --- Date helper ---
 
 fn days_to_ymd(mut days: i64) -> (i64, i64, i64) {
@@ -1271,6 +1425,9 @@ pub async fn run(host: String, port: u16) {
         .route("/admin/pages/{id}/delete", post(admin_delete_page))
         // Admin settings
         .route("/admin/settings", get(admin_get_settings).post(admin_post_settings))
+        // Admin downloads
+        .route("/admin/downloads/posts", get(admin_download_posts))
+        .route("/admin/downloads/uploads", get(admin_download_uploads))
         // Admin files
         .route("/admin/files", get(admin_files))
         .route("/admin/files/upload", post(admin_upload_file))
