@@ -3,7 +3,10 @@
 {% block meta %}
   {% if !og_image_url.is_empty() %}
     <meta property="og:image" content="{{ og_image_url }}">
+  {% else %}
+    <meta property="og:image" content="{{ site_url }}/static/og.png">
   {% endif %}
+  <meta property="og:url" content="{{ site_url }}/pages/{{ page.slug }}">
 {% endblock %}
 {% block content %}
   <div class="page-header">
