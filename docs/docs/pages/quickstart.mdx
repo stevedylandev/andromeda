@@ -1,55 +1,88 @@
 # Quickstart
 
-Get up and running with any Andromeda app in minutes.
+Andromeda is a suite of apps that are easy to self host, whether you're a complete beginner or a seasoned devops engineer. We'll show you how to deploy a minimal micro blogging app called [Posts](/apps/posts) two different ways:
 
-## Prerequisites
+- Railway (recommended for beginners)
+- Docker
 
-Make sure [Rust](https://www.rust-lang.org/tools/install) is installed:
+## Railway
 
-```bash
-rustc --version
+Railway is halfway between a VPS (virtual private server) and a hosting platform like Netlify or Vercel. It's the perfect place to host an Andromeda app if you're a beginner.
+
+::::steps
+### Deploy
+
+Click on the button below to sign up if you haven't already and start the process of deploying Posts.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tYtJYp?referralCode=JGcIp6)
+
+### Configure
+
+Railway will show a `Configure` button, and when you click on it you will need to fill in two things: 
+
+- `SITE_URL` - This will be the site of your deployed app. If you don't know what that URL will be then you can just put a placeholder for now like `https://example.com`. 
+- `POSTS_PASSWORD` - The password you want to set to access the admin dashboard.
+
+![railway deploying app](https://assets.andromeda.build/docs/railway-deploy-app_compressed.jpg)
+
+Once you have filled these out you can click the `Save Config` button at the bottom. Then click `Deploy`! 
+ 
+### Use
+ 
+Your app is now live! If you click on the square with your app you can see the hosted URL for it.
+
+![railway deployment with hosted url](https://assets.andromeda.build/docs/railway-deployment.png)
+
+One more thing that is worth adjusting is copying the URL, going into the `Variables` tab, clicking `Edit` for the `SITE_URL` variable, and pasting in your hosted app URL. This will make sure its fully functional. 
+
+![railway edit existing variable](https://assets.andromeda.build/docs/railway-edit-variable.png)
+
+Granted those Railway URLs are not pretty, so if you happen to get a custom domain, just visit the `Settings` tab and under the `Networking` section click `+ Custom Domain` and set it up. Of course make sure to update the `SITE_URL` variable again if you do this!
+::::
+
+## Docker
+
+::::steps
+### Setup
+
+Create a new folder and add a `docker-compose.yml` file:
+
+```yaml
+services:
+  posts:
+    image: ghcr.io/stevedylandev/posts:latest
+    platform: linux/amd64
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    env_file:
+      - .env
+    volumes:
+      - posts-data:/data
+    restart: unless-stopped
+
+volumes:
+  posts-data:
 ```
 
-## Clone the Workspace
+### Configure
+
+Create a `.env` file in the same folder with the following:
 
 ```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
+POSTS_PASSWORD=changeme
+SITE_URL=http://localhost:3000
 ```
 
-## Build All Apps
+Make sure to update `POSTS_PASSWORD` with your own password and `SITE_URL` with your domain if you have one hooked up to your docker setup.
+
+### Deploy
+
+Start the app:
 
 ```bash
-cargo build --release
+docker compose up -d
 ```
 
-## Run a Specific App
+This will start Posts on port `3000` with a persistent volume for the SQLite database and uploads. Visit `http://localhost:3000` and log in at `/login` with your configured password.
+::::
 
-Each app is a workspace member. Run any of them with `cargo run -p`:
-
-```bash
-cargo run -p sipp -- server --port 3000
-cargo run -p feeds
-cargo run -p parcels
-cargo run -p jotts
-cargo run -p og
-cargo run -p shrink
-```
-
-Most apps start on `http://localhost:3000` by default. Check each app's page for specific environment variables and configuration.
-
-## Environment Variables
-
-Most apps use a `.env` file for configuration. Copy the example file and fill in your values:
-
-```bash
-cp apps/<app-name>/.env.example .env
-```
-
-## Deployment
-
-Every app compiles to a single binary with embedded assets, making deployment straightforward. Each app supports:
-
-- **Railway** - one-click deploy buttons on each app's page
-- **Docker** - `docker compose up -d`
-- **Binary** - copy the binary to your server and run it directly
