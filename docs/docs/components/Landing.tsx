@@ -7,7 +7,7 @@ export function Landing() {
 			style={{
 				position: "relative",
 				width: "100%",
-				background: "#121113 url('/bg.png') center center / cover no-repeat",
+				background: "#121113 url('/bg.webp') center center / cover no-repeat",
 			}}
 		>
 			<div
@@ -20,7 +20,6 @@ export function Landing() {
 					justifyContent: "center",
 					gap: "3rem",
 					padding: "1rem",
-					background: "rgba(0, 0, 0, 0.65)",
 				}}
 			>
 				<div
@@ -34,10 +33,9 @@ export function Landing() {
 					<h1
 						style={{
 							textAlign: "center",
-							fontSize: "48px",
-							fontWeight: 700,
+							fontSize: "92px",
+							fontWeight: 400,
 							fontFamily: '"Commit Mono", monospace, sans-serif',
-							textTransform: "uppercase",
 							color: "#ffffff",
 						}}
 					>
