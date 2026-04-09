@@ -2,13 +2,13 @@ import { defineConfig } from 'vocs'
 
 export default defineConfig({
   title: 'Andromeda',
-  iconUrl: "https://andromeda.build/icon.png",
-  ogImageUrl: "https://andromeda.build/og.png",
+  iconUrl: "/icon.png",
+  ogImageUrl: "/og.png",
   markdown: {
     code: {
       themes: {
-        light: "github-dark-high-contrast",
-        dark: "github-dark-high-contrast",
+        light: "min-light",
+        dark: "slack-dark",
       },
     },
   },
@@ -18,6 +18,7 @@ export default defineConfig({
       link: "https://github.com/stevedylandev/andromeda",
     }
   ],
+  aiCta: false,
   sidebar: [
     {
       text: 'Intro',
@@ -36,6 +37,10 @@ export default defineConfig({
       text: 'Apps',
       items: [
         {
+          text: 'Cellar',
+          link: '/apps/cellar',
+        },
+        {
           text: 'Feeds',
           link: '/apps/feeds',
         },
@@ -44,16 +49,8 @@ export default defineConfig({
           link: '/apps/jotts',
         },
         {
-          text: 'Sipp',
-          link: '/apps/sipp',
-        },
-        {
           text: 'OG',
           link: '/apps/og',
-        },
-        {
-          text: 'Shrink',
-          link: '/apps/shrink',
         },
         {
           text: 'Parcels',
@@ -64,8 +61,12 @@ export default defineConfig({
           link: '/apps/posts',
         },
         {
-          text: 'Cellar',
-          link: '/apps/cellar',
+          text: 'Shrink',
+          link: '/apps/shrink',
+        },
+        {
+          text: 'Sipp',
+          link: '/apps/sipp',
         },
       ],
     },
