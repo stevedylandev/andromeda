@@ -2,6 +2,8 @@ import { defineConfig } from 'vocs'
 
 export default defineConfig({
   title: 'Andromeda',
+  iconUrl: "https://andromeda.build/icon.png",
+  ogImageUrl: "https://andromeda.build/og.png",
   markdown: {
     code: {
       themes: {
@@ -10,6 +12,12 @@ export default defineConfig({
       },
     },
   },
+  socials: [
+    {
+      icon: "github",
+      link: "https://github.com/stevedylandev/andromeda",
+    }
+  ],
   sidebar: [
     {
       text: 'Intro',
@@ -54,6 +62,10 @@ export default defineConfig({
         {
           text: 'Posts',
           link: '/apps/posts',
+        },
+        {
+          text: 'Cellar',
+          link: '/apps/cellar',
         },
       ],
     },

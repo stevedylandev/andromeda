@@ -48,7 +48,6 @@ export function Landing() {
 							fontWeight: 400,
 							fontFamily: '"Commit Mono", monospace, sans-serif',
 							color: "#ffffff",
-							opacity: 0.7,
 						}}
 					>
 						Minimal, self-hosted personal software in Rust
