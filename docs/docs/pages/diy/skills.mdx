@@ -1,78 +1,30 @@
 # Skills
 
-Andromeda apps are scaffolded using [Claude Code](https://claude.ai/code) with a custom skill called `rust-crud`. This page explains how to use it to build your own apps in the same style.
+Andromeda ships with two [Claude Code](https://claude.ai/code) skills that make it easy to build new apps in the same style. Both live in the repo at [`skills/`](https://github.com/stevedylandev/andromeda/tree/main/skills).
 
-## What is rust-crud?
+## andromeda-stack
 
-`rust-crud` is a Claude Code skill that scaffolds a complete Rust CRUD web application matching the Andromeda stack:
+[`andromeda-stack`](https://github.com/stevedylandev/andromeda/blob/main/skills/andromeda-stack/SKILL.md) scaffolds a complete Rust CRUD web app matching the Andromeda stack:
 
 - Axum web server with routing
 - SQLite database with rusqlite
 - Askama HTML templates
-- API key authentication
+- `andromeda-auth` for session or API key auth
 - Embedded static assets via rust-embed
 - Dockerfile and docker-compose.yml for deployment
 
-## Using the Skill
+New apps land under `apps/` in the workspace and share dependencies via the root `Cargo.toml`.
 
-In Claude Code, invoke the skill when you want to create a new app:
+## darkmatter-styles
 
-```
-/rust-crud
-```
+[`darkmatter-styles`](https://github.com/stevedylandev/andromeda/tree/main/skills/darkmatter-styles/SKILL.md) applies the shared Andromeda aesthetic: dark background, white borders, Commit Mono, minimal layout, no frameworks. Use it when building new pages or components that need to match the rest of the lineup.
 
-Describe what you want to build and the skill will generate a complete, working app that follows the same patterns as every other Andromeda app.
+## Installing
 
-## Building Your Own App
-
-If you want to add a new app to the workspace manually, follow these steps:
-
-### 1. Create the app directory
+Use [`npx skills add`](https://github.com/vercel-labs/skills) to pull either skill directly from the repo:
 
 ```bash
-mkdir -p apps/my-app/src
-mkdir -p apps/my-app/templates
-mkdir -p apps/my-app/static
+npx skills add stevedylandev/andromeda/skills
 ```
 
-### 2. Add to workspace
-
-Add your app to the root `Cargo.toml` workspace members:
-
-```toml
-[workspace]
-members = [
-    "apps/my-app",
-    # ...existing apps
-]
-```
-
-### 3. Set up Cargo.toml
-
-```toml
-[package]
-name = "my-app"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-axum = "0.8"
-tokio = { version = "1", features = ["full"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
-askama = "0.12"
-askama_axum = "0.4"
-rust-embed = "8"
-tower-http = { version = "0.6", features = ["cors"] }
-serde = { version = "1", features = ["derive"] }
-dotenvy = "0.15"
-```
-
-### 4. Follow the pattern
-
-Use the [Stack](/diy/stack) page as a reference for how to structure your `main.rs`, `server.rs`, and `db.rs` files. Look at any existing app in `apps/` for a working example.
-
-### 5. Build and run
-
-```bash
-cargo run -p my-app
-```
+Once installed, invoke them in Claude Code by describing what you want to build — the skills trigger automatically based on their descriptions.

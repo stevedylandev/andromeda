@@ -1,8 +1,6 @@
 # Shrink
 
-A minimal image compression app
-
-## Overview
+![demo of shrink](https://files.stevedylan.dev/shrink-demo.png)
 
 A simple self-hosted tool for compressing and resizing images. Upload an image, set your desired quality and optional width, and download the compressed JPEG.
 
@@ -11,13 +9,7 @@ A simple self-hosted tool for compressing and resizing images. Upload an image, 
 - Optional resize by width (preserves aspect ratio)
 - 20MB upload limit
 
-## Quickstart
-
-```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
-cargo run -p shrink
-```
+## Configure
 
 ### Environment Variables
 
@@ -26,23 +18,11 @@ cargo run -p shrink
 | `HOST` | Server bind host | `127.0.0.1` |
 | `PORT` | Server bind port | `3000` |
 
-## Structure
-
-```
-shrink/
-├── src/
-│   ├── main.rs        # Entry point and server startup
-│   └── server.rs      # Axum routes and image compression logic
-├── templates/
-│   └── index.html     # Upload UI
-├── static/            # Fonts and static assets
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
+## Deploy
 
 ### Railway
+
+The easiest way to deploy Shrink is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Shrink needs no environment variables beyond the defaults.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/enYUFb?referralCode=JGcIp6)
 
@@ -57,8 +37,22 @@ This will start Shrink on port `3000`.
 
 ### Binary
 
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/shrink
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=shrink&expanded=true).
+
+You can also build from source:
+
 ```bash
 cargo build --release -p shrink
 ```
 
 The resulting binary is self-contained. Copy it to your server and run it directly.
+
+## Use
+
+Upload an image, set your desired quality (1-100) and an optional target width, then download the compressed JPEG. Aspect ratio is preserved when resizing.
