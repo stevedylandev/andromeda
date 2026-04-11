@@ -1,8 +1,6 @@
 # Feeds
-
-Minimal RSS Feeds
-
-## Overview
+#
+![demo of feeds](https://files.stevedylan.dev/feeds-demo.png)
 
 Feeds is a minimal RSS reader that mimics the original experience of RSS. It's just a list of posts. No categories, no marking a post read or unread, and there is no in-app reading. With this approach you have to read the post on the author's personal website and experience it in its original context.
 
@@ -12,26 +10,57 @@ Feeds is a minimal RSS reader that mimics the original experience of RSS. It's j
 - Feeds API with JSON and OPML export
 - Dark themed UI with Commit Mono font
 
-## Quickstart
-
-```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
-cargo run -p feeds
-# Server running on http://localhost:3000
-```
+## Configure
 
 ### Environment Variables
 
 | Variable | Description | Default |
 |---|---|---|
+| `DEFAULT_FEED` | Comma-separated list of RSS feed URLs to load when no `?url=` or `?urls=` query param is provided | -- |
 | `FRESHRSS_URL` | URL of your FreshRSS instance | -- |
 | `FRESHRSS_USERNAME` | FreshRSS username | -- |
 | `FRESHRSS_PASSWORD` | FreshRSS password | -- |
 | `ADMIN_PASSWORD` | Password for the admin panel | -- |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
 
-## Usage
+The FreshRSS credentials are only needed if you want to source feeds from a FreshRSS instance.
+
+## Deploy
+
+### Railway
+
+The easiest way to deploy Feeds is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Feeds requires `ADMIN_PASSWORD` to enable the admin panel, and optionally the `FRESHRSS_*` variables if you want to source feeds from a FreshRSS instance.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Ezvmhx?referralCode=JGcIp6)
+
+### Docker
+
+```bash
+cd apps/feeds
+cp .env.sample .env
+# Edit .env with your credentials
+docker compose up -d
+```
+
+### Binary
+
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/feeds
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=feeds&expanded=true).
+
+You can also build from source:
+
+```bash
+cargo build --release -p feeds
+```
+
+The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
 
 There are several built-in ways to source RSS feeds.
 
@@ -47,6 +76,14 @@ You can also add multiple URLs by using commas to separate them:
 
 ```
 ?urls=https://bearblog.dev/discover/feed/,https://bearblog.stevedylan.dev/feed/
+```
+
+### Default Feed
+
+Set the `DEFAULT_FEED` environment variable to a comma-separated list of feed URLs and the app will load them whenever no `?url=` or `?urls=` query param is provided:
+
+```
+DEFAULT_FEED=https://bearblog.dev/discover/feed/,https://bearblog.stevedylan.dev/feed/
 ```
 
 ### OPML File
@@ -75,41 +112,3 @@ The `/feeds` endpoint exports your FreshRSS subscriptions in JSON or OPML format
 /feeds?format=json
 /feeds?format=opml
 ```
-
-## Structure
-
-```
-feeds/
-├── src/
-│   ├── main.rs        # Axum server with routing, templates, and static asset serving
-│   ├── feeds.rs       # Feed fetching, OPML parsing, and FreshRSS API integration
-│   ├── auth.rs        # Session-based authentication with constant-time password verification
-│   └── models.rs      # Data structures for feeds and FreshRSS responses
-├── templates/         # Askama HTML templates
-├── assets/            # Static assets embedded at compile time via rust-embed
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
-
-### Railway
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Ezvmhx?referralCode=JGcIp6)
-
-### Docker
-
-```bash
-cd apps/feeds
-cp .env.sample .env
-# Edit .env with your credentials
-docker compose up -d
-```
-
-### Binary
-
-```bash
-cargo build --release -p feeds
-```
-
-The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.

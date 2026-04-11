@@ -1,0 +1,46 @@
+# Deploying with Railway
+
+[Railway](https://railway.com) is halfway between a VPS (virtual private server) and a hosting platform like Netlify or Vercel. It's the perfect place to host an Andromeda app if you're a beginner, and every Andromeda app has a one-click Railway template to make it even easier.
+
+This guide walks through the general process of deploying the Andromeda app [posts](/apps/posts) to Railway. For app-specific environment variables and configuration, check the corresponding app's page.
+
+::::steps
+### Deploy
+
+On the app's page, click the `Deploy on Railway` button. If you haven't signed up for Railway yet you'll be prompted to do so before continuing.
+
+### Configure
+
+Railway will show a `Configure` button, and when you click on it you will need to fill in the environment variables for that app. Most Andromeda apps share a couple of common ones:
+
+- `SITE_URL` - The public URL your app will be hosted at. If you don't know what that URL will be yet, you can put a placeholder like `https://example.com` and update it once Railway gives you a hosted URL.
+- A password variable (e.g. `POSTS_PASSWORD`, `JOTTS_PASSWORD`, `CELLAR_PASSWORD`) - The password used to access the admin dashboard for that app.
+
+Check the specific app's page for the full list of environment variables it accepts.
+
+![railway deploying app](https://assets.andromeda.build/docs/railway-deploy-app_compressed.jpg)
+
+Once you have filled these out click the `Save Config` button at the bottom, then click `Deploy`.
+
+### Use
+
+Your app is now live. Click on the square with your app to see the hosted URL for it.
+
+![railway deployment with hosted url](https://assets.andromeda.build/docs/railway-deployment.png)
+
+If your app uses a `SITE_URL` variable, copy the hosted URL, go into the `Variables` tab, click `Edit` for the `SITE_URL` variable, and paste in the new value. This makes sure the app is fully functional.
+
+![railway edit existing variable](https://assets.andromeda.build/docs/railway-edit-variable.png)
+
+Those Railway URLs are not pretty, so if you have a custom domain, visit the `Settings` tab and under the `Networking` section click `+ Custom Domain` to set it up. Make sure to update the `SITE_URL` variable again after you do this.
+::::
+
+Check out the other available Andromeda apps! Each one has its own one-click Railway template on its page, along with the full list of environment variables it accepts.
+
+- [Posts](/apps/posts) - A minimal CMS blog with an admin interface.
+- [Jotts](/apps/jotts) - A minimal self-hosted markdown notes app.
+- [Cellar](/apps/cellar) - A minimal wine collection tracker.
+- [Feeds](/apps/feeds) - A minimal RSS reader that sends you back to the author's site to read posts in their original context.
+- [Shrink](/apps/shrink) - A simple self-hosted tool for compressing and resizing images.
+- [Sipp](/apps/sipp) - A single binary for code sharing with a web server and interactive TUI.
+- [OG](/apps/og) - A simple web tool for inspecting Open Graph tags on any URL.

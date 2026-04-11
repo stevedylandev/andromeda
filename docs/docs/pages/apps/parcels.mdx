@@ -1,12 +1,11 @@
 # Parcels
 
-A minimal package tracking app
+![demo of parcels](https://files.stevedylan.dev/parcels-demo.png)
+
 
 :::warning
 This app originally used USPS, but starting April 1st 2026, it has become much harder to obtain/maintain API keys.
 :::
-
-## Overview
 
 A self-hosted package tracker for USPS. Track your packages without logging into USPS every time.
 
@@ -16,15 +15,7 @@ A self-hosted package tracker for USPS. Track your packages without logging into
 - Track USPS packages with custom labels
 - Delete packages you no longer want to track
 
-## Quickstart
-
-```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
-cp apps/parcels/.env.example .env
-# Edit .env with your USPS API credentials and app password
-cargo run -p parcels
-```
+## Configure
 
 You'll need a [USPS Web Tools API](https://developer.usps.com) account to get your `USPS_CLIENT_ID` and `USPS_CLIENT_SECRET`.
 
@@ -39,29 +30,11 @@ You'll need a [USPS Web Tools API](https://developer.usps.com) account to get yo
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
 
-## Structure
-
-```
-parcels/
-├── src/
-│   ├── main.rs        # Axum web server, routes, and app state
-│   ├── auth.rs        # Password verification and session management
-│   ├── db.rs          # SQLite database layer (packages, events, sessions)
-│   └── usps.rs        # USPS API integration with OAuth2 token caching
-├── templates/         # Askama HTML templates
-│   ├── base.html      # Base layout
-│   ├── index.html     # Package list
-│   ├── detail.html    # Package detail with tracking events
-│   ├── add.html       # Add package form
-│   └── login.html     # Login page
-├── static/            # Fonts, favicons, and images
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
+## Deploy
 
 ### Railway
+
+The easiest way to deploy Parcels is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Parcels requires `APP_PASSWORD`, `USPS_CLIENT_ID`, and `USPS_CLIENT_SECRET` to be set during the configure step.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/HNQUs4?referralCode=JGcIp6)
 
@@ -78,8 +51,22 @@ This will start Parcels on port `3000` with a persistent volume for the SQLite d
 
 ### Binary
 
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/parcels
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=parcels&expanded=true).
+
+You can also build from source:
+
 ```bash
 cargo build --release -p parcels
 ```
 
 The resulting binary is self-contained (~7MB). Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Log in with your configured password, then add packages by entering a USPS tracking number and an optional label. Your packages and their tracking events are displayed on the main page. Delete packages you no longer need to track.

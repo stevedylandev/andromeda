@@ -1,0 +1,81 @@
+# Cellar
+
+![demo of cellar](https://files.stevedylan.dev/cellar-demo.png)
+
+A simple, self-hosted wine collection app built with Rust.
+
+- Single binary with embedded assets
+- Password authentication with session cookies
+- Add, edit, and delete wines from your collection
+- AI-powered tasting notes via Claude
+- Pentagon and bar visualizations for wine profiles
+- Image upload with automatic JPEG processing
+- Dark themed UI with Commit Mono font
+- SQLite for persistent storage
+
+## Configure
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `CELLAR_PASSWORD` | Password for login authentication | `changeme` |
+| `CELLAR_DB_PATH` | SQLite database file path | `cellar.sqlite` |
+| `ANTHROPIC_API_KEY` | Anthropic API key for AI features | |
+| `HOST` | Server bind address | `127.0.0.1` |
+| `PORT` | Server port | `3000` |
+| `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+
+The `ANTHROPIC_API_KEY` is optional but required for AI-powered tasting notes and image analysis.
+
+## Deploy
+
+### Railway
+
+The easiest way to deploy Cellar is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Cellar requires `CELLAR_PASSWORD` during the configure step, and optionally `ANTHROPIC_API_KEY` if you want AI-powered tasting notes and image analysis.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/MNprVh?referralCode=JGcIp6)
+
+### Docker
+
+```bash
+git clone https://github.com/stevedylandev/cellar.git
+cd cellar
+cp .env.example .env
+# Edit .env with your password and Anthropic API key
+docker compose up -d
+```
+
+This will start Cellar on port `3000` with a persistent volume for the SQLite database.
+
+### Binary
+
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/cellar
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=cellar&expanded=true).
+
+You can also build from source:
+
+```bash
+cargo build --release -p cellar
+```
+
+The resulting binary at `./target/release/cellar` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Your wine collection is publicly viewable at `/` with individual wine pages at `/wines/{short_id}`.
+
+### Admin
+
+Log in at `/admin/login` with your configured password to access the admin pages.
+
+| Page | Description |
+|---|---|
+| `/admin` | Admin dashboard listing every wine in your collection |
+| `/admin/new` | Add a new wine, optionally using AI image analysis to prefill details |
+| `/admin/edit/{short_id}` | Edit an existing wine |
