@@ -7,8 +7,8 @@ export default defineConfig({
   markdown: {
     code: {
       themes: {
-        light: "min-light",
-        dark: "slack-dark",
+        light: "github-light-default",
+        dark: "github-dark-default",
       },
     },
   },
@@ -30,6 +30,10 @@ export default defineConfig({
         {
           text: 'What is Andromeda',
           link: '/what-is-andromeda',
+        },
+        {
+          text: 'Deploying with Railway',
+          link: '/deploy-railway',
         },
       ],
     },

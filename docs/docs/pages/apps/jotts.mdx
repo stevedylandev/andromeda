@@ -2,10 +2,6 @@
 
 ![demo of jotts](https://files.stevedylan.dev/jotts-demo.png)
 
-A minimal notes app
-
-## Overview
-
 A simple, self-hosted markdown note app built with Rust.
 
 - Single ~7MB Rust binary with embedded assets
@@ -15,15 +11,7 @@ A simple, self-hosted markdown note app built with Rust.
 - Dark themed UI with Commit Mono font
 - SQLite for persistent storage
 
-## Quickstart
-
-```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
-cp apps/jotts/.env.example .env
-# Edit .env with your password
-cargo run -p jotts
-```
+## Configure
 
 ### Environment Variables
 
@@ -35,31 +23,11 @@ cargo run -p jotts
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
 
-## Structure
-
-```
-jotts/
-├── src/
-│   ├── main.rs        # App entrypoint, env vars, starts server
-│   ├── server.rs      # Axum router, HTTP handlers, and templates
-│   ├── auth.rs        # Password verification and session management
-│   └── db.rs          # SQLite database layer (notes, sessions)
-├── templates/         # Askama HTML templates
-│   ├── base.html      # Base layout with header and nav
-│   ├── login.html     # Login page
-│   ├── index.html     # Note list
-│   ├── view.html      # Single note display
-│   ├── new.html       # Create note form
-│   └── edit.html      # Edit note form
-├── static/            # Favicons, og:image, styles, and webmanifest
-├── assets/            # Commit Mono font files
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
+## Deploy
 
 ### Railway
+
+The easiest way to deploy Jotts is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Jotts requires `JOTTS_PASSWORD` to be set during the configure step.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DLhUhH?referralCode=JGcIp6)
 
@@ -76,8 +44,22 @@ This will start Jotts on port `3000` with a persistent volume for the SQLite dat
 
 ### Binary
 
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/jotts
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=jotts&expanded=true).
+
+You can also build from source:
+
 ```bash
 cargo build --release -p jotts
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Log in at `/login` with your configured password. From there you can create, edit, and delete markdown notes. Notes support GitHub-flavored markdown including strikethrough, tables, and task lists.

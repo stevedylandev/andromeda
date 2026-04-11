@@ -2,10 +2,6 @@
 
 ![demo of posts](https://assets.andromeda.build/posts-demo.png)
 
-A minimal CMS blog with admin interface
-
-## Overview
-
 A self-hosted blog CMS built with Rust.
 
 - Single Rust binary with embedded assets
@@ -18,15 +14,7 @@ A self-hosted blog CMS built with Rust.
 - Dark themed UI with Commit Mono font
 - SQLite for persistent storage
 
-## Quickstart
-
-```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
-cp apps/posts/.env.example .env
-# Edit .env with your password
-cargo run -p posts
-```
+## Configure
 
 ### Environment Variables
 
@@ -40,38 +28,11 @@ cargo run -p posts
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
 
-## Structure
-
-```
-posts/
-├── src/
-│   ├── main.rs        # App entrypoint, env vars, starts server
-│   ├── server.rs      # Axum router, HTTP handlers, and templates
-│   ├── auth.rs        # Password verification and session management
-│   └── db.rs          # SQLite database layer (posts, pages, files, settings, sessions)
-├── templates/         # Askama HTML templates
-│   ├── base.html            # Public base layout
-│   ├── index.html           # Blog home page
-│   ├── post.html            # Single post view
-│   ├── posts.html           # Post listing
-│   ├── page.html            # Static page view
-│   ├── login.html           # Login page
-│   ├── admin_base.html      # Admin layout
-│   ├── admin_index.html     # Admin dashboard
-│   ├── admin_post_form.html # Create/edit post form
-│   ├── admin_pages.html     # Admin page listing
-│   ├── admin_page_form.html # Create/edit page form
-│   ├── admin_files.html     # File upload management
-│   └── admin_settings.html  # Blog settings
-├── static/            # Favicons, fonts, and styles
-├── uploads/           # Uploaded files directory
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
+## Deploy
 
 ### Railway
+
+The easiest way to deploy Posts is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Posts requires `POSTS_PASSWORD` and `SITE_URL` to be set during the configure step.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tYtJYp?referralCode=JGcIp6)
 
@@ -88,8 +49,22 @@ This will start Posts on port `3000` with a persistent volume for the SQLite dat
 
 ### Binary
 
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/posts
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=posts&expanded=true).
+
+You can also build from source:
+
 ```bash
 cargo build --release -p posts
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Log in at `/login` with your configured password to access the admin panel. From there you can manage blog posts, static pages, file uploads, and site settings including custom CSS. Your blog's RSS feed is available at `/feed.xml`.

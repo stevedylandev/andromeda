@@ -2,10 +2,6 @@
 
 ![demo of og](https://files.stevedylan.dev/og-demo.png)
 
-A simple web tool for inspecting Open Graph tags on any URL.
-
-## Overview
-
 A self-hosted Open Graph tag inspector built with Rust. Enter any URL and instantly see its OG metadata.
 
 - Single Rust binary with embedded assets
@@ -13,13 +9,7 @@ A self-hosted Open Graph tag inspector built with Rust. Enter any URL and instan
 - Dark themed UI with Commit Mono font
 - No database needed -- fully stateless
 
-## Quickstart
-
-```bash
-git clone https://github.com/stevedylandev/andromeda.git
-cd andromeda
-cargo run -p og
-```
+## Configure
 
 ### Environment Variables
 
@@ -27,26 +17,11 @@ cargo run -p og
 |---|---|---|
 | `PORT` | Server port | `3000` |
 
-## Structure
-
-```
-og/
-├── src/
-│   ├── main.rs        # Entry point and server startup
-│   ├── server.rs      # Axum routes and request handling
-│   └── og.rs          # Open Graph tag fetching and parsing
-├── templates/         # Askama HTML templates
-│   ├── base.html      # Base layout
-│   ├── index.html     # Search form
-│   └── results.html   # OG tag results display
-├── static/            # Fonts, favicons, and styles
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
+## Deploy
 
 ### Railway
+
+The easiest way to deploy OG is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. OG is fully stateless and needs no environment variables beyond the defaults.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/OdXBt_?referralCode=JGcIp6)
 
@@ -59,8 +34,22 @@ docker compose up -d
 
 ### Binary
 
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/og
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=og&expanded=true).
+
+You can also build from source:
+
 ```bash
 cargo build --release -p og
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server and run it directly.
+
+## Use
+
+Enter any URL to inspect its Open Graph tags including title, description, and image. Results are displayed instantly with no account or configuration needed.
