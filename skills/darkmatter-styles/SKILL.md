@@ -1,13 +1,13 @@
 ---
 name: darkmatter-styles
-description: Use when building any web UI for Steve - applies his personal dark aesthetic with Commit Mono font, #121113 background, white borders, minimal layout, and max-width centered content. Use for new pages, components, or when asked to match his existing style.
+description: Applies the Darkmatter aesthetic - Commit Mono font, #121113 background, white borders, minimal layout, and max-width centered content. Use for new pages, components, or when asked to match the Andromeda style.
 ---
 
 # Darkmatter Styles
 
 ## Overview
 
-Steve's personal web aesthetic: dark, minimal, monospace. No frameworks, no decorative flourishes. Everything is functional and stark.
+The Darkmatter aesthetic: dark, minimal, monospace. No frameworks, no decorative flourishes. Everything is functional and stark.
 
 ## Core Palette
 

@@ -2,10 +2,6 @@
 
 ![demo of sipp](https://files.stevedylan.dev/sipp-demo.png)
 
-Minimal code sharing
-
-## Overview
-
 A single binary for code sharing with a web server and interactive TUI.
 
 - Create snippets and share on the web
@@ -17,81 +13,27 @@ A single binary for code sharing with a web server and interactive TUI.
 A small demo instance runs at [sipp.so](https://sipp.so). All snippets created there are public and might be deleted at any time; host your own instance with your own API key for personal use!
 :::
 
-## Quickstart
-
-```bash
-cargo install sipp-so
-sipp --help
-```
-
-Start a server and create a snippet:
-
-```bash
-sipp server --port 3000
-```
-
-```bash
-# Path to file
-sipp path/to/file.rs
-
-# Or use the interactive TUI
-sipp
-```
-
-### Install
+## Install
 
 Sipp can be installed several ways:
 
-#### Homebrew
+### Homebrew
 
 ```bash
 brew install stevedylandev/tap/sipp-so
 ```
 
-#### Cargo
+### Cargo
 
 ```bash
 cargo install sipp-so
 ```
 
-#### Releases
+### Releases
 
 Visit the [releases](https://github.com/stevedylandev/sipp/releases) page for binaries and install scripts.
 
-## CLI
-
-```
-sipp [OPTIONS] [FILE] [COMMAND]
-```
-
-### Commands
-
-| Command | Description |
-|---|---|
-| `server` | Start the web server |
-| `tui` | Launch the interactive TUI |
-| `auth` | Save remote URL and API key to config file |
-
-### Arguments
-
-| Argument | Description |
-|---|---|
-| `[FILE]` | File path to create a snippet from |
-
-### Options
-
-| Option | Description |
-|---|---|
-| `-r, --remote <URL>` | Remote server URL (env: `SIPP_REMOTE_URL`) |
-| `-k, --api-key <KEY>` | API key for authenticated operations (env: `SIPP_API_KEY`) |
-
-## Server
-
-Sipp includes a built-in web server powered by Axum. Start it with:
-
-```bash
-sipp server --port 3000 --host localhost
-```
+## Configure
 
 ### Environment Variables
 
@@ -102,7 +44,66 @@ sipp server --port 3000 --host localhost
 | `SIPP_MAX_CONTENT_SIZE` | Maximum snippet content size in bytes (defaults to `512000` / 500 KB) |
 | `SIPP_DB_PATH` | Custom path for the SQLite database file (defaults to `sipp.sqlite`) |
 
-### API Endpoints
+## Deploy
+
+### Railway
+
+The easiest way to deploy a Sipp server is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Set `SIPP_API_KEY` during the configure step to protect your authenticated endpoints.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Axcf_D?referralCode=JGcIp6)
+
+### Docker
+
+```bash
+SIPP_API_KEY=your-secret-key docker compose up -d
+```
+
+### Binary
+
+```bash
+cargo build --release -p sipp
+```
+
+The resulting binary is self-contained with all assets embedded. Copy it to your server with your environment variables configured and run it directly.
+
+## Use
+
+### CLI
+
+```
+sipp [OPTIONS] [FILE] [COMMAND]
+```
+
+#### Commands
+
+| Command | Description |
+|---|---|
+| `server` | Start the web server |
+| `tui` | Launch the interactive TUI |
+| `auth` | Save remote URL and API key to config file |
+
+#### Arguments
+
+| Argument | Description |
+|---|---|
+| `[FILE]` | File path to create a snippet from |
+
+#### Options
+
+| Option | Description |
+|---|---|
+| `-r, --remote <URL>` | Remote server URL (env: `SIPP_REMOTE_URL`) |
+| `-k, --api-key <KEY>` | API key for authenticated operations (env: `SIPP_API_KEY`) |
+
+### Server
+
+Start the web server with:
+
+```bash
+sipp server --port 3000 --host localhost
+```
+
+#### API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -114,7 +115,7 @@ sipp server --port 3000 --host localhost
 
 Authenticated endpoints require an `x-api-key` header.
 
-### Raw Output for CLI Tools
+#### Raw Output for CLI Tools
 
 When you access a snippet URL (`/s/{short_id}`) with `curl`, `wget`, or `httpie`, the server returns the raw content as plain text instead of HTML:
 
@@ -122,7 +123,7 @@ When you access a snippet URL (`/s/{short_id}`) with `curl`, `wget`, or `httpie`
 curl https://sipp.so/s/abc123
 ```
 
-## TUI
+### TUI
 
 The Sipp TUI makes it easy to create, copy, share, and manage your snippets either locally or remotely.
 
@@ -137,17 +138,17 @@ sipp tui
 sipp -r https://sipp.so -k your-api-key
 ```
 
-### Local Access
+#### Local Access
 
 If you are running `sipp` in the same directory as the `sipp.sqlite` file created by the server instance, the TUI will automatically access the database locally.
 
-### Remote Access
+#### Remote Access
 
 To access a remote instance:
 - Set the `SIPP_API_KEY` variable in your server instance
 - Run `sipp auth` to enter your server URL and API key, stored under `$HOME/.config/sipp`
 
-### Keybindings
+#### Keybindings
 
 | Key | Action |
 |---|---|
@@ -165,42 +166,3 @@ To access a remote instance:
 | `r` | Refresh snippets (remote only) |
 | `q` | Quit |
 | `?` | Toggle help |
-
-## Structure
-
-```
-sipp/
-├── src/
-│   ├── main.rs        # CLI argument parsing and entry point
-│   ├── lib.rs         # Library exports
-│   ├── server.rs      # Axum web server, routes, and templates
-│   ├── tui.rs         # Interactive terminal UI
-│   ├── db.rs          # SQLite database layer
-│   ├── backend.rs     # Local/remote backend abstraction
-│   ├── config.rs      # Config file management
-│   └── highlight.rs   # Syntax highlighting with custom themes
-├── templates/         # Askama HTML templates
-├── static/            # Fonts, favicons, and styles
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
-
-### Railway
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Axcf_D?referralCode=JGcIp6)
-
-### Docker
-
-```bash
-SIPP_API_KEY=your-secret-key docker compose up -d
-```
-
-### Binary
-
-```bash
-cargo build --release -p sipp
-```
-
-The resulting binary is self-contained with all assets embedded. Copy it to your server with your environment variables configured and run it directly.
