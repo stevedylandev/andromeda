@@ -35,6 +35,13 @@ impl FromRequestParts<Arc<AppState>> for AuthSession {
     }
 }
 
+pub fn is_authenticated(state: &AppState, headers: &axum::http::HeaderMap) -> bool {
+    if let Some(token) = andromeda_auth::extract_session_cookie(headers) {
+        return is_valid_session(state, &token);
+    }
+    false
+}
+
 fn is_valid_session(state: &AppState, token: &str) -> bool {
     match db::get_session_expiry(&state.db, token) {
         Ok(Some(expires_at)) => {

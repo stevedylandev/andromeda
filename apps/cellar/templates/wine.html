@@ -14,10 +14,12 @@
         <img src="/wines/{{ wine.short_id }}/image" alt="{{ wine.name }}" class="wine-image">
       </div>
       {% endif %}
+      {% if !wine.wishlist %}
       <div class="wine-detail-chart">
         {{ pentagon_svg|safe }}
         {{ bars_svg|safe }}
       </div>
+      {% endif %}
     </div>
     <div class="wine-detail-meta">
       {% if !wine.origin.is_empty() %}
