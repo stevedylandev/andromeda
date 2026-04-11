@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Admin - Cellar{% endblock %}
+{% block title %}Wishlist - Cellar{% endblock %}
 {% block nav %}
   <nav class="links">
-    <a href="/admin/new">new</a>
-    <a href="/wishlist">wishlist</a>
+    <a href="/admin/wishlist/new">new</a>
+    <a href="/">cellar</a>
   </nav>
 {% endblock %}
 {% block content %}
   {% if wines.is_empty() %}
-    <p class="empty">no wines yet</p>
+    <p class="empty">wishlist empty</p>
   {% endif %}
   <div class="admin-list">
     {% for wine in wines %}
@@ -17,12 +17,17 @@
         <a href="/wines/{{ wine.short_id }}" class="admin-item-name">{{ wine.name }}</a>
         <span class="admin-item-meta">{{ wine.origin }}{% if !wine.grape.is_empty() %} &middot; {{ wine.grape }}{% endif %}</span>
       </div>
+      {% if is_admin %}
       <div class="admin-actions">
-        <a href="/admin/edit/{{ wine.short_id }}">edit</a>
-        <form method="POST" action="/admin/delete/{{ wine.short_id }}" class="inline-form" onsubmit="return confirm('delete this wine?')">
+        <a href="/admin/wishlist/edit/{{ wine.short_id }}">edit</a>
+        <form method="POST" action="/admin/wishlist/promote/{{ wine.short_id }}" class="inline-form">
+          <button type="submit" class="link-button">promote</button>
+        </form>
+        <form method="POST" action="/admin/wishlist/delete/{{ wine.short_id }}" class="inline-form" onsubmit="return confirm('delete this wine?')">
           <button type="submit" class="link-button">delete</button>
         </form>
       </div>
+      {% endif %}
     </div>
     {% endfor %}
   </div>

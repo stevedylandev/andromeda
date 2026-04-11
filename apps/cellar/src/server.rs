@@ -73,6 +73,21 @@ struct WineFormTemplate {
     has_anthropic_key: bool,
 }
 
+#[derive(Template)]
+#[template(path = "wishlist.html")]
+struct WishlistTemplate {
+    wines: Vec<Wine>,
+    is_admin: bool,
+}
+
+#[derive(Template)]
+#[template(path = "wishlist_form.html")]
+struct WishlistFormTemplate {
+    wine: Option<Wine>,
+    error: Option<String>,
+    has_anthropic_key: bool,
+}
+
 // --- Query/Form structs ---
 
 #[derive(serde::Deserialize, Default)]
@@ -382,7 +397,7 @@ async fn get_logout(State(state): State<Arc<AppState>>, headers: axum::http::Hea
 // --- Public handlers ---
 
 async fn get_index(State(state): State<Arc<AppState>>) -> Response {
-    match db::get_all_wines(&state.db) {
+    match db::get_cellar_wines(&state.db) {
         Ok(wines) => {
             let wines: Vec<WineWithSvg> = wines
                 .into_iter()
@@ -470,7 +485,7 @@ async fn get_admin(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
 ) -> Response {
-    match db::get_all_wines(&state.db) {
+    match db::get_cellar_wines(&state.db) {
         Ok(wines) => WebTemplate(AdminTemplate { wines }).into_response(),
         Err(e) => {
             tracing::error!("Failed to list wines: {}", e);
@@ -657,6 +672,7 @@ async fn post_new_wine(
         data.aroma_intensity,
         data.nose_complexity,
         &data.background,
+        false,
     ) {
         Ok(wine) => Redirect::to(&format!("/wines/{}", wine.short_id)).into_response(),
         Err(e) => {
@@ -730,6 +746,216 @@ async fn post_delete_wine(
         Err(e) => {
             tracing::error!("Failed to delete wine: {}", e);
             Redirect::to("/admin").into_response()
+        }
+    }
+}
+
+// --- Wishlist ---
+
+struct WishlistFormData {
+    name: String,
+    origin: String,
+    grape: String,
+    notes: String,
+    background: String,
+    image: Option<Vec<u8>>,
+    image_mime: Option<String>,
+}
+
+async fn parse_wishlist_multipart(mut multipart: Multipart) -> Result<WishlistFormData, String> {
+    let mut name = String::new();
+    let mut origin = String::new();
+    let mut grape = String::new();
+    let mut notes = String::new();
+    let mut background = String::new();
+    let mut image: Option<Vec<u8>> = None;
+    let mut image_mime: Option<String> = None;
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let field_name = field.name().unwrap_or("").to_string();
+        match field_name.as_str() {
+            "image" => {
+                let bytes = field.bytes().await.map_err(|e| format!("Failed to read image: {}", e))?;
+                if !bytes.is_empty() {
+                    let processed = process_image(&bytes)?;
+                    image = Some(processed);
+                    image_mime = Some("image/jpeg".to_string());
+                }
+            }
+            "name" => name = field.text().await.unwrap_or_default(),
+            "origin" => origin = field.text().await.unwrap_or_default(),
+            "grape" => grape = field.text().await.unwrap_or_default(),
+            "notes" => notes = field.text().await.unwrap_or_default(),
+            "background" => background = field.text().await.unwrap_or_default(),
+            _ => {}
+        }
+    }
+
+    if name.trim().is_empty() {
+        return Err("Name is required".to_string());
+    }
+
+    Ok(WishlistFormData {
+        name: name.trim().to_string(),
+        origin: origin.trim().to_string(),
+        grape: grape.trim().to_string(),
+        notes: notes.trim().to_string(),
+        background: background.trim().to_string(),
+        image,
+        image_mime,
+    })
+}
+
+async fn get_wishlist(
+    State(state): State<Arc<AppState>>,
+    headers: axum::http::HeaderMap,
+) -> Response {
+    let is_admin = auth::is_authenticated(&state, &headers);
+    match db::get_wishlist_wines(&state.db) {
+        Ok(wines) => WebTemplate(WishlistTemplate { wines, is_admin }).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to list wishlist: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
+        }
+    }
+}
+
+async fn get_new_wishlist_wine(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Query(q): Query<FlashQuery>,
+) -> Response {
+    WebTemplate(WishlistFormTemplate {
+        wine: None,
+        error: q.error,
+        has_anthropic_key: state.anthropic_api_key.is_some(),
+    })
+    .into_response()
+}
+
+async fn get_edit_wishlist_wine(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+    Query(q): Query<FlashQuery>,
+) -> Response {
+    match db::get_wine_by_short_id(&state.db, &short_id) {
+        Ok(Some(wine)) => WebTemplate(WishlistFormTemplate {
+            wine: Some(wine),
+            error: q.error,
+            has_anthropic_key: state.anthropic_api_key.is_some(),
+        })
+        .into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Html("Wine not found".to_string())).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to get wine: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
+        }
+    }
+}
+
+async fn post_new_wishlist_wine(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    multipart: Multipart,
+) -> Response {
+    let data = match parse_wishlist_multipart(multipart).await {
+        Ok(data) => data,
+        Err(e) => {
+            return Redirect::to(&format!("/admin/wishlist/new?error={}", urlencoded(&e))).into_response();
+        }
+    };
+
+    match db::create_wine(
+        &state.db,
+        &data.name,
+        &data.origin,
+        &data.grape,
+        &data.notes,
+        data.image.as_deref(),
+        data.image_mime.as_deref(),
+        3, 3, 3, 3, 3, 3, 3, 3, 3,
+        &data.background,
+        true,
+    ) {
+        Ok(_) => Redirect::to("/wishlist").into_response(),
+        Err(e) => {
+            tracing::error!("Failed to create wishlist wine: {}", e);
+            Redirect::to("/admin/wishlist/new?error=Failed+to+create+wine").into_response()
+        }
+    }
+}
+
+async fn post_edit_wishlist_wine(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+    multipart: Multipart,
+) -> Response {
+    let data = match parse_wishlist_multipart(multipart).await {
+        Ok(data) => data,
+        Err(e) => {
+            return Redirect::to(&format!("/admin/wishlist/edit/{}?error={}", short_id, urlencoded(&e)))
+                .into_response();
+        }
+    };
+
+    match db::update_wishlist_wine(
+        &state.db,
+        &short_id,
+        &data.name,
+        &data.origin,
+        &data.grape,
+        &data.notes,
+        &data.background,
+    ) {
+        Ok(Some(_)) => {
+            if let Some(image) = &data.image {
+                if let Some(mime) = &data.image_mime {
+                    if let Err(e) = db::update_wine_image(&state.db, &short_id, image, mime) {
+                        tracing::error!("Failed to update wine image: {}", e);
+                    }
+                }
+            }
+            Redirect::to("/wishlist").into_response()
+        }
+        Ok(None) => (StatusCode::NOT_FOUND, Html("Wine not found".to_string())).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to update wishlist wine: {}", e);
+            Redirect::to(&format!(
+                "/admin/wishlist/edit/{}?error=Failed+to+update+wine",
+                short_id
+            ))
+            .into_response()
+        }
+    }
+}
+
+async fn post_delete_wishlist_wine(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::delete_wine(&state.db, &short_id) {
+        Ok(_) => Redirect::to("/wishlist").into_response(),
+        Err(e) => {
+            tracing::error!("Failed to delete wine: {}", e);
+            Redirect::to("/wishlist").into_response()
+        }
+    }
+}
+
+async fn post_promote_wine(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::promote_wine(&state.db, &short_id) {
+        Ok(true) => Redirect::to(&format!("/admin/edit/{}", short_id)).into_response(),
+        Ok(false) => (StatusCode::NOT_FOUND, Html("Wine not found".to_string())).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to promote wine: {}", e);
+            Redirect::to("/wishlist").into_response()
         }
     }
 }
@@ -845,6 +1071,12 @@ pub async fn run(host: String, port: u16) {
         .route("/admin/new", get(get_new_wine).post(post_new_wine))
         .route("/admin/edit/{short_id}", get(get_edit_wine).post(post_edit_wine))
         .route("/admin/delete/{short_id}", post(post_delete_wine))
+        // Wishlist public (admin actions inline when authenticated)
+        .route("/wishlist", get(get_wishlist))
+        .route("/admin/wishlist/new", get(get_new_wishlist_wine).post(post_new_wishlist_wine))
+        .route("/admin/wishlist/edit/{short_id}", get(get_edit_wishlist_wine).post(post_edit_wishlist_wine))
+        .route("/admin/wishlist/delete/{short_id}", post(post_delete_wishlist_wine))
+        .route("/admin/wishlist/promote/{short_id}", post(post_promote_wine))
         // Claude vision
         .route("/admin/analyze-image", post(post_analyze_image))
         // Static assets
