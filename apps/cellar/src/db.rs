@@ -50,6 +50,7 @@ pub struct Wine {
     pub nose_complexity: i32,
     pub background: String,
     pub created_at: String,
+    pub wishlist: bool,
 }
 
 pub fn init_db() -> Db {
@@ -91,6 +92,9 @@ pub fn init_db() -> Db {
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN aroma_intensity INTEGER NOT NULL DEFAULT 3", []);
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN nose_complexity INTEGER NOT NULL DEFAULT 3", []);
 
+    // Migration: add wishlist flag
+    let _ = conn.execute("ALTER TABLE wines ADD COLUMN wishlist INTEGER NOT NULL DEFAULT 0", []);
+
     Arc::new(Mutex::new(conn))
 }
 
@@ -115,11 +119,12 @@ fn wine_from_row(row: &rusqlite::Row) -> rusqlite::Result<Wine> {
         nose_complexity: row.get(16)?,
         background: row.get(17)?,
         created_at: row.get(18)?,
+        wishlist: row.get::<_, i32>(19)? != 0,
     })
 }
 
 const WINE_COLUMNS: &str =
-    "id, short_id, name, origin, grape, notes, (image IS NOT NULL) AS has_image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, created_at";
+    "id, short_id, name, origin, grape, notes, (image IS NOT NULL) AS has_image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, created_at, wishlist";
 
 pub fn create_wine(
     db: &Db,
@@ -139,13 +144,15 @@ pub fn create_wine(
     aroma_intensity: i32,
     nose_complexity: i32,
     background: &str,
+    wishlist: bool,
 ) -> Result<Wine, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let short_id = nanoid!(10);
+    let wishlist_int: i32 = if wishlist { 1 } else { 0 };
     conn.execute(
-        "INSERT INTO wines (short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
-        params![short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background],
+        "INSERT INTO wines (short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, wishlist)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+        params![short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, wishlist_int],
     )?;
     let id = conn.last_insert_rowid();
     let wine = conn.query_row(
@@ -156,16 +163,68 @@ pub fn create_wine(
     Ok(wine)
 }
 
-pub fn get_all_wines(db: &Db) -> Result<Vec<Wine>, DbError> {
+pub fn get_cellar_wines(db: &Db) -> Result<Vec<Wine>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let mut stmt = conn.prepare(&format!(
-        "SELECT {} FROM wines ORDER BY id DESC",
+        "SELECT {} FROM wines WHERE wishlist = 0 ORDER BY id DESC",
         WINE_COLUMNS
     ))?;
     let wines = stmt
         .query_map([], wine_from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(wines)
+}
+
+pub fn get_wishlist_wines(db: &Db) -> Result<Vec<Wine>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {} FROM wines WHERE wishlist = 1 ORDER BY id DESC",
+        WINE_COLUMNS
+    ))?;
+    let wines = stmt
+        .query_map([], wine_from_row)?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(wines)
+}
+
+pub fn promote_wine(db: &Db, short_id: &str) -> Result<bool, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let rows = conn.execute(
+        "UPDATE wines SET wishlist = 0 WHERE short_id = ?1 AND wishlist = 1",
+        params![short_id],
+    )?;
+    Ok(rows > 0)
+}
+
+pub fn update_wishlist_wine(
+    db: &Db,
+    short_id: &str,
+    name: &str,
+    origin: &str,
+    grape: &str,
+    notes: &str,
+    background: &str,
+) -> Result<Option<Wine>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let rows = conn.execute(
+        "UPDATE wines SET name = ?1, origin = ?2, grape = ?3, notes = ?4, background = ?5 WHERE short_id = ?6 AND wishlist = 1",
+        params![name, origin, grape, notes, background, short_id],
+    )?;
+    if rows == 0 {
+        return Ok(None);
+    }
+    match conn.query_row(
+        &format!(
+            "SELECT {} FROM wines WHERE short_id = ?1",
+            WINE_COLUMNS
+        ),
+        params![short_id],
+        wine_from_row,
+    ) {
+        Ok(wine) => Ok(Some(wine)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(e) => Err(DbError::Sqlite(e)),
+    }
 }
 
 pub fn get_wine_by_short_id(db: &Db, short_id: &str) -> Result<Option<Wine>, DbError> {
