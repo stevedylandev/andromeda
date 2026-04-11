@@ -68,7 +68,7 @@ The resulting binary at `./target/release/cellar` is self-contained with all ass
 
 ## Use
 
-Your wine collection is publicly viewable at `/` with individual wine pages at `/wines/{short_id}`.
+Your wine collection is publicly viewable at `/` with individual wine pages at `/wines/{short_id}`. The `/wishlist` page lists wines you want to try but haven't tasted yet — no scores, no pentagon chart, just the basics. Promote a wishlist wine once you've tasted it to move it into the main cellar and fill in scores.
 
 ### Admin
 
@@ -79,3 +79,6 @@ Log in at `/admin/login` with your configured password to access the admin pages
 | `/admin` | Admin dashboard listing every wine in your collection |
 | `/admin/new` | Add a new wine, optionally using AI image analysis to prefill details |
 | `/admin/edit/{short_id}` | Edit an existing wine |
+| `/wishlist` | Wishlist view — shows inline edit/promote/delete actions when logged in |
+| `/admin/wishlist/new` | Add a new wine to the wishlist (no scores) |
+| `/admin/wishlist/edit/{short_id}` | Edit a wishlist wine |
