@@ -4181,6 +4181,7 @@ dependencies = [
  "serde_json",
  "subtle",
  "syntect",
+ "tempfile",
  "tokio",
  "toml",
  "tower-http",

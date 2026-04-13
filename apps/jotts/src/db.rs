@@ -212,3 +212,115 @@ pub fn prune_expired_sessions(db: &Db) -> Result<(), DbError> {
     )?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_db() -> Db {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS notes (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_id   TEXT NOT NULL UNIQUE,
+                title      TEXT NOT NULL,
+                content    TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS sessions (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                token      TEXT NOT NULL UNIQUE,
+                expires_at TEXT NOT NULL
+            );",
+        )
+        .unwrap();
+        Arc::new(Mutex::new(conn))
+    }
+
+    // ── Note CRUD ──────────────────────────────────────────────────────
+
+    #[test]
+    fn create_and_get_note() {
+        let db = test_db();
+        let note = create_note(&db, "My Note", "Some content").unwrap();
+        assert_eq!(note.title, "My Note");
+        assert_eq!(note.content, "Some content");
+
+        let fetched = get_note_by_short_id(&db, &note.short_id).unwrap().unwrap();
+        assert_eq!(fetched.title, "My Note");
+    }
+
+    #[test]
+    fn get_note_not_found() {
+        let db = test_db();
+        assert!(get_note_by_short_id(&db, "nope").unwrap().is_none());
+    }
+
+    #[test]
+    fn get_all_notes_ordered_desc() {
+        let db = test_db();
+        create_note(&db, "First", "a").unwrap();
+        create_note(&db, "Second", "b").unwrap();
+
+        let all = get_all_notes(&db).unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].title, "Second");
+        assert_eq!(all[1].title, "First");
+    }
+
+    #[test]
+    fn update_note() {
+        let db = test_db();
+        let note = create_note(&db, "Old", "old").unwrap();
+        let updated = update_note_by_short_id(&db, &note.short_id, "New", "new")
+            .unwrap()
+            .unwrap();
+        assert_eq!(updated.title, "New");
+        assert_eq!(updated.content, "new");
+    }
+
+    #[test]
+    fn update_nonexistent_note() {
+        let db = test_db();
+        assert!(update_note_by_short_id(&db, "nope", "x", "x").unwrap().is_none());
+    }
+
+    #[test]
+    fn delete_note() {
+        let db = test_db();
+        let note = create_note(&db, "Del", "x").unwrap();
+        assert!(delete_note_by_short_id(&db, &note.short_id).unwrap());
+        assert!(get_note_by_short_id(&db, &note.short_id).unwrap().is_none());
+    }
+
+    #[test]
+    fn delete_nonexistent_note() {
+        let db = test_db();
+        assert!(!delete_note_by_short_id(&db, "nope").unwrap());
+    }
+
+    // ── Sessions ───────────────────────────────────────────────────────
+
+    #[test]
+    fn session_lifecycle() {
+        let db = test_db();
+        insert_session(&db, "tok", "2099-01-01 00:00:00").unwrap();
+        assert_eq!(
+            get_session_expiry(&db, "tok").unwrap(),
+            Some("2099-01-01 00:00:00".to_string())
+        );
+        delete_session(&db, "tok").unwrap();
+        assert!(get_session_expiry(&db, "tok").unwrap().is_none());
+    }
+
+    #[test]
+    fn prune_expired_sessions_works() {
+        let db = test_db();
+        insert_session(&db, "old", "2000-01-01 00:00:00").unwrap();
+        insert_session(&db, "new", "2099-01-01 00:00:00").unwrap();
+        prune_expired_sessions(&db).unwrap();
+        assert!(get_session_expiry(&db, "old").unwrap().is_none());
+        assert!(get_session_expiry(&db, "new").unwrap().is_some());
+    }
+}

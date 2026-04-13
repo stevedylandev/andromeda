@@ -629,3 +629,315 @@ pub fn delete_file(db: &Db, short_id: &str) -> Result<Option<UploadedFile>, DbEr
     conn.execute("DELETE FROM files WHERE short_id = ?1", params![short_id])?;
     Ok(Some(file))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_db() -> Db {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS posts (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_id        TEXT NOT NULL UNIQUE,
+                title           TEXT NOT NULL,
+                slug            TEXT NOT NULL UNIQUE,
+                alias           TEXT,
+                canonical_url   TEXT,
+                published_date  TEXT,
+                meta_description TEXT,
+                meta_image      TEXT,
+                lang            TEXT NOT NULL DEFAULT 'en',
+                tags            TEXT,
+                content         TEXT NOT NULL,
+                status          TEXT NOT NULL DEFAULT 'draft',
+                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS pages (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_id        TEXT NOT NULL UNIQUE,
+                title           TEXT NOT NULL,
+                slug            TEXT NOT NULL UNIQUE,
+                content         TEXT NOT NULL,
+                is_published    INTEGER NOT NULL DEFAULT 0,
+                nav_order       INTEGER NOT NULL DEFAULT 0,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE TABLE IF NOT EXISTS sessions (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                token           TEXT NOT NULL UNIQUE,
+                expires_at      TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS files (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_id      TEXT NOT NULL UNIQUE,
+                filename      TEXT NOT NULL UNIQUE,
+                original_name TEXT NOT NULL,
+                content_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
+                size          INTEGER NOT NULL,
+                created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+            );",
+        )
+        .unwrap();
+        Arc::new(Mutex::new(conn))
+    }
+
+    // ── Post CRUD ──────────────────────────────────────────────────────
+
+    #[test]
+    fn create_and_get_post() {
+        let db = test_db();
+        let post = create_post(
+            &db, "Hello World", "hello-world", "# Hello", "draft",
+            None, None, None, None, None, "en", None,
+        )
+        .unwrap();
+        assert_eq!(post.title, "Hello World");
+        assert_eq!(post.slug, "hello-world");
+        assert_eq!(post.status, "draft");
+
+        let fetched = get_post_by_short_id(&db, &post.short_id).unwrap().unwrap();
+        assert_eq!(fetched.title, "Hello World");
+    }
+
+    #[test]
+    fn get_post_by_slug_works() {
+        let db = test_db();
+        create_post(
+            &db, "Test", "test-slug", "content", "published",
+            None, None, Some("2024-01-01"), None, None, "en", None,
+        )
+        .unwrap();
+
+        let post = get_post_by_slug(&db, "test-slug").unwrap().unwrap();
+        assert_eq!(post.title, "Test");
+    }
+
+    #[test]
+    fn duplicate_slug_fails() {
+        let db = test_db();
+        create_post(&db, "A", "same-slug", "a", "draft", None, None, None, None, None, "en", None).unwrap();
+        let result = create_post(&db, "B", "same-slug", "b", "draft", None, None, None, None, None, "en", None);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_all_posts_ordered_desc() {
+        let db = test_db();
+        create_post(&db, "First", "first", "a", "draft", None, None, None, None, None, "en", None).unwrap();
+        create_post(&db, "Second", "second", "b", "draft", None, None, None, None, None, "en", None).unwrap();
+
+        let all = get_all_posts(&db).unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].title, "Second");
+        assert_eq!(all[1].title, "First");
+    }
+
+    #[test]
+    fn get_published_posts_filters() {
+        let db = test_db();
+        create_post(&db, "Draft", "draft", "a", "draft", None, None, None, None, None, "en", None).unwrap();
+        create_post(&db, "Published", "pub", "b", "published", None, None, Some("2024-01-01"), None, None, "en", None).unwrap();
+
+        let published = get_published_posts(&db).unwrap();
+        assert_eq!(published.len(), 1);
+        assert_eq!(published[0].title, "Published");
+    }
+
+    #[test]
+    fn delete_post_works() {
+        let db = test_db();
+        let post = create_post(&db, "Del", "del", "x", "draft", None, None, None, None, None, "en", None).unwrap();
+        assert!(delete_post(&db, &post.short_id).unwrap());
+        assert!(get_post_by_short_id(&db, &post.short_id).unwrap().is_none());
+    }
+
+    #[test]
+    fn toggle_post_status_draft_to_published() {
+        let db = test_db();
+        let post = create_post(&db, "Toggle", "toggle", "x", "draft", None, None, None, None, None, "en", None).unwrap();
+        let new_status = toggle_post_status(&db, &post.short_id).unwrap().unwrap();
+        assert_eq!(new_status, "published");
+
+        let updated = get_post_by_short_id(&db, &post.short_id).unwrap().unwrap();
+        assert_eq!(updated.status, "published");
+        assert!(updated.published_date.is_some());
+    }
+
+    #[test]
+    fn toggle_post_status_published_to_draft() {
+        let db = test_db();
+        let post = create_post(&db, "Toggle", "toggle", "x", "published", None, None, Some("2024-01-01"), None, None, "en", None).unwrap();
+        let new_status = toggle_post_status(&db, &post.short_id).unwrap().unwrap();
+        assert_eq!(new_status, "draft");
+    }
+
+    #[test]
+    fn find_alias_redirect_found() {
+        let db = test_db();
+        create_post(&db, "Aliased", "aliased-post", "x", "published", Some("old-url"), None, Some("2024-01-01"), None, None, "en", None).unwrap();
+        let redirect = find_alias_redirect(&db, "old-url").unwrap();
+        assert_eq!(redirect, Some("/posts/aliased-post".to_string()));
+    }
+
+    #[test]
+    fn find_alias_redirect_not_found() {
+        let db = test_db();
+        assert!(find_alias_redirect(&db, "nonexistent").unwrap().is_none());
+    }
+
+    #[test]
+    fn find_alias_redirect_only_published() {
+        let db = test_db();
+        create_post(&db, "Draft Alias", "draft-alias", "x", "draft", Some("my-alias"), None, None, None, None, "en", None).unwrap();
+        assert!(find_alias_redirect(&db, "my-alias").unwrap().is_none());
+    }
+
+    // ── Page CRUD ──────────────────────────────────────────────────────
+
+    #[test]
+    fn create_and_get_page() {
+        let db = test_db();
+        let page = create_page(&db, "About", "about", "About content", true, 1).unwrap();
+        assert_eq!(page.title, "About");
+        assert!(page.is_published);
+
+        let fetched = get_page_by_short_id(&db, &page.short_id).unwrap().unwrap();
+        assert_eq!(fetched.slug, "about");
+    }
+
+    #[test]
+    fn get_page_by_slug_works() {
+        let db = test_db();
+        create_page(&db, "Contact", "contact", "Email us", false, 2).unwrap();
+        let page = get_page_by_slug(&db, "contact").unwrap().unwrap();
+        assert_eq!(page.title, "Contact");
+    }
+
+    #[test]
+    fn get_published_pages_filters() {
+        let db = test_db();
+        create_page(&db, "Pub", "pub", "x", true, 1).unwrap();
+        create_page(&db, "Draft", "draft", "x", false, 2).unwrap();
+
+        let published = get_published_pages(&db).unwrap();
+        assert_eq!(published.len(), 1);
+        assert_eq!(published[0].title, "Pub");
+    }
+
+    #[test]
+    fn update_page_works() {
+        let db = test_db();
+        let page = create_page(&db, "Old", "old", "old content", false, 0).unwrap();
+        let updated = update_page(&db, &page.short_id, "New", "new", "new content", true, 5)
+            .unwrap()
+            .unwrap();
+        assert_eq!(updated.title, "New");
+        assert!(updated.is_published);
+        assert_eq!(updated.nav_order, 5);
+    }
+
+    #[test]
+    fn delete_page_works() {
+        let db = test_db();
+        let page = create_page(&db, "Del", "del", "x", false, 0).unwrap();
+        assert!(delete_page(&db, &page.short_id).unwrap());
+        assert!(get_page_by_short_id(&db, &page.short_id).unwrap().is_none());
+    }
+
+    // ── Settings ───────────────────────────────────────────────────────
+
+    #[test]
+    fn settings_get_set() {
+        let db = test_db();
+        set_setting(&db, "blog_title", "My Blog").unwrap();
+        let val = get_setting(&db, "blog_title").unwrap();
+        assert_eq!(val, Some("My Blog".to_string()));
+    }
+
+    #[test]
+    fn settings_upsert() {
+        let db = test_db();
+        set_setting(&db, "key", "first").unwrap();
+        set_setting(&db, "key", "second").unwrap();
+        assert_eq!(get_setting(&db, "key").unwrap(), Some("second".to_string()));
+    }
+
+    #[test]
+    fn settings_missing_key() {
+        let db = test_db();
+        assert!(get_setting(&db, "nonexistent").unwrap().is_none());
+    }
+
+    #[test]
+    fn get_all_settings_works() {
+        let db = test_db();
+        set_setting(&db, "a", "1").unwrap();
+        set_setting(&db, "b", "2").unwrap();
+
+        let all = get_all_settings(&db).unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0], ("a".to_string(), "1".to_string()));
+    }
+
+    // ── File CRUD ──────────────────────────────────────────────────────
+
+    #[test]
+    fn create_and_get_files() {
+        let db = test_db();
+        let file = create_file(&db, "abc123.jpg", "photo.jpg", "image/jpeg", 1024).unwrap();
+        assert_eq!(file.filename, "abc123.jpg");
+        assert_eq!(file.original_name, "photo.jpg");
+        assert_eq!(file.size, 1024);
+
+        let all = get_all_files(&db).unwrap();
+        assert_eq!(all.len(), 1);
+    }
+
+    #[test]
+    fn delete_file_returns_deleted() {
+        let db = test_db();
+        let file = create_file(&db, "f.txt", "f.txt", "text/plain", 10).unwrap();
+        let deleted = delete_file(&db, &file.short_id).unwrap();
+        assert!(deleted.is_some());
+        assert_eq!(deleted.unwrap().filename, "f.txt");
+
+        assert!(get_all_files(&db).unwrap().is_empty());
+    }
+
+    #[test]
+    fn delete_file_not_found() {
+        let db = test_db();
+        assert!(delete_file(&db, "nonexistent").unwrap().is_none());
+    }
+
+    // ── Sessions ───────────────────────────────────────────────────────
+
+    #[test]
+    fn session_lifecycle() {
+        let db = test_db();
+        insert_session(&db, "tok", "2099-12-31 23:59:59").unwrap();
+        assert_eq!(
+            get_session_expiry(&db, "tok").unwrap(),
+            Some("2099-12-31 23:59:59".to_string())
+        );
+        delete_session(&db, "tok").unwrap();
+        assert!(get_session_expiry(&db, "tok").unwrap().is_none());
+    }
+
+    #[test]
+    fn prune_expired_sessions_works() {
+        let db = test_db();
+        insert_session(&db, "old", "2000-01-01 00:00:00").unwrap();
+        insert_session(&db, "new", "2099-01-01 00:00:00").unwrap();
+        prune_expired_sessions(&db).unwrap();
+        assert!(get_session_expiry(&db, "old").unwrap().is_none());
+        assert!(get_session_expiry(&db, "new").unwrap().is_some());
+    }
+}

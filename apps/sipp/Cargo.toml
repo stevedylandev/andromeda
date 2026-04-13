@@ -39,3 +39,6 @@ clap = { version = "4", features = ["derive", "env"] }
 toml = "1.0"
 rpassword = "7"
 open = "5.3.3"
+
+[dev-dependencies]
+tempfile = { workspace = true }
