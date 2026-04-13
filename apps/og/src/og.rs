@@ -127,3 +127,113 @@ fn extract_link_tags(document: &Html, base_url: &Url) -> Vec<LinkTag> {
     }
     link_tags
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn base() -> Url {
+        Url::parse("https://example.com/page").unwrap()
+    }
+
+    // ── extract_favicon ────────────────────────────────────────────────
+
+    #[test]
+    fn favicon_from_rel_icon() {
+        let doc = Html::parse_document(
+            r#"<html><head><link rel="icon" href="/favicon.png"></head></html>"#,
+        );
+        let result = extract_favicon(&doc, &base());
+        assert_eq!(result, Some("https://example.com/favicon.png".to_string()));
+    }
+
+    #[test]
+    fn favicon_from_shortcut_icon() {
+        let doc = Html::parse_document(
+            r#"<html><head><link rel="shortcut icon" href="/icon.ico"></head></html>"#,
+        );
+        let result = extract_favicon(&doc, &base());
+        assert_eq!(result, Some("https://example.com/icon.ico".to_string()));
+    }
+
+    #[test]
+    fn favicon_from_apple_touch_icon() {
+        let doc = Html::parse_document(
+            r#"<html><head><link rel="apple-touch-icon" href="/apple.png"></head></html>"#,
+        );
+        let result = extract_favicon(&doc, &base());
+        assert_eq!(result, Some("https://example.com/apple.png".to_string()));
+    }
+
+    #[test]
+    fn favicon_priority_icon_over_shortcut() {
+        let doc = Html::parse_document(
+            r#"<html><head>
+                <link rel="icon" href="/first.png">
+                <link rel="shortcut icon" href="/second.ico">
+            </head></html>"#,
+        );
+        let result = extract_favicon(&doc, &base());
+        assert_eq!(result, Some("https://example.com/first.png".to_string()));
+    }
+
+    #[test]
+    fn favicon_fallback_to_favicon_ico() {
+        let doc = Html::parse_document("<html><head></head></html>");
+        let result = extract_favicon(&doc, &base());
+        assert_eq!(result, Some("https://example.com/favicon.ico".to_string()));
+    }
+
+    #[test]
+    fn favicon_resolves_relative_url() {
+        let doc = Html::parse_document(
+            r#"<html><head><link rel="icon" href="assets/icon.png"></head></html>"#,
+        );
+        let result = extract_favicon(&doc, &base());
+        assert_eq!(
+            result,
+            Some("https://example.com/assets/icon.png".to_string())
+        );
+    }
+
+    // ── extract_link_tags ──────────────────────────────────────────────
+
+    #[test]
+    fn link_tags_extracts_multiple() {
+        let doc = Html::parse_document(
+            r#"<html><head>
+                <link rel="stylesheet" href="/style.css">
+                <link rel="canonical" href="https://example.com/">
+            </head></html>"#,
+        );
+        let tags = extract_link_tags(&doc, &base());
+        assert_eq!(tags.len(), 2);
+        assert_eq!(tags[0].rel, "stylesheet");
+        assert_eq!(tags[1].rel, "canonical");
+    }
+
+    #[test]
+    fn link_tags_resolves_relative_href() {
+        let doc = Html::parse_document(
+            r#"<html><head><link rel="stylesheet" href="css/main.css"></head></html>"#,
+        );
+        let tags = extract_link_tags(&doc, &base());
+        assert_eq!(tags[0].href, "https://example.com/css/main.css");
+    }
+
+    #[test]
+    fn link_tags_preserves_extra_attrs() {
+        let doc = Html::parse_document(
+            r#"<html><head><link rel="stylesheet" href="/s.css" type="text/css"></head></html>"#,
+        );
+        let tags = extract_link_tags(&doc, &base());
+        assert!(tags[0].extra.contains("type=\"text/css\""));
+    }
+
+    #[test]
+    fn link_tags_empty_head() {
+        let doc = Html::parse_document("<html><head></head></html>");
+        let tags = extract_link_tags(&doc, &base());
+        assert!(tags.is_empty());
+    }
+}

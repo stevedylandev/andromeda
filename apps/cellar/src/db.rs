@@ -361,3 +361,224 @@ pub fn prune_expired_sessions(db: &Db) -> Result<(), DbError> {
     )?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_db() -> Db {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS wines (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_id        TEXT NOT NULL UNIQUE,
+                name            TEXT NOT NULL,
+                origin          TEXT NOT NULL,
+                grape           TEXT NOT NULL,
+                notes           TEXT NOT NULL,
+                image           BLOB,
+                image_mime      TEXT,
+                sweetness       INTEGER NOT NULL CHECK(sweetness BETWEEN 1 AND 5),
+                acidity         INTEGER NOT NULL CHECK(acidity BETWEEN 1 AND 5),
+                tannin          INTEGER NOT NULL CHECK(tannin BETWEEN 1 AND 5),
+                alcohol         INTEGER NOT NULL CHECK(alcohol BETWEEN 1 AND 5),
+                body            INTEGER NOT NULL CHECK(body BETWEEN 1 AND 5),
+                clarity         INTEGER NOT NULL DEFAULT 3,
+                color_intensity INTEGER NOT NULL DEFAULT 3,
+                aroma_intensity INTEGER NOT NULL DEFAULT 3,
+                nose_complexity INTEGER NOT NULL DEFAULT 3,
+                background      TEXT NOT NULL DEFAULT '',
+                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                wishlist        INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS sessions (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                token      TEXT NOT NULL UNIQUE,
+                expires_at TEXT NOT NULL
+            );",
+        )
+        .unwrap();
+        Arc::new(Mutex::new(conn))
+    }
+
+    fn create_test_wine(db: &Db, name: &str, wishlist: bool) -> Wine {
+        create_wine(
+            db, name, "France", "Merlot", "Smooth", None, None,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, "", wishlist,
+        )
+        .unwrap()
+    }
+
+    // ── Wine CRUD ──────────────────────────────────────────────────────
+
+    #[test]
+    fn create_and_get_wine() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Chateau Test", false);
+        assert_eq!(wine.name, "Chateau Test");
+        assert_eq!(wine.origin, "France");
+        assert!(!wine.wishlist);
+
+        let fetched = get_wine_by_short_id(&db, &wine.short_id).unwrap().unwrap();
+        assert_eq!(fetched.name, "Chateau Test");
+    }
+
+    #[test]
+    fn create_wine_invalid_sweetness_fails() {
+        let db = test_db();
+        let result = create_wine(
+            &db, "Bad", "X", "X", "X", None, None,
+            6, 3, 3, 3, 3, 3, 3, 3, 3, "", false, // sweetness=6 > 5
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn create_wine_zero_rating_fails() {
+        let db = test_db();
+        let result = create_wine(
+            &db, "Bad", "X", "X", "X", None, None,
+            0, 3, 3, 3, 3, 3, 3, 3, 3, "", false, // sweetness=0 < 1
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_cellar_wines_excludes_wishlist() {
+        let db = test_db();
+        create_test_wine(&db, "Cellar Wine", false);
+        create_test_wine(&db, "Wishlist Wine", true);
+
+        let cellar = get_cellar_wines(&db).unwrap();
+        assert_eq!(cellar.len(), 1);
+        assert_eq!(cellar[0].name, "Cellar Wine");
+    }
+
+    #[test]
+    fn get_wishlist_wines_only_wishlist() {
+        let db = test_db();
+        create_test_wine(&db, "Cellar Wine", false);
+        create_test_wine(&db, "Wishlist Wine", true);
+
+        let wishlist = get_wishlist_wines(&db).unwrap();
+        assert_eq!(wishlist.len(), 1);
+        assert_eq!(wishlist[0].name, "Wishlist Wine");
+    }
+
+    #[test]
+    fn promote_wine_moves_to_cellar() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "To Promote", true);
+
+        assert!(promote_wine(&db, &wine.short_id).unwrap());
+
+        let promoted = get_wine_by_short_id(&db, &wine.short_id).unwrap().unwrap();
+        assert!(!promoted.wishlist);
+
+        assert_eq!(get_wishlist_wines(&db).unwrap().len(), 0);
+        assert_eq!(get_cellar_wines(&db).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn promote_cellar_wine_returns_false() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Already Cellar", false);
+        assert!(!promote_wine(&db, &wine.short_id).unwrap());
+    }
+
+    #[test]
+    fn update_wine_works() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Old Name", false);
+
+        let updated = update_wine(
+            &db, &wine.short_id, "New Name", "Italy", "Sangiovese", "Bold",
+            4, 4, 4, 4, 4, 4, 4, 4, 4, "deep red",
+        )
+        .unwrap()
+        .unwrap();
+
+        assert_eq!(updated.name, "New Name");
+        assert_eq!(updated.origin, "Italy");
+        assert_eq!(updated.sweetness, 4);
+        assert_eq!(updated.background, "deep red");
+    }
+
+    #[test]
+    fn update_wishlist_wine_works() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Wish", true);
+
+        let updated = update_wishlist_wine(
+            &db, &wine.short_id, "Updated Wish", "Spain", "Tempranillo", "Try soon", "amber",
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(updated.name, "Updated Wish");
+        assert!(updated.wishlist);
+    }
+
+    #[test]
+    fn update_wishlist_wine_on_cellar_wine_returns_none() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Cellar", false);
+        let result = update_wishlist_wine(&db, &wine.short_id, "X", "X", "X", "X", "").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn update_wine_image_and_get() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Photo Wine", false);
+        assert!(!wine.has_image);
+
+        let img_data = vec![0xFF, 0xD8, 0xFF]; // fake JPEG header
+        assert!(update_wine_image(&db, &wine.short_id, &img_data, "image/jpeg").unwrap());
+
+        let (data, mime) = get_wine_image(&db, &wine.short_id).unwrap().unwrap();
+        assert_eq!(data, img_data);
+        assert_eq!(mime, "image/jpeg");
+    }
+
+    #[test]
+    fn get_wine_image_no_image() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "No Photo", false);
+        assert!(get_wine_image(&db, &wine.short_id).unwrap().is_none());
+    }
+
+    #[test]
+    fn delete_wine_works() {
+        let db = test_db();
+        let wine = create_test_wine(&db, "Delete Me", false);
+        assert!(delete_wine(&db, &wine.short_id).unwrap());
+        assert!(get_wine_by_short_id(&db, &wine.short_id).unwrap().is_none());
+    }
+
+    #[test]
+    fn delete_nonexistent_wine() {
+        let db = test_db();
+        assert!(!delete_wine(&db, "nope").unwrap());
+    }
+
+    // ── Sessions ───────────────────────────────────────────────────────
+
+    #[test]
+    fn session_lifecycle() {
+        let db = test_db();
+        insert_session(&db, "tok", "2099-01-01 00:00:00").unwrap();
+        assert!(get_session_expiry(&db, "tok").unwrap().is_some());
+        delete_session(&db, "tok").unwrap();
+        assert!(get_session_expiry(&db, "tok").unwrap().is_none());
+    }
+
+    #[test]
+    fn prune_expired_sessions_works() {
+        let db = test_db();
+        insert_session(&db, "old", "2000-01-01 00:00:00").unwrap();
+        insert_session(&db, "new", "2099-01-01 00:00:00").unwrap();
+        prune_expired_sessions(&db).unwrap();
+        assert!(get_session_expiry(&db, "old").unwrap().is_none());
+        assert!(get_session_expiry(&db, "new").unwrap().is_some());
+    }
+}

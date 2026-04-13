@@ -194,6 +194,65 @@ fn escape_xml(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn escape_xml_ampersand() {
+        assert_eq!(escape_xml("A&B"), "A&amp;B");
+    }
+
+    #[test]
+    fn escape_xml_less_than() {
+        assert_eq!(escape_xml("a<b"), "a&lt;b");
+    }
+
+    #[test]
+    fn escape_xml_greater_than() {
+        assert_eq!(escape_xml("a>b"), "a&gt;b");
+    }
+
+    #[test]
+    fn escape_xml_quote() {
+        assert_eq!(escape_xml(r#"a"b"#), "a&quot;b");
+    }
+
+    #[test]
+    fn escape_xml_apostrophe() {
+        assert_eq!(escape_xml("a'b"), "a&apos;b");
+    }
+
+    #[test]
+    fn escape_xml_all_special() {
+        assert_eq!(
+            escape_xml(r#"<a href="x">&'test'</a>"#),
+            "&lt;a href=&quot;x&quot;&gt;&amp;&apos;test&apos;&lt;/a&gt;"
+        );
+    }
+
+    #[test]
+    fn escape_xml_no_special_chars() {
+        assert_eq!(escape_xml("hello world"), "hello world");
+    }
+
+    #[test]
+    fn escape_xml_empty() {
+        assert_eq!(escape_xml(""), "");
+    }
+
+    #[test]
+    fn format_date_valid_timestamp() {
+        // 2024-01-15 00:00:00 UTC
+        assert_eq!(format_date(1705276800), "Jan 15, 2024");
+    }
+
+    #[test]
+    fn format_date_zero() {
+        assert_eq!(format_date(0), "Jan 1, 1970");
+    }
+}
+
 async fn static_handler(axum::extract::Path(path): axum::extract::Path<String>) -> Response {
     match Static::get(&path) {
         Some(file) => {

@@ -315,6 +315,62 @@ pub async fn add_freshrss_subscription(
     Ok(format!("Successfully added feed: {feed_url}"))
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_opml_extracts_xml_urls() {
+        let opml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <body>
+    <outline type="rss" text="Blog A" xmlUrl="https://a.com/feed" />
+    <outline type="rss" text="Blog B" xmlUrl="https://b.com/rss" />
+  </body>
+</opml>"#;
+        let urls = parse_opml(opml);
+        assert_eq!(urls, vec!["https://a.com/feed", "https://b.com/rss"]);
+    }
+
+    #[test]
+    fn parse_opml_empty_document() {
+        let opml = r#"<?xml version="1.0"?><opml><body></body></opml>"#;
+        assert!(parse_opml(opml).is_empty());
+    }
+
+    #[test]
+    fn parse_opml_no_xml_url_attribute() {
+        let opml = r#"<?xml version="1.0"?>
+<opml><body>
+  <outline type="rss" text="No URL" htmlUrl="https://example.com" />
+</body></opml>"#;
+        assert!(parse_opml(opml).is_empty());
+    }
+
+    #[test]
+    fn parse_opml_nested_outlines() {
+        let opml = r#"<?xml version="1.0"?>
+<opml><body>
+  <outline text="Category">
+    <outline type="rss" text="Nested" xmlUrl="https://nested.com/feed" />
+  </outline>
+</body></opml>"#;
+        let urls = parse_opml(opml);
+        assert_eq!(urls, vec!["https://nested.com/feed"]);
+    }
+
+    #[test]
+    fn parse_opml_skips_empty_url() {
+        let opml = r#"<?xml version="1.0"?>
+<opml><body>
+  <outline type="rss" text="Empty" xmlUrl="" />
+  <outline type="rss" text="Valid" xmlUrl="https://valid.com/feed" />
+</body></opml>"#;
+        let urls = parse_opml(opml);
+        assert_eq!(urls, vec!["https://valid.com/feed"]);
+    }
+}
+
 pub async fn get_feed_items(
     url_query: Option<&str>,
 ) -> Result<(Vec<FeedItem>, Option<Vec<String>>), String> {

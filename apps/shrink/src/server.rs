@@ -212,3 +212,165 @@ fn build_download_filename(original: &str, new_ext: &str) -> String {
         .unwrap_or("compressed");
     format!("{}_compressed.{}", stem, new_ext)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── build_download_filename ────────────────────────────────────────
+
+    #[test]
+    fn filename_with_extension() {
+        assert_eq!(build_download_filename("photo.png", "jpg"), "photo_compressed.jpg");
+    }
+
+    #[test]
+    fn filename_without_extension() {
+        assert_eq!(build_download_filename("photo", "jpg"), "photo_compressed.jpg");
+    }
+
+    #[test]
+    fn filename_empty_string() {
+        assert_eq!(build_download_filename("", "jpg"), "compressed_compressed.jpg");
+    }
+
+    #[test]
+    fn filename_multiple_dots() {
+        assert_eq!(
+            build_download_filename("my.cool.photo.png", "jpg"),
+            "my.cool.photo_compressed.jpg"
+        );
+    }
+
+    // ── strip_gps_from_exif ────────────────────────────────────────────
+
+    #[test]
+    fn strip_gps_too_short_returns_unchanged() {
+        let data = vec![0u8; 4];
+        assert_eq!(strip_gps_from_exif(&data), data);
+    }
+
+    #[test]
+    fn strip_gps_no_tiff_header_returns_unchanged() {
+        let data = vec![0u8; 32];
+        assert_eq!(strip_gps_from_exif(&data), data);
+    }
+
+    #[test]
+    fn strip_gps_little_endian_zeroes_gps_ifd() {
+        // Build minimal TIFF (little-endian) with one IFD entry: GPS tag 0x8825
+        let mut data = Vec::new();
+        // TIFF header: "II" + magic 42 + offset to IFD0 (8)
+        data.extend_from_slice(b"II");
+        data.extend_from_slice(&42u16.to_le_bytes());
+        data.extend_from_slice(&8u32.to_le_bytes()); // IFD0 at offset 8
+
+        // IFD0 at offset 8: 1 entry
+        data.extend_from_slice(&1u16.to_le_bytes());
+
+        // IFD entry: tag=0x8825 (GPS), type=LONG(4), count=1, value=offset to GPS IFD
+        let gps_ifd_offset: u32 = 22; // right after this IFD entry + next IFD pointer
+        data.extend_from_slice(&0x8825u16.to_le_bytes());
+        data.extend_from_slice(&4u16.to_le_bytes()); // type LONG
+        data.extend_from_slice(&1u32.to_le_bytes()); // count
+        data.extend_from_slice(&gps_ifd_offset.to_le_bytes()); // GPS IFD offset
+
+        // Next IFD pointer (none)
+        // We need padding to get to offset 22
+        // Current size = 8 + 2 + 12 = 22, perfect
+
+        // GPS IFD at offset 22: entry count = 5 (nonzero, should be zeroed)
+        data.extend_from_slice(&5u16.to_le_bytes());
+        // Some dummy GPS entries
+        data.extend_from_slice(&[0u8; 24]);
+
+        let result = strip_gps_from_exif(&data);
+        // GPS IFD entry count at offset 22 should now be 0
+        let gps_count = u16::from_le_bytes([result[22], result[23]]);
+        assert_eq!(gps_count, 0);
+    }
+
+    #[test]
+    fn strip_gps_big_endian_zeroes_gps_ifd() {
+        let mut data = Vec::new();
+        // TIFF header: "MM" + magic 42 + offset to IFD0 (8)
+        data.extend_from_slice(b"MM");
+        data.extend_from_slice(&42u16.to_be_bytes());
+        data.extend_from_slice(&8u32.to_be_bytes());
+
+        // IFD0: 1 entry
+        data.extend_from_slice(&1u16.to_be_bytes());
+
+        // GPS tag entry pointing to GPS IFD at offset 22
+        data.extend_from_slice(&0x8825u16.to_be_bytes());
+        data.extend_from_slice(&4u16.to_be_bytes());
+        data.extend_from_slice(&1u32.to_be_bytes());
+        data.extend_from_slice(&22u32.to_be_bytes());
+
+        // GPS IFD at offset 22
+        data.extend_from_slice(&3u16.to_be_bytes()); // 3 entries
+        data.extend_from_slice(&[0u8; 24]);
+
+        let result = strip_gps_from_exif(&data);
+        let gps_count = u16::from_be_bytes([result[22], result[23]]);
+        assert_eq!(gps_count, 0);
+    }
+
+    #[test]
+    fn strip_gps_no_gps_tag_unchanged() {
+        let mut data = Vec::new();
+        data.extend_from_slice(b"II");
+        data.extend_from_slice(&42u16.to_le_bytes());
+        data.extend_from_slice(&8u32.to_le_bytes());
+
+        // IFD0: 1 entry, but NOT a GPS tag (use 0x010F = Make)
+        data.extend_from_slice(&1u16.to_le_bytes());
+        data.extend_from_slice(&0x010Fu16.to_le_bytes());
+        data.extend_from_slice(&2u16.to_le_bytes());
+        data.extend_from_slice(&1u32.to_le_bytes());
+        data.extend_from_slice(&0u32.to_le_bytes());
+
+        let original = data.clone();
+        let result = strip_gps_from_exif(&data);
+        assert_eq!(result, original);
+    }
+
+    // ── compress_image ─────────────────────────────────────────────────
+
+    #[test]
+    fn compress_image_invalid_data_returns_error() {
+        let result = compress_image(&[0, 1, 2, 3], 80, 0);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn compress_image_valid_jpeg() {
+        // Create a minimal 2x2 RGB image and encode as JPEG
+        let img = image::RgbImage::from_fn(2, 2, |_, _| image::Rgb([255u8, 0, 0]));
+        let mut buf = Vec::new();
+        let encoder = image::codecs::jpeg::JpegEncoder::new(&mut buf);
+        image::DynamicImage::ImageRgb8(img)
+            .write_with_encoder(encoder)
+            .unwrap();
+
+        let result = compress_image(&buf, 80, 0);
+        assert!(result.is_ok());
+        assert!(!result.unwrap().is_empty());
+    }
+
+    #[test]
+    fn compress_image_with_resize() {
+        let img = image::RgbImage::from_fn(100, 50, |_, _| image::Rgb([0u8, 128, 255]));
+        let mut buf = Vec::new();
+        let encoder = image::codecs::jpeg::JpegEncoder::new(&mut buf);
+        image::DynamicImage::ImageRgb8(img)
+            .write_with_encoder(encoder)
+            .unwrap();
+
+        let result = compress_image(&buf, 80, 50).unwrap();
+        // Verify output is valid JPEG (starts with FFD8)
+        assert!(result.len() >= 2);
+        assert_eq!(result[0], 0xFF);
+        assert_eq!(result[1], 0xD8);
+    }
+}

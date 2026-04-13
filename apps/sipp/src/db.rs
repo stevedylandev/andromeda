@@ -152,3 +152,95 @@ pub fn update_snippet_by_short_id(
         Err(e) => Err(DbError::Sqlite(e)),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_db() -> Db {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS snippets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                short_id TEXT NOT NULL UNIQUE,
+                content TEXT NOT NULL,
+                name TEXT NOT NULL
+            )",
+            [],
+        )
+        .unwrap();
+        Arc::new(Mutex::new(conn))
+    }
+
+    #[test]
+    fn create_and_get_snippet() {
+        let db = test_db();
+        let snippet = create_snippet(&db, "hello.rs", "fn main() {}").unwrap();
+        assert_eq!(snippet.name, "hello.rs");
+        assert_eq!(snippet.content, "fn main() {}");
+        assert!(!snippet.short_id.is_empty());
+
+        let fetched = get_snippet_by_short_id(&db, &snippet.short_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(fetched.name, "hello.rs");
+        assert_eq!(fetched.content, "fn main() {}");
+    }
+
+    #[test]
+    fn get_snippet_not_found() {
+        let db = test_db();
+        let result = get_snippet_by_short_id(&db, "nonexistent").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn get_all_snippets_ordered_desc() {
+        let db = test_db();
+        create_snippet(&db, "first", "aaa").unwrap();
+        create_snippet(&db, "second", "bbb").unwrap();
+
+        let all = get_all_snippets(&db).unwrap();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0].name, "second"); // DESC order
+        assert_eq!(all[1].name, "first");
+    }
+
+    #[test]
+    fn update_snippet() {
+        let db = test_db();
+        let snippet = create_snippet(&db, "old.rs", "old content").unwrap();
+
+        let updated = update_snippet_by_short_id(&db, &snippet.short_id, "new.rs", "new content")
+            .unwrap()
+            .unwrap();
+        assert_eq!(updated.name, "new.rs");
+        assert_eq!(updated.content, "new content");
+    }
+
+    #[test]
+    fn update_nonexistent_snippet() {
+        let db = test_db();
+        let result = update_snippet_by_short_id(&db, "nope", "name", "content").unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn delete_snippet() {
+        let db = test_db();
+        let snippet = create_snippet(&db, "test", "content").unwrap();
+
+        let deleted = delete_snippet_by_short_id(&db, &snippet.short_id).unwrap();
+        assert!(deleted);
+
+        let fetched = get_snippet_by_short_id(&db, &snippet.short_id).unwrap();
+        assert!(fetched.is_none());
+    }
+
+    #[test]
+    fn delete_nonexistent_returns_false() {
+        let db = test_db();
+        let deleted = delete_snippet_by_short_id(&db, "nonexistent").unwrap();
+        assert!(!deleted);
+    }
+}
