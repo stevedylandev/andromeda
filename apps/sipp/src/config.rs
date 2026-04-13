@@ -29,3 +29,66 @@ pub fn save_config(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::write(&path, contents)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn config_default_is_none_fields() {
+        let config = Config::default();
+        assert!(config.remote_url.is_none());
+        assert!(config.api_key.is_none());
+    }
+
+    #[test]
+    fn config_toml_roundtrip() {
+        let config = Config {
+            remote_url: Some("http://localhost:3000".to_string()),
+            api_key: Some("secret-key-123".to_string()),
+        };
+        let serialized = toml::to_string_pretty(&config).unwrap();
+        let deserialized: Config = toml::from_str(&serialized).unwrap();
+        assert_eq!(deserialized.remote_url, config.remote_url);
+        assert_eq!(deserialized.api_key, config.api_key);
+    }
+
+    #[test]
+    fn config_toml_roundtrip_with_nones() {
+        let config = Config {
+            remote_url: None,
+            api_key: None,
+        };
+        let serialized = toml::to_string_pretty(&config).unwrap();
+        let deserialized: Config = toml::from_str(&serialized).unwrap();
+        assert!(deserialized.remote_url.is_none());
+        assert!(deserialized.api_key.is_none());
+    }
+
+    #[test]
+    fn load_config_missing_file_returns_default() {
+        let tmp = tempfile::tempdir().unwrap();
+        // SAFETY: test-only, single-threaded test runner for this test
+        unsafe { std::env::set_var("HOME", tmp.path()); }
+        let config = load_config();
+        assert!(config.remote_url.is_none());
+        assert!(config.api_key.is_none());
+    }
+
+    #[test]
+    fn save_and_load_config_roundtrip() {
+        let tmp = tempfile::tempdir().unwrap();
+        // SAFETY: test-only, single-threaded test runner for this test
+        unsafe { std::env::set_var("HOME", tmp.path()); }
+
+        let config = Config {
+            remote_url: Some("https://sipp.example.com".to_string()),
+            api_key: Some("key123".to_string()),
+        };
+        save_config(&config).unwrap();
+
+        let loaded = load_config();
+        assert_eq!(loaded.remote_url, config.remote_url);
+        assert_eq!(loaded.api_key, config.api_key);
+    }
+}

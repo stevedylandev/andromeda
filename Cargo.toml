@@ -45,5 +45,8 @@ tracing-subscriber = "0.3"
 # Archive
 zip = "2"
 
+# Testing
+tempfile = "3"
+
 # Workspace crates
 andromeda-auth = { path = "crates/auth" }
