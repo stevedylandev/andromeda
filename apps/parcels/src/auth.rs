@@ -99,3 +99,61 @@ async fn is_valid_session(state: &AppState, token: &str) -> bool {
         _ => false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_unix_epoch() {
+        assert_eq!(format_unix_to_datetime(0, 0, 0, 0), "1970-01-01 00:00:00");
+    }
+
+    #[test]
+    fn format_unix_known_date() {
+        // 2024-01-15 = day 19737 since epoch
+        assert_eq!(
+            format_unix_to_datetime(19737, 12, 30, 45),
+            "2024-01-15 12:30:45"
+        );
+    }
+
+    #[test]
+    fn format_unix_y2k() {
+        // 2000-01-01 = day 10957
+        assert_eq!(
+            format_unix_to_datetime(10957, 0, 0, 0),
+            "2000-01-01 00:00:00"
+        );
+    }
+
+    #[test]
+    fn format_unix_leap_day() {
+        // 2024-02-29 = day 19782
+        assert_eq!(
+            format_unix_to_datetime(19782, 23, 59, 59),
+            "2024-02-29 23:59:59"
+        );
+    }
+
+    #[test]
+    fn format_unix_end_of_year() {
+        // 2023-12-31 = day 19722
+        assert_eq!(
+            format_unix_to_datetime(19722, 23, 59, 59),
+            "2023-12-31 23:59:59"
+        );
+    }
+
+    #[test]
+    fn session_expiry_at_is_valid_format() {
+        let expiry = session_expiry_at();
+        // Should match YYYY-MM-DD HH:MM:SS
+        assert_eq!(expiry.len(), 19);
+        assert_eq!(&expiry[4..5], "-");
+        assert_eq!(&expiry[7..8], "-");
+        assert_eq!(&expiry[10..11], " ");
+        assert_eq!(&expiry[13..14], ":");
+        assert_eq!(&expiry[16..17], ":");
+    }
+}
