@@ -23,6 +23,26 @@ pub fn generate_session_token() -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
+/// Constant-time API key comparison. Same shape as `verify_password`.
+pub fn verify_api_key(input: &str, expected: &str) -> bool {
+    const LEN: usize = 256;
+    let mut a = [0u8; LEN];
+    let mut b = [0u8; LEN];
+    let ib = input.as_bytes();
+    let eb = expected.as_bytes();
+    a[..ib.len().min(LEN)].copy_from_slice(&ib[..ib.len().min(LEN)]);
+    b[..eb.len().min(LEN)].copy_from_slice(&eb[..eb.len().min(LEN)]);
+    let lengths_match = subtle::Choice::from((ib.len() == eb.len()) as u8);
+    (lengths_match & a.ct_eq(&b)).into()
+}
+
+/// Generate a 32-byte cryptographically random hex API key.
+pub fn generate_api_key() -> String {
+    let mut bytes = [0u8; 32];
+    rand::rngs::OsRng.fill_bytes(&mut bytes);
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
 /// Build a session cookie with HttpOnly, SameSite=Strict, 7-day Max-Age.
 pub fn build_session_cookie(token: &str, secure: bool) -> String {
     let mut cookie = format!(
@@ -127,6 +147,37 @@ mod tests {
         let a = generate_session_token();
         let b = generate_session_token();
         assert_ne!(a, b);
+    }
+
+    // ── verify_api_key ─────────────────────────────────────────────────
+
+    #[test]
+    fn verify_api_key_correct() {
+        assert!(verify_api_key("abc123", "abc123"));
+    }
+
+    #[test]
+    fn verify_api_key_wrong() {
+        assert!(!verify_api_key("abc123", "abc124"));
+    }
+
+    #[test]
+    fn verify_api_key_length_mismatch() {
+        assert!(!verify_api_key("short", "longer_key"));
+    }
+
+    // ── generate_api_key ───────────────────────────────────────────────
+
+    #[test]
+    fn api_key_is_64_hex_chars() {
+        let key = generate_api_key();
+        assert_eq!(key.len(), 64);
+        assert!(key.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn api_key_unique_across_calls() {
+        assert_ne!(generate_api_key(), generate_api_key());
     }
 
     // ── build_session_cookie ───────────────────────────────────────────

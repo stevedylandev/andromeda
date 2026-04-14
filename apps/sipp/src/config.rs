@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Config {
@@ -9,24 +9,34 @@ pub struct Config {
 
 pub fn config_path() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".config/sipp/config.toml")
+    config_path_from(Path::new(&home))
+}
+
+pub fn config_path_from(home: &Path) -> PathBuf {
+    home.join(".config/sipp/config.toml")
 }
 
 pub fn load_config() -> Config {
-    let path = config_path();
-    match std::fs::read_to_string(&path) {
+    load_config_from(&config_path())
+}
+
+pub fn load_config_from(path: &Path) -> Config {
+    match std::fs::read_to_string(path) {
         Ok(contents) => toml::from_str(&contents).unwrap_or_default(),
         Err(_) => Config::default(),
     }
 }
 
 pub fn save_config(config: &Config) -> Result<(), Box<dyn std::error::Error>> {
-    let path = config_path();
+    save_config_to(&config_path(), config)
+}
+
+pub fn save_config_to(path: &Path, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let contents = toml::to_string_pretty(config)?;
-    std::fs::write(&path, contents)?;
+    std::fs::write(path, contents)?;
     Ok(())
 }
 
@@ -68,9 +78,8 @@ mod tests {
     #[test]
     fn load_config_missing_file_returns_default() {
         let tmp = tempfile::tempdir().unwrap();
-        // SAFETY: test-only, single-threaded test runner for this test
-        unsafe { std::env::set_var("HOME", tmp.path()); }
-        let config = load_config();
+        let path = config_path_from(tmp.path());
+        let config = load_config_from(&path);
         assert!(config.remote_url.is_none());
         assert!(config.api_key.is_none());
     }
@@ -78,16 +87,15 @@ mod tests {
     #[test]
     fn save_and_load_config_roundtrip() {
         let tmp = tempfile::tempdir().unwrap();
-        // SAFETY: test-only, single-threaded test runner for this test
-        unsafe { std::env::set_var("HOME", tmp.path()); }
+        let path = config_path_from(tmp.path());
 
         let config = Config {
             remote_url: Some("https://sipp.example.com".to_string()),
             api_key: Some("key123".to_string()),
         };
-        save_config(&config).unwrap();
+        save_config_to(&path, &config).unwrap();
 
-        let loaded = load_config();
+        let loaded = load_config_from(&path);
         assert_eq!(loaded.remote_url, config.remote_url);
         assert_eq!(loaded.api_key, config.api_key);
     }

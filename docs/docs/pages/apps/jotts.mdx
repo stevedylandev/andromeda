@@ -8,8 +8,23 @@ A simple, self-hosted markdown note app built with Rust.
 - Password authentication with session cookies
 - Create, edit, and delete markdown notes
 - Markdown rendering with strikethrough, tables, and task lists
+- Interactive TUI with authenticated access for note management
 - Dark themed UI with Commit Mono font
 - SQLite for persistent storage
+
+## Install
+
+Jotts can be installed several ways:
+
+### Homebrew
+
+```bash
+brew install stevedylandev/tap/jotts
+```
+
+### Releases
+
+Visit the [releases](https://github.com/stevedylandev/andromeda/releases?q=jotts&expanded=true) page for binaries and install scripts.
 
 ## Configure
 
@@ -17,17 +32,20 @@ A simple, self-hosted markdown note app built with Rust.
 
 | Variable | Description | Default |
 |---|---|---|
-| `JOTTS_PASSWORD` | Password for login authentication | `changeme` |
+| `JOTTS_PASSWORD` | Password for web login authentication | `changeme` |
+| `JOTTS_API_KEY` | API key for protecting `/api/*` endpoints | — |
 | `JOTTS_DB_PATH` | SQLite database file path | `jotts.sqlite` |
 | `HOST` | Server bind address | `127.0.0.1` |
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
 
+If `JOTTS_API_KEY` is not set, `/api/*` routes return `403`.
+
 ## Deploy
 
 ### Railway
 
-The easiest way to deploy Jotts is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Jotts requires `JOTTS_PASSWORD` to be set during the configure step.
+The easiest way to deploy Jotts is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Jotts requires `JOTTS_PASSWORD` to be set during the configure step. Set `JOTTS_API_KEY` too if you want to use the TUI against your remote instance.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DLhUhH?referralCode=JGcIp6)
 
@@ -44,16 +62,6 @@ This will start Jotts on port `3000` with a persistent volume for the SQLite dat
 
 ### Binary
 
-Install with Homebrew:
-
-```bash
-brew install stevedylandev/tap/jotts
-```
-
-Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=jotts&expanded=true).
-
-You can also build from source:
-
 ```bash
 cargo build --release -p jotts
 ```
@@ -62,4 +70,97 @@ The resulting binary is self-contained with all assets embedded. Copy it to your
 
 ## Use
 
+### CLI
+
+```
+jotts [OPTIONS] [FILE] [COMMAND]
+```
+
+#### Commands
+
+| Command | Description |
+|---|---|
+| `server` | Start the web server |
+| `tui` | Launch the interactive TUI |
+| `auth` | Save remote URL and API key to config file |
+
+#### Arguments
+
+| Argument | Description |
+|---|---|
+| `[FILE]` | File path to create a note from |
+
+#### Options
+
+| Option | Description |
+|---|---|
+| `-r, --remote <URL>` | Remote server URL (env: `JOTTS_REMOTE_URL`) |
+| `-k, --api-key <KEY>` | API key for authenticated operations (env: `JOTTS_API_KEY`) |
+
+### Server
+
+Start the web server with:
+
+```bash
+jotts server --port 3000 --host localhost
+```
+
 Log in at `/login` with your configured password. From there you can create, edit, and delete markdown notes. Notes support GitHub-flavored markdown including strikethrough, tables, and task lists.
+
+#### API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/notes` | List all notes |
+| `POST` | `/api/notes` | Create a note (`{"title": "...", "content": "..."}`) |
+| `GET` | `/api/notes/{short_id}` | Get a note by ID |
+| `PUT` | `/api/notes/{short_id}` | Update a note |
+| `DELETE` | `/api/notes/{short_id}` | Delete a note by ID |
+
+All `/api/*` endpoints require an `x-api-key` header matching `JOTTS_API_KEY`.
+
+### TUI
+
+The Jotts TUI makes it easy to create, edit, and manage your notes either locally or remotely.
+
+```bash
+# Launch TUI (default behavior when no file argument is given)
+jotts
+
+# Or explicitly
+jotts tui
+
+# With remote options
+jotts -r https://your-jotts-instance.com -k your-api-key
+```
+
+#### Local Access
+
+If you are running `jotts` in the same directory as the `jotts.sqlite` file created by the server instance, the TUI will automatically access the database locally.
+
+#### Remote Access
+
+To access a remote instance:
+- Set `JOTTS_API_KEY` on your server instance
+- Run `jotts auth` to enter your server URL and API key, stored under `$HOME/.config/jotts`
+
+#### Keybindings
+
+| Key | Action |
+|---|---|
+| `j`/`Down` | Move down / Scroll down |
+| `k`/`Up` | Move up / Scroll up |
+| `Enter` | Focus content pane |
+| `Esc` | Back / Quit |
+| `y` | Copy note content |
+| `Y` | Copy note link |
+| `o` | Open in browser |
+| `e` | Edit note |
+| `E` | Edit in `$EDITOR` |
+| `d` | Delete note |
+| `c` | Create note |
+| `/` | Search notes |
+| `^W` | Toggle word wrap (edit) |
+| `r` | Refresh notes (remote only) |
+| `q` | Quit |
+| `?` | Toggle help |
