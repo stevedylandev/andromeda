@@ -11,6 +11,7 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Widget, Wrap},
 };
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 fn edit_in_external_editor(
@@ -511,6 +512,35 @@ fn resolve_backend(
         false,
         Some("http://localhost:3000".to_string()),
     ))
+}
+
+pub fn run_file_upload(
+    remote: Option<String>,
+    api_key: Option<String>,
+    file: PathBuf,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let (backend, _, remote_url) = resolve_backend(remote, api_key)?;
+
+    let title = file
+        .file_stem()
+        .ok_or("Invalid file path")?
+        .to_string_lossy()
+        .to_string();
+    let content = std::fs::read_to_string(&file)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    let note = backend
+        .create_note(&title, &content)
+        .map_err(|e| format!("{}", e))?;
+    let link = match &remote_url {
+        Some(url) => format!("{}/notes/{}", url.trim_end_matches('/'), note.short_id),
+        None => note.short_id.clone(),
+    };
+    println!("{}", link);
+    if let Ok(mut clipboard) = Clipboard::new() {
+        let _ = clipboard.set_text(&link);
+        println!("\u{2714} Copied to clipboard!");
+    }
+    Ok(())
 }
 
 pub fn run_auth() -> Result<(), Box<dyn std::error::Error>> {
