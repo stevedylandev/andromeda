@@ -3,57 +3,18 @@ import { Button } from "./Button";
 export function Landing() {
 	return (
 		<main
-			className="landing"
-			style={{
-				position: "relative",
-				width: "100%",
-				background: "#121113 url('/bg.webp') center center / cover no-repeat",
-			}}
+			className="landing relative w-full bg-[#121113] bg-[url('/bg.webp')] bg-cover bg-center bg-no-repeat"
 		>
-			<div
-				style={{
-					display: "flex",
-					width: "100%",
-					minHeight: "100vh",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: "3rem",
-					padding: "1rem",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						gap: "1.5rem",
-					}}
-				>
-					<h1
-						style={{
-							textAlign: "center",
-							fontSize: "92px",
-							fontWeight: 400,
-							fontFamily: '"Commit Mono", monospace, sans-serif',
-							color: "#ffffff",
-						}}
-					>
+			<div className="flex w-full min-h-screen flex-col items-center justify-center gap-12 p-4">
+				<div className="flex flex-col items-center gap-6">
+					<h1 className="text-center sm:text-[92px] text-[64px] font-normal font-['Commit_Mono',monospace] text-white">
 						Andromeda
 					</h1>
-					<h3
-						style={{
-							textAlign: "center",
-							fontSize: "16px",
-							fontWeight: 400,
-							fontFamily: '"Commit Mono", monospace, sans-serif',
-							color: "#ffffff",
-						}}
-					>
-						Minimal, self-hosted personal software in Rust
+					<h3 className="text-center text-lg font-normal font-['Commit_Mono',monospace] text-white">
+						Minimal, self-hosted, personal software in Rust
 					</h3>
 				</div>
-				<div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+				<div className="flex items-center gap-4">
 					<Button type="link" href="/quickstart">
 						Get Started
 					</Button>
