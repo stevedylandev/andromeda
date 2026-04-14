@@ -1,11 +1,12 @@
 use askama::Template;
 use askama_web::WebTemplate;
 use axum::{
-    extract::{Form, Path, Query, State},
+    extract::{Form, Path, Query, Request, State},
     http::{HeaderValue, StatusCode},
+    middleware::{self, Next},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
-    Router,
+    Json, Router,
 };
 use pulldown_cmark::{Options, Parser, html}; use rust_embed::Embed;
 use std::sync::Arc;
@@ -17,6 +18,7 @@ use crate::db::{self, Db, Note};
 pub struct AppState {
     pub db: Db,
     pub app_password: String,
+    pub api_key: Option<String>,
     pub cookie_secure: bool,
 }
 
@@ -78,6 +80,115 @@ struct LoginForm {
 struct NoteForm {
     title: String,
     content: String,
+}
+
+#[derive(serde::Deserialize)]
+struct NoteJson {
+    title: String,
+    content: String,
+}
+
+// --- API key middleware ---
+
+async fn api_key_guard(
+    State(state): State<Arc<AppState>>,
+    req: Request,
+    next: Next,
+) -> Response {
+    let expected = match &state.api_key {
+        Some(k) if !k.is_empty() => k.clone(),
+        _ => {
+            return (StatusCode::FORBIDDEN, "API key not configured on server").into_response();
+        }
+    };
+
+    let provided = req
+        .headers()
+        .get("x-api-key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !andromeda_auth::verify_api_key(provided, &expected) {
+        return (StatusCode::UNAUTHORIZED, "Invalid API key").into_response();
+    }
+
+    next.run(req).await
+}
+
+// --- JSON API handlers ---
+
+async fn api_list_notes(State(state): State<Arc<AppState>>) -> Response {
+    match db::get_all_notes(&state.db) {
+        Ok(notes) => Json(notes).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to list notes: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
+        }
+    }
+}
+
+async fn api_get_note(
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::get_note_by_short_id(&state.db, &short_id) {
+        Ok(Some(note)) => Json(note).into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => {
+            tracing::error!("Failed to get note: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
+        }
+    }
+}
+
+async fn api_create_note(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<NoteJson>,
+) -> Response {
+    let title = body.title.trim();
+    if title.is_empty() {
+        return (StatusCode::BAD_REQUEST, "title required").into_response();
+    }
+    match db::create_note(&state.db, title, &body.content) {
+        Ok(note) => (StatusCode::CREATED, Json(note)).into_response(),
+        Err(e) => {
+            tracing::error!("Failed to create note: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
+        }
+    }
+}
+
+async fn api_update_note(
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+    Json(body): Json<NoteJson>,
+) -> Response {
+    let title = body.title.trim();
+    if title.is_empty() {
+        return (StatusCode::BAD_REQUEST, "title required").into_response();
+    }
+    match db::update_note_by_short_id(&state.db, &short_id, title, &body.content) {
+        Ok(Some(note)) => Json(note).into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => {
+            tracing::error!("Failed to update note: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
+        }
+    }
+}
+
+async fn api_delete_note(
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::delete_note_by_short_id(&state.db, &short_id) {
+        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(false) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => {
+            tracing::error!("Failed to delete note: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
+        }
+    }
 }
 
 // --- Static file handlers ---
@@ -359,11 +470,32 @@ pub async fn run(host: String, port: u16) {
         .map(|v| v == "true")
         .unwrap_or(false);
 
+    let api_key = std::env::var("JOTTS_API_KEY")
+        .ok()
+        .filter(|k| !k.is_empty());
+    if api_key.is_none() {
+        tracing::info!("JOTTS_API_KEY not set, /api/* will return 403");
+    }
+
     let state = Arc::new(AppState {
         db,
         app_password,
+        api_key,
         cookie_secure,
     });
+
+    let api_router = Router::new()
+        .route("/api/notes", get(api_list_notes).post(api_create_note))
+        .route(
+            "/api/notes/{short_id}",
+            get(api_get_note)
+                .put(api_update_note)
+                .delete(api_delete_note),
+        )
+        .route_layer(middleware::from_fn_with_state(
+            state.clone(),
+            api_key_guard,
+        ));
 
     let app = Router::new()
         // Public routes
@@ -379,6 +511,7 @@ pub async fn run(host: String, port: u16) {
         .route("/notes/{short_id}/delete", post(post_delete_note))
         // Static assets
         .route("/static/{*path}", get(serve_static))
+        .merge(api_router)
         .with_state(state);
 
     let addr = format!("{}:{}", host, port);
