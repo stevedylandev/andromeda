@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "jotts", about = "Markdown notes — TUI, server, and CLI")]
@@ -10,6 +11,10 @@ struct Cli {
     /// API key for authenticated operations
     #[arg(short = 'k', long, env = "JOTTS_API_KEY")]
     api_key: Option<String>,
+
+    /// File path to create a note from
+    #[arg(value_name = "FILE")]
+    file: Option<PathBuf>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -57,7 +62,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             jotts::tui::run_auth()?;
         }
         None => {
-            jotts::tui::run_interactive(cli.remote, cli.api_key)?;
+            if let Some(file) = cli.file {
+                jotts::tui::run_file_upload(cli.remote, cli.api_key, file)?;
+            } else {
+                jotts::tui::run_interactive(cli.remote, cli.api_key)?;
+            }
         }
     }
 
