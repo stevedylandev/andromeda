@@ -1,0 +1,68 @@
+name: Docker Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.filter.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine which apps to build
+        id: filter
+        run: |
+          ALL='["cellar","sipp","feeds","parcels","jotts","og","shrink","backup","posts"]'
+
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          if echo "$changed" | grep -qE '^(Cargo\.(toml|lock)|crates/|\.github/workflows/docker(-test)?\.yml)'; then
+            echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          apps=()
+          for app in cellar sipp feeds parcels jotts og shrink backup posts; do
+            if echo "$changed" | grep -q "^apps/${app}/"; then
+              apps+=("\"${app}\"")
+            fi
+          done
+
+          if [ ${#apps[@]} -eq 0 ]; then
+            echo 'apps=[]' >> "$GITHUB_OUTPUT"
+          else
+            echo "apps=[$(IFS=,; echo "${apps[*]}")]" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: build (${{ matrix.app }})
+    needs: changes
+    if: needs.changes.outputs.apps != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJson(needs.changes.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: false
+          load: true
+          tags: ${{ matrix.app }}:test
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
