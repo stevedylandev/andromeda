@@ -24,3 +24,16 @@ andromeda-auth = { workspace = true }
 askama = "0.15"
 askama_web = { version = "0.15", features = ["axum-0.8"] }
 pulldown-cmark = "0.12"
+ratatui = "0.30"
+crossterm = "0.29"
+arboard = "3"
+syntect = "5"
+reqwest = { version = "0.13", features = ["json", "blocking"] }
+clap = { version = "4", features = ["derive", "env"] }
+toml = "1.0"
+rpassword = "7"
+open = "5.3.3"
+
+[[bin]]
+name = "jotts"
+path = "src/main.rs"

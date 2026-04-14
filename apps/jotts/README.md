@@ -24,6 +24,7 @@ cargo build --release
 | `HOST` | Server bind address | `127.0.0.1` |
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+| `JOTTS_API_KEY` | API key for `/api/notes` JSON endpoints (unset = API disabled) | _(unset)_ |
 
 ## Overview
 
@@ -56,6 +57,21 @@ jotts/
 ├── Dockerfile         # Multi-stage build (Rust + Debian slim)
 └── docker-compose.yml
 ```
+
+## CLI / TUI
+
+The `jotts` binary also ships an interactive terminal UI and a minimal CLI.
+
+```bash
+jotts               # Launch TUI (local SQLite by default, remote if configured)
+jotts server        # Run the web server
+jotts tui           # Launch TUI explicitly
+jotts auth          # Prompt for remote URL + API key, save to ~/.config/jotts/config.toml
+```
+
+Flags: `--remote <URL>` (env `JOTTS_REMOTE_URL`), `--api-key <KEY>` (env `JOTTS_API_KEY`).
+
+Against a remote server, set `JOTTS_API_KEY` on the server and pass the same key from the CLI. Requests go to `/api/notes` with the `x-api-key` header. The TUI renders note content with syntect Markdown syntax highlighting.
 
 ## Deployment
 
