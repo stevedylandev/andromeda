@@ -1,6 +1,8 @@
 use rand::RngCore;
 use subtle::ConstantTimeEq;
 
+pub mod datetime;
+
 /// Constant-time password comparison to prevent timing attacks.
 /// Pads/truncates both sides to a fixed 256-byte buffer so length
 /// differences don't leak via timing.

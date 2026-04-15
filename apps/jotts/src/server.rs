@@ -242,26 +242,7 @@ async fn post_login(
 
     // Session expires in 7 days
     // We need to compute a datetime 7 days from now
-    let expires_at = {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let secs = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-            + 7 * 24 * 3600;
-        let days = secs / 86400;
-        let tod = secs % 86400;
-        let (y, m, d) = days_to_ymd(days as i64);
-        format!(
-            "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
-            y,
-            m,
-            d,
-            tod / 3600,
-            (tod % 3600) / 60,
-            tod % 60
-        )
-    };
+    let expires_at = andromeda_auth::datetime::expiry_datetime_string(7 * 24 * 3600);
 
     if let Err(e) = db::insert_session(&state.db, &token, &expires_at) {
         tracing::error!("Failed to create session: {}", e);
@@ -431,22 +412,6 @@ async fn post_delete_note(
             Redirect::to("/").into_response()
         }
     }
-}
-
-// --- Date helper (same algorithm as auth.rs) ---
-
-fn days_to_ymd(mut days: i64) -> (i64, i64, i64) {
-    days += 719468;
-    let era = if days >= 0 { days } else { days - 146096 } / 146097;
-    let doe = (days - era * 146097) as u32;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe as i64 + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    (y, m as i64, d as i64)
 }
 
 // --- Router ---
