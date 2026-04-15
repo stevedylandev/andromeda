@@ -439,6 +439,27 @@ struct WineFormData {
     scores: WineScores,
 }
 
+impl<'a> From<&'a WineFormData> for crate::db::WineInput<'a> {
+    fn from(data: &'a WineFormData) -> Self {
+        Self {
+            name: &data.base.name,
+            origin: &data.base.origin,
+            grape: &data.base.grape,
+            notes: &data.base.notes,
+            sweetness: data.scores.sweetness,
+            acidity: data.scores.acidity,
+            tannin: data.scores.tannin,
+            alcohol: data.scores.alcohol,
+            body: data.scores.body,
+            clarity: data.scores.clarity,
+            color_intensity: data.scores.color_intensity,
+            aroma_intensity: data.scores.aroma_intensity,
+            nose_complexity: data.scores.nose_complexity,
+            background: &data.base.background,
+        }
+    }
+}
+
 async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, String> {
     let mut base = WineBase::default();
     let mut scores = WineScores::default();
