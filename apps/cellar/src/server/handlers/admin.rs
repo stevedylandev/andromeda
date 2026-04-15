@@ -137,24 +137,24 @@ pub async fn post_new_wine(
     };
 
     let input = db::WineInput {
-        name: &data.name,
-        origin: &data.origin,
-        grape: &data.grape,
-        notes: &data.notes,
-        sweetness: data.sweetness,
-        acidity: data.acidity,
-        tannin: data.tannin,
-        alcohol: data.alcohol,
-        body: data.body,
-        clarity: data.clarity,
-        color_intensity: data.color_intensity,
-        aroma_intensity: data.aroma_intensity,
-        nose_complexity: data.nose_complexity,
-        background: &data.background,
+        name: &data.base.name,
+        origin: &data.base.origin,
+        grape: &data.base.grape,
+        notes: &data.base.notes,
+        sweetness: data.scores.sweetness,
+        acidity: data.scores.acidity,
+        tannin: data.scores.tannin,
+        alcohol: data.scores.alcohol,
+        body: data.scores.body,
+        clarity: data.scores.clarity,
+        color_intensity: data.scores.color_intensity,
+        aroma_intensity: data.scores.aroma_intensity,
+        nose_complexity: data.scores.nose_complexity,
+        background: &data.base.background,
     };
     match db::create_wine(&state.db, &input, false) {
         Ok(wine) => {
-            if let (Some(image), Some(mime)) = (&data.image, &data.image_mime) {
+            if let (Some(image), Some(mime)) = (&data.base.image, &data.base.image_mime) {
                 if let Err(e) = db::update_wine_image(&state.db, &wine.short_id, image, mime) {
                     tracing::error!("Failed to set wine image: {}", e);
                 }
@@ -187,25 +187,25 @@ pub async fn post_edit_wine(
     };
 
     let input = db::WineInput {
-        name: &data.name,
-        origin: &data.origin,
-        grape: &data.grape,
-        notes: &data.notes,
-        sweetness: data.sweetness,
-        acidity: data.acidity,
-        tannin: data.tannin,
-        alcohol: data.alcohol,
-        body: data.body,
-        clarity: data.clarity,
-        color_intensity: data.color_intensity,
-        aroma_intensity: data.aroma_intensity,
-        nose_complexity: data.nose_complexity,
-        background: &data.background,
+        name: &data.base.name,
+        origin: &data.base.origin,
+        grape: &data.base.grape,
+        notes: &data.base.notes,
+        sweetness: data.scores.sweetness,
+        acidity: data.scores.acidity,
+        tannin: data.scores.tannin,
+        alcohol: data.scores.alcohol,
+        body: data.scores.body,
+        clarity: data.scores.clarity,
+        color_intensity: data.scores.color_intensity,
+        aroma_intensity: data.scores.aroma_intensity,
+        nose_complexity: data.scores.nose_complexity,
+        background: &data.base.background,
     };
     match db::update_wine(&state.db, &short_id, &input) {
         Ok(Some(_)) => {
-            if let Some(image) = &data.image {
-                if let Some(mime) = &data.image_mime {
+            if let Some(image) = &data.base.image {
+                if let Some(mime) = &data.base.image_mime {
                     if let Err(e) = db::update_wine_image(&state.db, &short_id, image, mime) {
                         tracing::error!("Failed to update wine image: {}", e);
                     }
