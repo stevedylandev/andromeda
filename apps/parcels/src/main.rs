@@ -139,15 +139,7 @@ async fn refresh_one(state: &AppState, package: &db::Package) -> Result<(), anyh
 
     let detail = usps::fetch_tracking(&state.http_client, &token, &package.tracking_number).await?;
 
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-    let refreshed_at = {
-        let days = now / 86400;
-        let h = (now / 3600) % 24;
-        let m = (now / 60) % 60;
-        let s = now % 60;
-        auth::format_unix_to_datetime_pub(days, h, m, s)
-    };
+    let refreshed_at = andromeda_auth::datetime::now_datetime_string();
 
     let expected_delivery = detail
         .delivery_date_expectation
