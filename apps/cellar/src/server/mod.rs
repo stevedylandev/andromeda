@@ -1,6 +1,6 @@
 use askama::Template;
 use axum::{
-    extract::{DefaultBodyLimit, Multipart},
+    extract::{multipart::Field, DefaultBodyLimit, Multipart},
     routing::{get, post},
     Router,
 };
@@ -320,7 +320,8 @@ fn process_image(data: &[u8]) -> Result<Vec<u8>, String> {
 
 // --- Multipart parsing ---
 
-struct WineFormData {
+#[derive(Default)]
+struct WineBase {
     name: String,
     origin: String,
     grape: String,
@@ -328,6 +329,51 @@ struct WineFormData {
     background: String,
     image: Option<Vec<u8>>,
     image_mime: Option<String>,
+}
+
+impl WineBase {
+    fn owns(field_name: &str) -> bool {
+        matches!(
+            field_name,
+            "image" | "name" | "origin" | "grape" | "notes" | "background"
+        )
+    }
+
+    async fn apply_field(&mut self, field_name: &str, field: Field<'_>) -> Result<(), String> {
+        match field_name {
+            "image" => {
+                let bytes = field.bytes().await.map_err(|e| format!("Failed to read image: {}", e))?;
+                if !bytes.is_empty() {
+                    self.image = Some(process_image(&bytes)?);
+                    self.image_mime = Some("image/jpeg".to_string());
+                }
+            }
+            "name" => self.name = field.text().await.unwrap_or_default(),
+            "origin" => self.origin = field.text().await.unwrap_or_default(),
+            "grape" => self.grape = field.text().await.unwrap_or_default(),
+            "notes" => self.notes = field.text().await.unwrap_or_default(),
+            "background" => self.background = field.text().await.unwrap_or_default(),
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn finalize(&mut self) -> Result<(), String> {
+        if self.name.trim().is_empty() {
+            return Err("Name is required".to_string());
+        }
+        self.name = self.name.trim().to_string();
+        self.origin = self.origin.trim().to_string();
+        self.grape = self.grape.trim().to_string();
+        self.notes = self.notes.trim().to_string();
+        self.background = self.background.trim().to_string();
+        Ok(())
+    }
+}
+
+type WishlistFormData = WineBase;
+
+struct WineScores {
     sweetness: i32,
     acidity: i32,
     tannin: i32,
@@ -339,130 +385,86 @@ struct WineFormData {
     nose_complexity: i32,
 }
 
+impl Default for WineScores {
+    fn default() -> Self {
+        Self {
+            sweetness: 3,
+            acidity: 3,
+            tannin: 3,
+            alcohol: 3,
+            body: 3,
+            clarity: 3,
+            color_intensity: 3,
+            aroma_intensity: 3,
+            nose_complexity: 3,
+        }
+    }
+}
+
+impl WineScores {
+    fn slot(&mut self, field_name: &str) -> Option<&mut i32> {
+        Some(match field_name {
+            "sweetness" => &mut self.sweetness,
+            "acidity" => &mut self.acidity,
+            "tannin" => &mut self.tannin,
+            "alcohol" => &mut self.alcohol,
+            "body" => &mut self.body,
+            "clarity" => &mut self.clarity,
+            "color_intensity" => &mut self.color_intensity,
+            "aroma_intensity" => &mut self.aroma_intensity,
+            "nose_complexity" => &mut self.nose_complexity,
+            _ => return None,
+        })
+    }
+
+    fn clamp_all(&mut self) {
+        for v in [
+            &mut self.sweetness,
+            &mut self.acidity,
+            &mut self.tannin,
+            &mut self.alcohol,
+            &mut self.body,
+            &mut self.clarity,
+            &mut self.color_intensity,
+            &mut self.aroma_intensity,
+            &mut self.nose_complexity,
+        ] {
+            *v = (*v).clamp(1, 5);
+        }
+    }
+}
+
+struct WineFormData {
+    base: WineBase,
+    scores: WineScores,
+}
+
 async fn parse_wine_multipart(mut multipart: Multipart) -> Result<WineFormData, String> {
-    let mut name = String::new();
-    let mut origin = String::new();
-    let mut grape = String::new();
-    let mut notes = String::new();
-    let mut background = String::new();
-    let mut image: Option<Vec<u8>> = None;
-    let mut image_mime: Option<String> = None;
-    let mut sweetness = 3;
-    let mut acidity = 3;
-    let mut tannin = 3;
-    let mut alcohol = 3;
-    let mut body = 3;
-    let mut clarity = 3;
-    let mut color_intensity = 3;
-    let mut aroma_intensity = 3;
-    let mut nose_complexity = 3;
+    let mut base = WineBase::default();
+    let mut scores = WineScores::default();
 
     while let Ok(Some(field)) = multipart.next_field().await {
         let field_name = field.name().unwrap_or("").to_string();
-        match field_name.as_str() {
-            "image" => {
-                let bytes = field.bytes().await.map_err(|e| format!("Failed to read image: {}", e))?;
-                if !bytes.is_empty() {
-                    let processed = process_image(&bytes)?;
-                    image = Some(processed);
-                    image_mime = Some("image/jpeg".to_string());
-                }
-            }
-            "name" => name = field.text().await.unwrap_or_default(),
-            "origin" => origin = field.text().await.unwrap_or_default(),
-            "grape" => grape = field.text().await.unwrap_or_default(),
-            "notes" => notes = field.text().await.unwrap_or_default(),
-            "background" => background = field.text().await.unwrap_or_default(),
-            "sweetness" => sweetness = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "acidity" => acidity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "tannin" => tannin = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "alcohol" => alcohol = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "body" => body = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "clarity" => clarity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "color_intensity" => color_intensity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "aroma_intensity" => aroma_intensity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            "nose_complexity" => nose_complexity = field.text().await.unwrap_or_default().parse().unwrap_or(3),
-            _ => {}
+        if WineBase::owns(&field_name) {
+            base.apply_field(&field_name, field).await?;
+        } else if let Some(slot) = scores.slot(&field_name) {
+            *slot = field.text().await.unwrap_or_default().parse().unwrap_or(3);
         }
     }
 
-    if name.trim().is_empty() {
-        return Err("Name is required".to_string());
-    }
-
-    let clamp = |v: i32| v.max(1).min(5);
-    Ok(WineFormData {
-        name: name.trim().to_string(),
-        origin: origin.trim().to_string(),
-        grape: grape.trim().to_string(),
-        notes: notes.trim().to_string(),
-        background: background.trim().to_string(),
-        image,
-        image_mime,
-        sweetness: clamp(sweetness),
-        acidity: clamp(acidity),
-        tannin: clamp(tannin),
-        alcohol: clamp(alcohol),
-        body: clamp(body),
-        clarity: clamp(clarity),
-        color_intensity: clamp(color_intensity),
-        aroma_intensity: clamp(aroma_intensity),
-        nose_complexity: clamp(nose_complexity),
-    })
-}
-
-struct WishlistFormData {
-    name: String,
-    origin: String,
-    grape: String,
-    notes: String,
-    background: String,
-    image: Option<Vec<u8>>,
-    image_mime: Option<String>,
+    base.finalize()?;
+    scores.clamp_all();
+    Ok(WineFormData { base, scores })
 }
 
 async fn parse_wishlist_multipart(mut multipart: Multipart) -> Result<WishlistFormData, String> {
-    let mut name = String::new();
-    let mut origin = String::new();
-    let mut grape = String::new();
-    let mut notes = String::new();
-    let mut background = String::new();
-    let mut image: Option<Vec<u8>> = None;
-    let mut image_mime: Option<String> = None;
-
+    let mut base = WineBase::default();
     while let Ok(Some(field)) = multipart.next_field().await {
         let field_name = field.name().unwrap_or("").to_string();
-        match field_name.as_str() {
-            "image" => {
-                let bytes = field.bytes().await.map_err(|e| format!("Failed to read image: {}", e))?;
-                if !bytes.is_empty() {
-                    let processed = process_image(&bytes)?;
-                    image = Some(processed);
-                    image_mime = Some("image/jpeg".to_string());
-                }
-            }
-            "name" => name = field.text().await.unwrap_or_default(),
-            "origin" => origin = field.text().await.unwrap_or_default(),
-            "grape" => grape = field.text().await.unwrap_or_default(),
-            "notes" => notes = field.text().await.unwrap_or_default(),
-            "background" => background = field.text().await.unwrap_or_default(),
-            _ => {}
-        }
+        base.apply_field(&field_name, field).await?;
     }
-
-    if name.trim().is_empty() {
-        return Err("Name is required".to_string());
-    }
-
-    Ok(WishlistFormData {
-        name: name.trim().to_string(),
-        origin: origin.trim().to_string(),
-        grape: grape.trim().to_string(),
-        notes: notes.trim().to_string(),
-        background: background.trim().to_string(),
-        image,
-        image_mime,
-    })
+    base.finalize()?;
+    Ok(base)
 }
 
 // --- Router ---
