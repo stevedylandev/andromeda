@@ -136,27 +136,31 @@ pub async fn post_new_wine(
         }
     };
 
-    match db::create_wine(
-        &state.db,
-        &data.name,
-        &data.origin,
-        &data.grape,
-        &data.notes,
-        data.image.as_deref(),
-        data.image_mime.as_deref(),
-        data.sweetness,
-        data.acidity,
-        data.tannin,
-        data.alcohol,
-        data.body,
-        data.clarity,
-        data.color_intensity,
-        data.aroma_intensity,
-        data.nose_complexity,
-        &data.background,
-        false,
-    ) {
-        Ok(wine) => Redirect::to(&format!("/wines/{}", wine.short_id)).into_response(),
+    let input = db::WineInput {
+        name: &data.name,
+        origin: &data.origin,
+        grape: &data.grape,
+        notes: &data.notes,
+        sweetness: data.sweetness,
+        acidity: data.acidity,
+        tannin: data.tannin,
+        alcohol: data.alcohol,
+        body: data.body,
+        clarity: data.clarity,
+        color_intensity: data.color_intensity,
+        aroma_intensity: data.aroma_intensity,
+        nose_complexity: data.nose_complexity,
+        background: &data.background,
+    };
+    match db::create_wine(&state.db, &input, false) {
+        Ok(wine) => {
+            if let (Some(image), Some(mime)) = (&data.image, &data.image_mime) {
+                if let Err(e) = db::update_wine_image(&state.db, &wine.short_id, image, mime) {
+                    tracing::error!("Failed to set wine image: {}", e);
+                }
+            }
+            Redirect::to(&format!("/wines/{}", wine.short_id)).into_response()
+        }
         Err(e) => {
             tracing::error!("Failed to create wine: {}", e);
             Redirect::to("/admin/new?error=Failed+to+create+wine").into_response()
@@ -182,24 +186,23 @@ pub async fn post_edit_wine(
         }
     };
 
-    match db::update_wine(
-        &state.db,
-        &short_id,
-        &data.name,
-        &data.origin,
-        &data.grape,
-        &data.notes,
-        data.sweetness,
-        data.acidity,
-        data.tannin,
-        data.alcohol,
-        data.body,
-        data.clarity,
-        data.color_intensity,
-        data.aroma_intensity,
-        data.nose_complexity,
-        &data.background,
-    ) {
+    let input = db::WineInput {
+        name: &data.name,
+        origin: &data.origin,
+        grape: &data.grape,
+        notes: &data.notes,
+        sweetness: data.sweetness,
+        acidity: data.acidity,
+        tannin: data.tannin,
+        alcohol: data.alcohol,
+        body: data.body,
+        clarity: data.clarity,
+        color_intensity: data.color_intensity,
+        aroma_intensity: data.aroma_intensity,
+        nose_complexity: data.nose_complexity,
+        background: &data.background,
+    };
+    match db::update_wine(&state.db, &short_id, &input) {
         Ok(Some(_)) => {
             if let Some(image) = &data.image {
                 if let Some(mime) = &data.image_mime {
@@ -285,19 +288,31 @@ pub async fn post_new_wishlist_wine(
         }
     };
 
-    match db::create_wine(
-        &state.db,
-        &data.name,
-        &data.origin,
-        &data.grape,
-        &data.notes,
-        data.image.as_deref(),
-        data.image_mime.as_deref(),
-        3, 3, 3, 3, 3, 3, 3, 3, 3,
-        &data.background,
-        true,
-    ) {
-        Ok(_) => Redirect::to("/wishlist").into_response(),
+    let input = db::WineInput {
+        name: &data.name,
+        origin: &data.origin,
+        grape: &data.grape,
+        notes: &data.notes,
+        sweetness: 3,
+        acidity: 3,
+        tannin: 3,
+        alcohol: 3,
+        body: 3,
+        clarity: 3,
+        color_intensity: 3,
+        aroma_intensity: 3,
+        nose_complexity: 3,
+        background: &data.background,
+    };
+    match db::create_wine(&state.db, &input, true) {
+        Ok(wine) => {
+            if let (Some(image), Some(mime)) = (&data.image, &data.image_mime) {
+                if let Err(e) = db::update_wine_image(&state.db, &wine.short_id, image, mime) {
+                    tracing::error!("Failed to set wine image: {}", e);
+                }
+            }
+            Redirect::to("/wishlist").into_response()
+        }
         Err(e) => {
             tracing::error!("Failed to create wishlist wine: {}", e);
             Redirect::to("/admin/wishlist/new?error=Failed+to+create+wine").into_response()
