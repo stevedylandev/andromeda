@@ -136,22 +136,7 @@ pub async fn post_new_wine(
         }
     };
 
-    let input = db::WineInput {
-        name: &data.base.name,
-        origin: &data.base.origin,
-        grape: &data.base.grape,
-        notes: &data.base.notes,
-        sweetness: data.scores.sweetness,
-        acidity: data.scores.acidity,
-        tannin: data.scores.tannin,
-        alcohol: data.scores.alcohol,
-        body: data.scores.body,
-        clarity: data.scores.clarity,
-        color_intensity: data.scores.color_intensity,
-        aroma_intensity: data.scores.aroma_intensity,
-        nose_complexity: data.scores.nose_complexity,
-        background: &data.base.background,
-    };
+    let input = db::WineInput::from(&data);
     match db::create_wine(&state.db, &input, false) {
         Ok(wine) => {
             if let (Some(image), Some(mime)) = (&data.base.image, &data.base.image_mime) {
@@ -186,22 +171,7 @@ pub async fn post_edit_wine(
         }
     };
 
-    let input = db::WineInput {
-        name: &data.base.name,
-        origin: &data.base.origin,
-        grape: &data.base.grape,
-        notes: &data.base.notes,
-        sweetness: data.scores.sweetness,
-        acidity: data.scores.acidity,
-        tannin: data.scores.tannin,
-        alcohol: data.scores.alcohol,
-        body: data.scores.body,
-        clarity: data.scores.clarity,
-        color_intensity: data.scores.color_intensity,
-        aroma_intensity: data.scores.aroma_intensity,
-        nose_complexity: data.scores.nose_complexity,
-        background: &data.base.background,
-    };
+    let input = db::WineInput::from(&data);
     match db::update_wine(&state.db, &short_id, &input) {
         Ok(Some(_)) => {
             if let Some(image) = &data.base.image {
