@@ -25,6 +25,7 @@ pub struct AppState {
     admin_password: Option<String>,
     cookie_secure: bool,
     base_url: String,
+    freshrss_config: Option<feeds::FreshRSSConfig>,
 }
 
 struct TemplateFeedItem {
@@ -64,13 +65,6 @@ fn format_date(timestamp: i64) -> String {
         .unwrap_or_default()
 }
 
-fn freshrss_env() -> Option<(String, String, String)> {
-    let url = std::env::var("FRESHRSS_URL").ok()?;
-    let username = std::env::var("FRESHRSS_USERNAME").ok()?;
-    let password = std::env::var("FRESHRSS_PASSWORD").ok()?;
-    Some((url, username, password))
-}
-
 async fn index_handler(
     State(state): State<Arc<AppState>>,
     Query(params): Query<HashMap<String, String>>,
@@ -80,7 +74,7 @@ async fn index_handler(
         .or_else(|| params.get("urls"))
         .map(|s| s.as_str());
 
-    let template = match feeds::get_feed_items(url_query).await {
+    let template = match feeds::get_feed_items(url_query, state.freshrss_config.as_ref()).await {
         Ok((items, feed_urls)) => {
             let template_items: Vec<TemplateFeedItem> = items
                 .into_iter()
@@ -114,6 +108,7 @@ async fn index_handler(
 }
 
 async fn feeds_handler(
+    State(state): State<Arc<AppState>>,
     Query(params): Query<HashMap<String, String>>,
 ) -> Result<Response, StatusCode> {
     let format = params
@@ -121,14 +116,12 @@ async fn feeds_handler(
         .map(|s| s.as_str())
         .unwrap_or("json");
 
-    let freshrss_url =
-        std::env::var("FRESHRSS_URL").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let username =
-        std::env::var("FRESHRSS_USERNAME").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let password =
-        std::env::var("FRESHRSS_PASSWORD").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let config = state
+        .freshrss_config
+        .as_ref()
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let data = feeds::fetch_freshrss_subscriptions(&freshrss_url, &username, &password)
+    let data = feeds::fetch_freshrss_subscriptions(config)
         .await
         .map_err(|e| {
             eprintln!("Failed to fetch subscriptions: {e}");
@@ -334,19 +327,13 @@ async fn admin_handler(
     State(state): State<Arc<AppState>>,
     Query(q): Query<FlashQuery>,
 ) -> Response {
-    let _ = state; // state available if needed later
+    let freshrss_configured = state.freshrss_config.is_some();
 
-    let freshrss_configured = freshrss_env().is_some();
-
-    let subscriptions = if freshrss_configured {
-        if let Some((url, user, pass)) = freshrss_env() {
-            feeds::fetch_freshrss_subscriptions(&url, &user, &pass)
-                .await
-                .ok()
-                .and_then(|list| list.subscriptions)
-        } else {
-            None
-        }
+    let subscriptions = if let Some(config) = &state.freshrss_config {
+        feeds::fetch_freshrss_subscriptions(config)
+            .await
+            .ok()
+            .and_then(|list| list.subscriptions)
     } else {
         None
     };
@@ -366,16 +353,17 @@ async fn admin_handler(
 
 async fn add_feed_handler(
     _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
     Form(form): Form<AddFeedForm>,
 ) -> Response {
-    let (url, user, pass) = match freshrss_env() {
-        Some(env) => env,
+    let config = match &state.freshrss_config {
+        Some(c) => c,
         None => {
             return Redirect::to("/admin?error=FreshRSS+not+configured").into_response();
         }
     };
 
-    match feeds::add_freshrss_subscription(&url, &user, &pass, &form.feed_url).await {
+    match feeds::add_freshrss_subscription(config, &form.feed_url).await {
         Ok(_) => Redirect::to("/admin?success=Feed+added+successfully").into_response(),
         Err(e) => {
             eprintln!("Failed to add feed: {e}");
@@ -400,6 +388,7 @@ async fn main() {
         admin_password: std::env::var("ADMIN_PASSWORD").ok(),
         cookie_secure,
         base_url,
+        freshrss_config: feeds::FreshRSSConfig::from_env(),
     });
 
     let app = Router::new()
