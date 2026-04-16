@@ -1,6 +1,167 @@
 use crate::models::{FeedItem, FreshRSSResponse, SubscriptionList};
 use std::time::Duration;
 
+#[derive(Clone)]
+pub struct FreshRSSConfig {
+    pub url: String,
+    pub username: String,
+    pub password: String,
+}
+
+impl FreshRSSConfig {
+    pub fn from_env() -> Option<Self> {
+        Some(Self {
+            url: std::env::var("FRESHRSS_URL").ok()?,
+            username: std::env::var("FRESHRSS_USERNAME").ok()?,
+            password: std::env::var("FRESHRSS_PASSWORD").ok()?,
+        })
+    }
+}
+
+struct FreshRSSClient {
+    client: reqwest::Client,
+    base_url: String,
+    token: String,
+}
+
+impl FreshRSSClient {
+    async fn new(config: &FreshRSSConfig) -> Result<Self, String> {
+        let client = build_client();
+        let auth_url = format!(
+            "{}/api/greader.php/accounts/ClientLogin?Email={}&Passwd={}",
+            config.url, config.username, config.password
+        );
+
+        let text = client
+            .get(&auth_url)
+            .send()
+            .await
+            .map_err(|e| format!("Auth request failed: {e}"))?
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read auth response: {e}"))?;
+
+        let token = text
+            .lines()
+            .find_map(|line| line.strip_prefix("Auth="))
+            .map(|t| t.trim().to_string())
+            .ok_or_else(|| "Authentication failed: no Auth token found".to_string())?;
+
+        Ok(Self {
+            client,
+            base_url: config.url.clone(),
+            token,
+        })
+    }
+
+    fn api_url(&self, path: &str) -> String {
+        format!("{}/api/greader.php/{}", self.base_url, path)
+    }
+
+    fn auth_get(&self, path: &str) -> reqwest::RequestBuilder {
+        self.client
+            .get(self.api_url(path))
+            .header("Authorization", format!("GoogleLogin auth={}", self.token))
+    }
+
+    fn auth_post(&self, path: &str) -> reqwest::RequestBuilder {
+        self.client
+            .post(self.api_url(path))
+            .header("Authorization", format!("GoogleLogin auth={}", self.token))
+    }
+
+    async fn fetch_items(&self) -> Result<Vec<FeedItem>, String> {
+        let data: FreshRSSResponse = self
+            .auth_get("reader/api/0/stream/contents/reading-list?n=60&r=d")
+            .send()
+            .await
+            .map_err(|e| format!("Failed to fetch reading list: {e}"))?
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse FreshRSS response: {e}"))?;
+
+        let mut items: Vec<FeedItem> = data
+            .items
+            .iter()
+            .map(|item| {
+                let link = item
+                    .canonical
+                    .as_ref()
+                    .and_then(|c| c.first())
+                    .map(|l| l.href.clone())
+                    .unwrap_or_default();
+
+                FeedItem {
+                    id: item.id.clone(),
+                    title: item.title.clone(),
+                    published: item.published,
+                    author: item.origin.title.clone(),
+                    link,
+                    origin: item.origin.title.clone(),
+                }
+            })
+            .collect();
+
+        items.sort_by(|a, b| b.published.cmp(&a.published));
+        Ok(items)
+    }
+
+    async fn fetch_subscriptions(&self) -> Result<SubscriptionList, String> {
+        let response = self
+            .auth_get("reader/api/0/subscription/list?output=json")
+            .send()
+            .await
+            .map_err(|e| format!("Failed to fetch subscriptions: {e}"))?;
+
+        if !response.status().is_success() {
+            return Err(format!("FreshRSS API error: {}", response.status()));
+        }
+
+        response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse subscription list: {e}"))
+    }
+
+    async fn add_subscription(&self, feed_url: &str) -> Result<String, String> {
+        let response = self
+            .auth_post("reader/api/0/subscription/quickadd")
+            .form(&[("quickadd", feed_url)])
+            .send()
+            .await
+            .map_err(|e| format!("Failed to add subscription: {e}"))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(format!("FreshRSS API error ({}): {}", status, body));
+        }
+
+        let stream_id = format!("feed/{feed_url}");
+        let response = self
+            .auth_post("reader/api/0/subscription/edit")
+            .form(&[
+                ("ac", "edit"),
+                ("s", &stream_id),
+                ("a", "user/-/label/Feeds"),
+            ])
+            .send()
+            .await
+            .map_err(|e| format!("Feed added but failed to set category: {e}"))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(format!(
+                "Feed added but failed to set category ({}): {}",
+                status, body
+            ));
+        }
+
+        Ok(format!("Successfully added feed: {feed_url}"))
+    }
+}
+
 fn build_client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
@@ -142,177 +303,21 @@ pub fn parse_opml(content: &str) -> Vec<String> {
     urls
 }
 
-async fn freshrss_auth(
-    client: &reqwest::Client,
-    freshrss_url: &str,
-    username: &str,
-    password: &str,
-) -> Result<String, String> {
-    let auth_url = format!(
-        "{}/api/greader.php/accounts/ClientLogin?Email={}&Passwd={}",
-        freshrss_url, username, password
-    );
-
-    let response = client
-        .get(&auth_url)
-        .send()
-        .await
-        .map_err(|e| format!("Auth request failed: {e}"))?;
-
-    let text = response
-        .text()
-        .await
-        .map_err(|e| format!("Failed to read auth response: {e}"))?;
-
-    for line in text.lines() {
-        if let Some(token) = line.strip_prefix("Auth=") {
-            return Ok(token.trim().to_string());
-        }
-    }
-
-    Err("Authentication failed: no Auth token found".to_string())
-}
-
-pub async fn fetch_freshrss_items(
-    freshrss_url: &str,
-    username: &str,
-    password: &str,
-) -> Result<Vec<FeedItem>, String> {
-    let client = build_client();
-    let token = freshrss_auth(&client, freshrss_url, username, password).await?;
-
-    let url = format!(
-        "{}/api/greader.php/reader/api/0/stream/contents/reading-list?n=60&r=d",
-        freshrss_url
-    );
-
-    let response = client
-        .get(&url)
-        .header("Authorization", format!("GoogleLogin auth={token}"))
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch reading list: {e}"))?;
-
-    let data: FreshRSSResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse FreshRSS response: {e}"))?;
-
-    let mut items: Vec<FeedItem> = data
-        .items
-        .iter()
-        .map(|item| {
-            let link = item
-                .canonical
-                .as_ref()
-                .and_then(|c| c.first())
-                .map(|l| l.href.clone())
-                .unwrap_or_default();
-
-            FeedItem {
-                id: item.id.clone(),
-                title: item.title.clone(),
-                published: item.published,
-                author: item.origin.title.clone(),
-                link,
-                origin: item.origin.title.clone(),
-            }
-        })
-        .collect();
-
-    items.sort_by(|a, b| b.published.cmp(&a.published));
-    Ok(items)
+pub async fn fetch_freshrss_items(config: &FreshRSSConfig) -> Result<Vec<FeedItem>, String> {
+    FreshRSSClient::new(config).await?.fetch_items().await
 }
 
 pub async fn fetch_freshrss_subscriptions(
-    freshrss_url: &str,
-    username: &str,
-    password: &str,
+    config: &FreshRSSConfig,
 ) -> Result<SubscriptionList, String> {
-    let client = build_client();
-    let token = freshrss_auth(&client, freshrss_url, username, password).await?;
-
-    let url = format!(
-        "{}/api/greader.php/reader/api/0/subscription/list?output=json",
-        freshrss_url
-    );
-
-    let response = client
-        .get(&url)
-        .header("Authorization", format!("GoogleLogin auth={token}"))
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch subscriptions: {e}"))?;
-
-    if !response.status().is_success() {
-        return Err(format!("FreshRSS API error: {}", response.status()));
-    }
-
-    let data: SubscriptionList = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse subscription list: {e}"))?;
-
-    Ok(data)
+    FreshRSSClient::new(config).await?.fetch_subscriptions().await
 }
 
 pub async fn add_freshrss_subscription(
-    freshrss_url: &str,
-    username: &str,
-    password: &str,
+    config: &FreshRSSConfig,
     feed_url: &str,
 ) -> Result<String, String> {
-    let client = build_client();
-    let token = freshrss_auth(&client, freshrss_url, username, password).await?;
-
-    let url = format!(
-        "{}/api/greader.php/reader/api/0/subscription/quickadd",
-        freshrss_url
-    );
-
-    let response = client
-        .post(&url)
-        .header("Authorization", format!("GoogleLogin auth={token}"))
-        .form(&[("quickadd", feed_url)])
-        .send()
-        .await
-        .map_err(|e| format!("Failed to add subscription: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(format!("FreshRSS API error ({}): {}", status, body));
-    }
-
-    // Assign the "Feeds" category via subscription/edit
-    let edit_url = format!(
-        "{}/api/greader.php/reader/api/0/subscription/edit",
-        freshrss_url
-    );
-
-    let stream_id = format!("feed/{feed_url}");
-    let response = client
-        .post(&edit_url)
-        .header("Authorization", format!("GoogleLogin auth={token}"))
-        .form(&[
-            ("ac", "edit"),
-            ("s", &stream_id),
-            ("a", "user/-/label/Feeds"),
-        ])
-        .send()
-        .await
-        .map_err(|e| format!("Feed added but failed to set category: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(format!(
-            "Feed added but failed to set category ({}): {}",
-            status, body
-        ));
-    }
-
-    Ok(format!("Successfully added feed: {feed_url}"))
+    FreshRSSClient::new(config).await?.add_subscription(feed_url).await
 }
 
 #[cfg(test)]
@@ -373,8 +378,8 @@ mod tests {
 
 pub async fn get_feed_items(
     url_query: Option<&str>,
+    freshrss_config: Option<&FreshRSSConfig>,
 ) -> Result<(Vec<FeedItem>, Option<Vec<String>>), String> {
-    // Priority 1: URL query parameter
     if let Some(query) = url_query {
         let urls: Vec<String> = query
             .split(',')
@@ -388,7 +393,6 @@ pub async fn get_feed_items(
         }
     }
 
-    // Priority 2: Local OPML file
     if let Ok(content) = tokio::fs::read_to_string("feeds.opml").await {
         let urls = parse_opml(&content);
         if !urls.is_empty() {
@@ -397,13 +401,11 @@ pub async fn get_feed_items(
         }
     }
 
-    // Priority 3: FreshRSS fallback
-    if let Some((freshrss_url, username, password)) = crate::freshrss_env() {
-        let items = fetch_freshrss_items(&freshrss_url, &username, &password).await?;
+    if let Some(config) = freshrss_config {
+        let items = fetch_freshrss_items(config).await?;
         return Ok((items, None));
     }
 
-    // Priority 4: DEFAULT_FEED env var
     if let Ok(default_feed) = std::env::var("DEFAULT_FEED") {
         let urls: Vec<String> = default_feed
             .split(',')
