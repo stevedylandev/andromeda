@@ -1,4 +1,6 @@
-use crate::db::{self, Db, Note};
+use crate::db::{self, Db, Note, NoteInput};
+use reqwest::StatusCode;
+use reqwest::blocking::{Client, RequestBuilder, Response};
 use std::fmt;
 
 #[derive(Debug)]
@@ -29,6 +31,32 @@ impl From<db::DbError> for BackendError {
     }
 }
 
+fn net<E: fmt::Display>(e: E) -> BackendError {
+    BackendError::Network(e.to_string())
+}
+
+fn with_key(req: RequestBuilder, key: &Option<String>) -> RequestBuilder {
+    match key {
+        Some(k) => req.header("x-api-key", k),
+        None => req,
+    }
+}
+
+fn send_request(req: RequestBuilder) -> Result<Response, BackendError> {
+    let resp = req.send().map_err(net)?;
+    match resp.status().as_u16() {
+        401 => Err(BackendError::Unauthorized("Invalid API key".into())),
+        403 => Err(BackendError::Unauthorized(
+            "No API key configured on server".into(),
+        )),
+        _ => Ok(resp),
+    }
+}
+
+fn unexpected(status: StatusCode) -> BackendError {
+    BackendError::Network(format!("HTTP {}", status))
+}
+
 pub enum Backend {
     Local {
         db: Db,
@@ -36,7 +64,7 @@ pub enum Backend {
     Remote {
         base_url: String,
         api_key: Option<String>,
-        client: reqwest::blocking::Client,
+        client: Client,
     },
 }
 
@@ -49,7 +77,7 @@ impl Backend {
         Backend::Remote {
             base_url,
             api_key,
-            client: reqwest::blocking::Client::new(),
+            client: Client::new(),
         }
     }
 
@@ -61,22 +89,11 @@ impl Backend {
                 api_key,
                 client,
             } => {
-                let mut req = client.get(format!("{}/api/notes", base_url));
-                if let Some(key) = api_key {
-                    req = req.header("x-api-key", key);
-                }
-                let resp = req
-                    .send()
-                    .map_err(|e| BackendError::Network(e.to_string()))?;
+                let req = with_key(client.get(format!("{base_url}/api/notes")), api_key);
+                let resp = send_request(req)?;
                 match resp.status().as_u16() {
-                    200 => resp
-                        .json::<Vec<Note>>()
-                        .map_err(|e| BackendError::Network(e.to_string())),
-                    401 => Err(BackendError::Unauthorized("Invalid API key".into())),
-                    403 => Err(BackendError::Unauthorized(
-                        "No API key configured on server".into(),
-                    )),
-                    _ => Err(BackendError::Network(format!("HTTP {}", resp.status()))),
+                    200 => resp.json::<Vec<Note>>().map_err(net),
+                    _ => Err(unexpected(resp.status())),
                 }
             }
         }
@@ -90,24 +107,18 @@ impl Backend {
                 api_key,
                 client,
             } => {
-                let mut req = client
-                    .post(format!("{}/api/notes", base_url))
-                    .json(&serde_json::json!({"title": title, "content": content}));
-                if let Some(key) = api_key {
-                    req = req.header("x-api-key", key);
-                }
-                let resp = req
-                    .send()
-                    .map_err(|e| BackendError::Network(e.to_string()))?;
+                let body = NoteInput {
+                    title: title.to_string(),
+                    content: content.to_string(),
+                };
+                let req = with_key(
+                    client.post(format!("{base_url}/api/notes")).json(&body),
+                    api_key,
+                );
+                let resp = send_request(req)?;
                 match resp.status().as_u16() {
-                    201 => resp
-                        .json::<Note>()
-                        .map_err(|e| BackendError::Network(e.to_string())),
-                    401 => Err(BackendError::Unauthorized("Invalid API key".into())),
-                    403 => Err(BackendError::Unauthorized(
-                        "No API key configured on server".into(),
-                    )),
-                    _ => Err(BackendError::Network(format!("HTTP {}", resp.status()))),
+                    201 => resp.json::<Note>().map_err(net),
+                    _ => Err(unexpected(resp.status())),
                 }
             }
         }
@@ -126,26 +137,21 @@ impl Backend {
                 api_key,
                 client,
             } => {
-                let mut req = client
-                    .put(format!("{}/api/notes/{}", base_url, short_id))
-                    .json(&serde_json::json!({"title": title, "content": content}));
-                if let Some(key) = api_key {
-                    req = req.header("x-api-key", key);
-                }
-                let resp = req
-                    .send()
-                    .map_err(|e| BackendError::Network(e.to_string()))?;
+                let body = NoteInput {
+                    title: title.to_string(),
+                    content: content.to_string(),
+                };
+                let req = with_key(
+                    client
+                        .put(format!("{base_url}/api/notes/{short_id}"))
+                        .json(&body),
+                    api_key,
+                );
+                let resp = send_request(req)?;
                 match resp.status().as_u16() {
-                    200 => resp
-                        .json::<Note>()
-                        .map(Some)
-                        .map_err(|e| BackendError::Network(e.to_string())),
-                    401 => Err(BackendError::Unauthorized("Invalid API key".into())),
-                    403 => Err(BackendError::Unauthorized(
-                        "No API key configured on server".into(),
-                    )),
+                    200 => resp.json::<Note>().map(Some).map_err(net),
                     404 => Ok(None),
-                    _ => Err(BackendError::Network(format!("HTTP {}", resp.status()))),
+                    _ => Err(unexpected(resp.status())),
                 }
             }
         }
@@ -159,24 +165,17 @@ impl Backend {
                 api_key,
                 client,
             } => {
-                let mut req = client.delete(format!("{}/api/notes/{}", base_url, short_id));
-                if let Some(key) = api_key {
-                    req = req.header("x-api-key", key);
-                }
-                let resp = req
-                    .send()
-                    .map_err(|e| BackendError::Network(e.to_string()))?;
+                let req = with_key(
+                    client.delete(format!("{base_url}/api/notes/{short_id}")),
+                    api_key,
+                );
+                let resp = send_request(req)?;
                 match resp.status().as_u16() {
                     200 | 204 => Ok(true),
-                    401 => Err(BackendError::Unauthorized("Invalid API key".into())),
-                    403 => Err(BackendError::Unauthorized(
-                        "No API key configured on server".into(),
-                    )),
                     404 => Ok(false),
-                    _ => Err(BackendError::Network(format!("HTTP {}", resp.status()))),
+                    _ => Err(unexpected(resp.status())),
                 }
             }
         }
     }
 }
-
