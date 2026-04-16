@@ -12,7 +12,23 @@ use pulldown_cmark::{Options, Parser, html}; use rust_embed::Embed;
 use std::sync::Arc;
 
 use crate::auth;
-use crate::db::{self, Db, Note};
+use crate::db::{self, Db, DbError, Note, NoteInput};
+
+impl IntoResponse for DbError {
+    fn into_response(self) -> Response {
+        tracing::error!("{}", self);
+        (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
+    }
+}
+
+fn redirect_with_cookie(target: &str, cookie: String) -> Response {
+    let mut resp = Redirect::to(target).into_response();
+    resp.headers_mut().insert(
+        axum::http::header::SET_COOKIE,
+        HeaderValue::from_str(&cookie).unwrap(),
+    );
+    resp
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -76,18 +92,6 @@ struct LoginForm {
     password: String,
 }
 
-#[derive(serde::Deserialize)]
-struct NoteForm {
-    title: String,
-    content: String,
-}
-
-#[derive(serde::Deserialize)]
-struct NoteJson {
-    title: String,
-    content: String,
-}
-
 // --- API key middleware ---
 
 async fn api_key_guard(
@@ -117,78 +121,57 @@ async fn api_key_guard(
 
 // --- JSON API handlers ---
 
-async fn api_list_notes(State(state): State<Arc<AppState>>) -> Response {
-    match db::get_all_notes(&state.db) {
-        Ok(notes) => Json(notes).into_response(),
-        Err(e) => {
-            tracing::error!("Failed to list notes: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
-        }
-    }
+async fn api_list_notes(State(state): State<Arc<AppState>>) -> Result<Response, DbError> {
+    Ok(Json(db::get_all_notes(&state.db)?).into_response())
 }
 
 async fn api_get_note(
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,
-) -> Response {
-    match db::get_note_by_short_id(&state.db, &short_id) {
-        Ok(Some(note)) => Json(note).into_response(),
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(e) => {
-            tracing::error!("Failed to get note: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
-        }
-    }
+) -> Result<Response, DbError> {
+    Ok(match db::get_note_by_short_id(&state.db, &short_id)? {
+        Some(note) => Json(note).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    })
 }
 
 async fn api_create_note(
     State(state): State<Arc<AppState>>,
-    Json(body): Json<NoteJson>,
-) -> Response {
+    Json(body): Json<NoteInput>,
+) -> Result<Response, DbError> {
     let title = body.title.trim();
     if title.is_empty() {
-        return (StatusCode::BAD_REQUEST, "title required").into_response();
+        return Ok((StatusCode::BAD_REQUEST, "title required").into_response());
     }
-    match db::create_note(&state.db, title, &body.content) {
-        Ok(note) => (StatusCode::CREATED, Json(note)).into_response(),
-        Err(e) => {
-            tracing::error!("Failed to create note: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
-        }
-    }
+    let note = db::create_note(&state.db, title, &body.content)?;
+    Ok((StatusCode::CREATED, Json(note)).into_response())
 }
 
 async fn api_update_note(
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,
-    Json(body): Json<NoteJson>,
-) -> Response {
+    Json(body): Json<NoteInput>,
+) -> Result<Response, DbError> {
     let title = body.title.trim();
     if title.is_empty() {
-        return (StatusCode::BAD_REQUEST, "title required").into_response();
+        return Ok((StatusCode::BAD_REQUEST, "title required").into_response());
     }
-    match db::update_note_by_short_id(&state.db, &short_id, title, &body.content) {
-        Ok(Some(note)) => Json(note).into_response(),
-        Ok(None) => StatusCode::NOT_FOUND.into_response(),
-        Err(e) => {
-            tracing::error!("Failed to update note: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
-        }
-    }
+    Ok(
+        match db::update_note_by_short_id(&state.db, &short_id, title, &body.content)? {
+            Some(note) => Json(note).into_response(),
+            None => StatusCode::NOT_FOUND.into_response(),
+        },
+    )
 }
 
 async fn api_delete_note(
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,
-) -> Response {
-    match db::delete_note_by_short_id(&state.db, &short_id) {
-        Ok(true) => StatusCode::NO_CONTENT.into_response(),
-        Ok(false) => StatusCode::NOT_FOUND.into_response(),
-        Err(e) => {
-            tracing::error!("Failed to delete note: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
-        }
-    }
+) -> Result<Response, DbError> {
+    Ok(match db::delete_note_by_short_id(&state.db, &short_id)? {
+        true => StatusCode::NO_CONTENT.into_response(),
+        false => StatusCode::NOT_FOUND.into_response(),
+    })
 }
 
 // --- Static file handlers ---
@@ -249,13 +232,7 @@ async fn post_login(
         return Redirect::to("/login?error=Server+error").into_response();
     }
 
-    let cookie = auth::build_session_cookie(&token, state.cookie_secure);
-    let mut resp = Redirect::to("/").into_response();
-    resp.headers_mut().insert(
-        axum::http::header::SET_COOKIE,
-        HeaderValue::from_str(&cookie).unwrap(),
-    );
-    resp
+    redirect_with_cookie("/", auth::build_session_cookie(&token, state.cookie_secure))
 }
 
 async fn get_logout(State(state): State<Arc<AppState>>, headers: axum::http::HeaderMap) -> Response {
@@ -271,13 +248,7 @@ async fn get_logout(State(state): State<Arc<AppState>>, headers: axum::http::Hea
         }
     }
 
-    let cookie = auth::clear_session_cookie();
-    let mut resp = Redirect::to("/login").into_response();
-    resp.headers_mut().insert(
-        axum::http::header::SET_COOKIE,
-        HeaderValue::from_str(&cookie).unwrap(),
-    );
-    resp
+    redirect_with_cookie("/login", auth::clear_session_cookie())
 }
 
 // --- Note handlers ---
@@ -285,14 +256,9 @@ async fn get_logout(State(state): State<Arc<AppState>>, headers: axum::http::Hea
 async fn get_index(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
-) -> Response {
-    match db::get_all_notes(&state.db) {
-        Ok(notes) => WebTemplate(IndexTemplate { notes }).into_response(),
-        Err(e) => {
-            tracing::error!("Failed to list notes: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
-        }
-    }
+) -> Result<Response, DbError> {
+    let notes = db::get_all_notes(&state.db)?;
+    Ok(WebTemplate(IndexTemplate { notes }).into_response())
 }
 
 async fn get_new_note(
@@ -305,7 +271,7 @@ async fn get_new_note(
 async fn post_create_note(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
-    Form(form): Form<NoteForm>,
+    Form(form): Form<NoteInput>,
 ) -> Response {
     let title = form.title.trim();
     if title.is_empty() {
@@ -336,9 +302,9 @@ async fn get_view_note(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,
-) -> Response {
-    match db::get_note_by_short_id(&state.db, &short_id) {
-        Ok(Some(note)) => {
+) -> Result<Response, DbError> {
+    Ok(match db::get_note_by_short_id(&state.db, &short_id)? {
+        Some(note) => {
             let rendered_content = render_markdown(&note.content);
             WebTemplate(ViewTemplate {
                 note,
@@ -346,12 +312,8 @@ async fn get_view_note(
             })
             .into_response()
         }
-        Ok(None) => (StatusCode::NOT_FOUND, Html("Note not found".to_string())).into_response(),
-        Err(e) => {
-            tracing::error!("Failed to get note: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
-        }
-    }
+        None => (StatusCode::NOT_FOUND, Html("Note not found".to_string())).into_response(),
+    })
 }
 
 async fn get_edit_note(
@@ -359,26 +321,22 @@ async fn get_edit_note(
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,
     Query(q): Query<FlashQuery>,
-) -> Response {
-    match db::get_note_by_short_id(&state.db, &short_id) {
-        Ok(Some(note)) => WebTemplate(EditTemplate {
+) -> Result<Response, DbError> {
+    Ok(match db::get_note_by_short_id(&state.db, &short_id)? {
+        Some(note) => WebTemplate(EditTemplate {
             note,
             error: q.error,
         })
         .into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Html("Note not found".to_string())).into_response(),
-        Err(e) => {
-            tracing::error!("Failed to get note: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
-        }
-    }
+        None => (StatusCode::NOT_FOUND, Html("Note not found".to_string())).into_response(),
+    })
 }
 
 async fn post_update_note(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,
-    Form(form): Form<NoteForm>,
+    Form(form): Form<NoteInput>,
 ) -> Response {
     let title = form.title.trim();
     if title.is_empty() {
