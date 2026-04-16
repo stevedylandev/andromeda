@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -11,6 +10,7 @@ pub struct FeedItem {
     pub origin: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct FreshRSSResponse {
     pub id: String,
@@ -19,6 +19,7 @@ pub struct FreshRSSResponse {
     pub continuation: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct FreshRSSItem {
     pub id: String,
@@ -34,6 +35,7 @@ pub struct FreshRSSLink {
     pub href: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct FreshRSSOrigin {
     #[serde(rename = "streamId")]
