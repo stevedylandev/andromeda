@@ -99,60 +99,44 @@ pub fn init_db() -> Db {
 }
 
 fn wine_from_row(row: &rusqlite::Row) -> rusqlite::Result<Wine> {
-    Ok(Wine {
-        id: row.get(0)?,
-        short_id: row.get(1)?,
-        name: row.get(2)?,
-        origin: row.get(3)?,
-        grape: row.get(4)?,
-        notes: row.get(5)?,
-        has_image: row.get(6)?,
-        image_mime: row.get(7)?,
-        sweetness: row.get(8)?,
-        acidity: row.get(9)?,
-        tannin: row.get(10)?,
-        alcohol: row.get(11)?,
-        body: row.get(12)?,
-        clarity: row.get(13)?,
-        color_intensity: row.get(14)?,
-        aroma_intensity: row.get(15)?,
-        nose_complexity: row.get(16)?,
-        background: row.get(17)?,
-        created_at: row.get(18)?,
-        wishlist: row.get::<_, i32>(19)? != 0,
+    serde_rusqlite::from_row::<Wine>(row).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Null, Box::new(e))
     })
 }
 
 const WINE_COLUMNS: &str =
     "id, short_id, name, origin, grape, notes, (image IS NOT NULL) AS has_image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, created_at, wishlist";
 
-pub fn create_wine(
-    db: &Db,
-    name: &str,
-    origin: &str,
-    grape: &str,
-    notes: &str,
-    image: Option<&[u8]>,
-    image_mime: Option<&str>,
-    sweetness: i32,
-    acidity: i32,
-    tannin: i32,
-    alcohol: i32,
-    body: i32,
-    clarity: i32,
-    color_intensity: i32,
-    aroma_intensity: i32,
-    nose_complexity: i32,
-    background: &str,
-    wishlist: bool,
-) -> Result<Wine, DbError> {
+#[derive(Serialize)]
+pub struct WineInput<'a> {
+    pub name: &'a str,
+    pub origin: &'a str,
+    pub grape: &'a str,
+    pub notes: &'a str,
+    pub sweetness: i32,
+    pub acidity: i32,
+    pub tannin: i32,
+    pub alcohol: i32,
+    pub body: i32,
+    pub clarity: i32,
+    pub color_intensity: i32,
+    pub aroma_intensity: i32,
+    pub nose_complexity: i32,
+    pub background: &'a str,
+}
+
+pub fn create_wine(db: &Db, input: &WineInput, wishlist: bool) -> Result<Wine, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let short_id = nanoid!(10);
-    let wishlist_int: i32 = if wishlist { 1 } else { 0 };
+    let named = serde_rusqlite::to_params_named(input)
+        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+    let mut bindings = named.to_slice();
+    bindings.push((":short_id", &short_id));
+    bindings.push((":wishlist", &wishlist));
     conn.execute(
-        "INSERT INTO wines (short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, wishlist)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
-        params![short_id, name, origin, grape, notes, image, image_mime, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, wishlist_int],
+        "INSERT INTO wines (short_id, name, origin, grape, notes, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, wishlist)
+         VALUES (:short_id, :name, :origin, :grape, :notes, :sweetness, :acidity, :tannin, :alcohol, :body, :clarity, :color_intensity, :aroma_intensity, :nose_complexity, :background, :wishlist)",
+        bindings.as_slice(),
     )?;
     let id = conn.last_insert_rowid();
     let wine = conn.query_row(
@@ -263,25 +247,16 @@ pub fn get_wine_image(db: &Db, short_id: &str) -> Result<Option<(Vec<u8>, String
 pub fn update_wine(
     db: &Db,
     short_id: &str,
-    name: &str,
-    origin: &str,
-    grape: &str,
-    notes: &str,
-    sweetness: i32,
-    acidity: i32,
-    tannin: i32,
-    alcohol: i32,
-    body: i32,
-    clarity: i32,
-    color_intensity: i32,
-    aroma_intensity: i32,
-    nose_complexity: i32,
-    background: &str,
+    input: &WineInput,
 ) -> Result<Option<Wine>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let named = serde_rusqlite::to_params_named(input)
+        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+    let mut bindings = named.to_slice();
+    bindings.push((":short_id", &short_id));
     let rows = conn.execute(
-        "UPDATE wines SET name = ?1, origin = ?2, grape = ?3, notes = ?4, sweetness = ?5, acidity = ?6, tannin = ?7, alcohol = ?8, body = ?9, clarity = ?10, color_intensity = ?11, aroma_intensity = ?12, nose_complexity = ?13, background = ?14 WHERE short_id = ?15",
-        params![name, origin, grape, notes, sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, short_id],
+        "UPDATE wines SET name = :name, origin = :origin, grape = :grape, notes = :notes, sweetness = :sweetness, acidity = :acidity, tannin = :tannin, alcohol = :alcohol, body = :body, clarity = :clarity, color_intensity = :color_intensity, aroma_intensity = :aroma_intensity, nose_complexity = :nose_complexity, background = :background WHERE short_id = :short_id",
+        bindings.as_slice(),
     )?;
     if rows == 0 {
         return Ok(None);
@@ -401,12 +376,27 @@ mod tests {
         Arc::new(Mutex::new(conn))
     }
 
+    fn sample_input<'a>(name: &'a str, sweetness: i32) -> WineInput<'a> {
+        WineInput {
+            name,
+            origin: "France",
+            grape: "Merlot",
+            notes: "Smooth",
+            sweetness,
+            acidity: 3,
+            tannin: 3,
+            alcohol: 3,
+            body: 3,
+            clarity: 3,
+            color_intensity: 3,
+            aroma_intensity: 3,
+            nose_complexity: 3,
+            background: "",
+        }
+    }
+
     fn create_test_wine(db: &Db, name: &str, wishlist: bool) -> Wine {
-        create_wine(
-            db, name, "France", "Merlot", "Smooth", None, None,
-            3, 3, 3, 3, 3, 3, 3, 3, 3, "", wishlist,
-        )
-        .unwrap()
+        create_wine(db, &sample_input(name, 3), wishlist).unwrap()
     }
 
     // ── Wine CRUD ──────────────────────────────────────────────────────
@@ -426,20 +416,14 @@ mod tests {
     #[test]
     fn create_wine_invalid_sweetness_fails() {
         let db = test_db();
-        let result = create_wine(
-            &db, "Bad", "X", "X", "X", None, None,
-            6, 3, 3, 3, 3, 3, 3, 3, 3, "", false, // sweetness=6 > 5
-        );
+        let result = create_wine(&db, &sample_input("Bad", 6), false);
         assert!(result.is_err());
     }
 
     #[test]
     fn create_wine_zero_rating_fails() {
         let db = test_db();
-        let result = create_wine(
-            &db, "Bad", "X", "X", "X", None, None,
-            0, 3, 3, 3, 3, 3, 3, 3, 3, "", false, // sweetness=0 < 1
-        );
+        let result = create_wine(&db, &sample_input("Bad", 0), false);
         assert!(result.is_err());
     }
 
@@ -491,12 +475,23 @@ mod tests {
         let db = test_db();
         let wine = create_test_wine(&db, "Old Name", false);
 
-        let updated = update_wine(
-            &db, &wine.short_id, "New Name", "Italy", "Sangiovese", "Bold",
-            4, 4, 4, 4, 4, 4, 4, 4, 4, "deep red",
-        )
-        .unwrap()
-        .unwrap();
+        let input = WineInput {
+            name: "New Name",
+            origin: "Italy",
+            grape: "Sangiovese",
+            notes: "Bold",
+            sweetness: 4,
+            acidity: 4,
+            tannin: 4,
+            alcohol: 4,
+            body: 4,
+            clarity: 4,
+            color_intensity: 4,
+            aroma_intensity: 4,
+            nose_complexity: 4,
+            background: "deep red",
+        };
+        let updated = update_wine(&db, &wine.short_id, &input).unwrap().unwrap();
 
         assert_eq!(updated.name, "New Name");
         assert_eq!(updated.origin, "Italy");
