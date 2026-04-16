@@ -1,10 +1,29 @@
 use nanoid::nanoid;
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
 pub type Db = Arc<Mutex<Connection>>;
+
+const NOTE_COLUMNS: &str = "id, short_id, title, content, created_at, updated_at";
+
+const SCHEMA: &str = "
+    CREATE TABLE IF NOT EXISTS notes (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_id   TEXT NOT NULL UNIQUE,
+        title      TEXT NOT NULL,
+        content    TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        token      TEXT NOT NULL UNIQUE,
+        expires_at TEXT NOT NULL
+    );
+";
 
 #[derive(Debug)]
 pub enum DbError {
@@ -39,28 +58,30 @@ pub struct Note {
     pub updated_at: String,
 }
 
+impl Note {
+    fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        Ok(Note {
+            id: row.get(0)?,
+            short_id: row.get(1)?,
+            title: row.get(2)?,
+            content: row.get(3)?,
+            created_at: row.get(4)?,
+            updated_at: row.get(5)?,
+        })
+    }
+}
+
+/// Incoming note payload from JSON/form requests. Shared by server and backend.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NoteInput {
+    pub title: String,
+    pub content: String,
+}
+
 pub fn init_db() -> Db {
     let path = std::env::var("JOTTS_DB_PATH").unwrap_or_else(|_| "jotts.sqlite".to_string());
     let conn = Connection::open(&path).expect("Failed to open database");
-
-    conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS notes (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            short_id   TEXT NOT NULL UNIQUE,
-            title      TEXT NOT NULL,
-            content    TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS sessions (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            token      TEXT NOT NULL UNIQUE,
-            expires_at TEXT NOT NULL
-        );"
-    )
-    .expect("Failed to create tables");
-
+    conn.execute_batch(SCHEMA).expect("Failed to create tables");
     Arc::new(Mutex::new(conn))
 }
 
@@ -73,60 +94,31 @@ pub fn create_note(db: &Db, title: &str, content: &str) -> Result<Note, DbError>
     )?;
     let id = conn.last_insert_rowid();
     let note = conn.query_row(
-        "SELECT id, short_id, title, content, created_at, updated_at FROM notes WHERE id = ?1",
+        &format!("SELECT {NOTE_COLUMNS} FROM notes WHERE id = ?1"),
         params![id],
-        |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                short_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        },
+        Note::from_row,
     )?;
     Ok(note)
 }
 
 pub fn get_note_by_short_id(db: &Db, short_id: &str) -> Result<Option<Note>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        "SELECT id, short_id, title, content, created_at, updated_at FROM notes WHERE short_id = ?1",
-        params![short_id],
-        |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                short_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        },
-    ) {
-        Ok(note) => Ok(Some(note)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let note = conn
+        .query_row(
+            &format!("SELECT {NOTE_COLUMNS} FROM notes WHERE short_id = ?1"),
+            params![short_id],
+            Note::from_row,
+        )
+        .optional()?;
+    Ok(note)
 }
 
 pub fn get_all_notes(db: &Db) -> Result<Vec<Note>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let mut stmt = conn.prepare(
-        "SELECT id, short_id, title, content, created_at, updated_at FROM notes ORDER BY id DESC",
-    )?;
+    let mut stmt =
+        conn.prepare(&format!("SELECT {NOTE_COLUMNS} FROM notes ORDER BY id DESC"))?;
     let notes = stmt
-        .query_map([], |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                short_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        })?
+        .query_map([], Note::from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(notes)
 }
@@ -145,24 +137,14 @@ pub fn update_note_by_short_id(
     if rows == 0 {
         return Ok(None);
     }
-    match conn.query_row(
-        "SELECT id, short_id, title, content, created_at, updated_at FROM notes WHERE short_id = ?1",
-        params![short_id],
-        |row| {
-            Ok(Note {
-                id: row.get(0)?,
-                short_id: row.get(1)?,
-                title: row.get(2)?,
-                content: row.get(3)?,
-                created_at: row.get(4)?,
-                updated_at: row.get(5)?,
-            })
-        },
-    ) {
-        Ok(note) => Ok(Some(note)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let note = conn
+        .query_row(
+            &format!("SELECT {NOTE_COLUMNS} FROM notes WHERE short_id = ?1"),
+            params![short_id],
+            Note::from_row,
+        )
+        .optional()?;
+    Ok(note)
 }
 
 pub fn delete_note_by_short_id(db: &Db, short_id: &str) -> Result<bool, DbError> {
@@ -219,22 +201,7 @@ mod tests {
 
     fn test_db() -> Db {
         let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS notes (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                short_id   TEXT NOT NULL UNIQUE,
-                title      TEXT NOT NULL,
-                content    TEXT NOT NULL,
-                created_at TEXT NOT NULL DEFAULT (datetime('now')),
-                updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-            );
-            CREATE TABLE IF NOT EXISTS sessions (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                token      TEXT NOT NULL UNIQUE,
-                expires_at TEXT NOT NULL
-            );",
-        )
-        .unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
         Arc::new(Mutex::new(conn))
     }
 
