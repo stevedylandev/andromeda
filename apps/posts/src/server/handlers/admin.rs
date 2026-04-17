@@ -116,20 +116,20 @@ pub async fn admin_create_post(
         attrs.published_date.trim().to_string()
     };
 
-    match db::create_post(
-        &state.db,
+    let input = db::PostInput {
         title,
-        &slug,
-        &form.content,
+        slug: &slug,
+        content: &form.content,
         status,
-        opt_str(&attrs.alias),
-        None,
-        Some(&published_date),
-        opt_str(&attrs.meta_description),
-        opt_str(&attrs.meta_image),
+        alias: opt_str(&attrs.alias),
+        canonical_url: None,
+        published_date: Some(&published_date),
+        meta_description: opt_str(&attrs.meta_description),
+        meta_image: opt_str(&attrs.meta_image),
         lang,
-        opt_str(&attrs.tags),
-    ) {
+        tags: opt_str(&attrs.tags),
+    };
+    match db::create_post(&state.db, &input) {
         Ok(_) => Redirect::to("/admin").into_response(),
         Err(e) => {
             tracing::error!("Failed to create post: {}", e);
@@ -184,21 +184,20 @@ pub async fn admin_update_post(
         Some(attrs.published_date.trim().to_string())
     };
 
-    match db::update_post(
-        &state.db,
-        &short_id,
+    let input = db::PostInput {
         title,
-        &slug,
-        &form.content,
+        slug: &slug,
+        content: &form.content,
         status,
-        opt_str(&attrs.alias),
-        None,
-        published_date.as_deref(),
-        opt_str(&attrs.meta_description),
-        opt_str(&attrs.meta_image),
+        alias: opt_str(&attrs.alias),
+        canonical_url: None,
+        published_date: published_date.as_deref(),
+        meta_description: opt_str(&attrs.meta_description),
+        meta_image: opt_str(&attrs.meta_image),
         lang,
-        opt_str(&attrs.tags),
-    ) {
+        tags: opt_str(&attrs.tags),
+    };
+    match db::update_post(&state.db, &short_id, &input) {
         Ok(Some(_)) => Redirect::to("/admin").into_response(),
         Ok(None) => (StatusCode::NOT_FOUND, Html("Post not found".to_string())).into_response(),
         Err(e) => {

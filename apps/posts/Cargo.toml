@@ -21,6 +21,8 @@ rand = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 andromeda-auth = { workspace = true }
+andromeda-db = { workspace = true, features = ["session"] }
+serde_rusqlite = "0.41"
 askama = "0.15"
 askama_web = { version = "0.15", features = ["axum-0.8"] }
 pulldown-cmark = "0.12"

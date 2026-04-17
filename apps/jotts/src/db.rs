@@ -1,10 +1,10 @@
 use nanoid::nanoid;
 use rusqlite::{Connection, OptionalExtension, Row, params};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::sync::{Arc, Mutex};
 
-pub type Db = Arc<Mutex<Connection>>;
+pub use andromeda_db::{Db, DbError};
+pub use andromeda_db::session::{insert_session, get_session_expiry, delete_session, prune_expired_sessions};
 
 const NOTE_COLUMNS: &str = "id, short_id, title, content, created_at, updated_at";
 
@@ -24,29 +24,6 @@ const SCHEMA: &str = "
         expires_at TEXT NOT NULL
     );
 ";
-
-#[derive(Debug)]
-pub enum DbError {
-    Sqlite(rusqlite::Error),
-    LockPoisoned,
-}
-
-impl fmt::Display for DbError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            DbError::Sqlite(e) => write!(f, "Database error: {}", e),
-            DbError::LockPoisoned => write!(f, "Database lock poisoned"),
-        }
-    }
-}
-
-impl std::error::Error for DbError {}
-
-impl From<rusqlite::Error> for DbError {
-    fn from(e: rusqlite::Error) -> Self {
-        DbError::Sqlite(e)
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Note {
@@ -156,44 +133,6 @@ pub fn delete_note_by_short_id(db: &Db, short_id: &str) -> Result<bool, DbError>
     Ok(rows > 0)
 }
 
-// Session functions
-
-pub fn insert_session(db: &Db, token: &str, expires_at: &str) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute(
-        "INSERT INTO sessions (token, expires_at) VALUES (?1, ?2)",
-        params![token, expires_at],
-    )?;
-    Ok(())
-}
-
-pub fn get_session_expiry(db: &Db, token: &str) -> Result<Option<String>, DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        "SELECT expires_at FROM sessions WHERE token = ?1",
-        params![token],
-        |row| row.get(0),
-    ) {
-        Ok(val) => Ok(Some(val)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
-}
-
-pub fn delete_session(db: &Db, token: &str) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute("DELETE FROM sessions WHERE token = ?1", params![token])?;
-    Ok(())
-}
-
-pub fn prune_expired_sessions(db: &Db) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute(
-        "DELETE FROM sessions WHERE expires_at < datetime('now')",
-        [],
-    )?;
-    Ok(())
-}
 
 #[cfg(test)]
 mod tests {
