@@ -14,13 +14,6 @@ use std::sync::Arc;
 use crate::auth;
 use crate::db::{self, Db, DbError, Note, NoteInput};
 
-impl IntoResponse for DbError {
-    fn into_response(self) -> Response {
-        tracing::error!("{}", self);
-        (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response()
-    }
-}
-
 fn redirect_with_cookie(target: &str, cookie: String) -> Response {
     let mut resp = Redirect::to(target).into_response();
     resp.headers_mut().insert(

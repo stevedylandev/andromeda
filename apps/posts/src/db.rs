@@ -1,32 +1,15 @@
 use nanoid::nanoid;
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::sync::{Arc, Mutex};
 
-pub type Db = Arc<Mutex<Connection>>;
+pub use andromeda_db::{Db, DbError};
+pub use andromeda_db::session::{insert_session, get_session_expiry, delete_session, prune_expired_sessions};
 
-#[derive(Debug)]
-pub enum DbError {
-    Sqlite(rusqlite::Error),
-    LockPoisoned,
-}
-
-impl fmt::Display for DbError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            DbError::Sqlite(e) => write!(f, "Database error: {}", e),
-            DbError::LockPoisoned => write!(f, "Database lock poisoned"),
-        }
-    }
-}
-
-impl std::error::Error for DbError {}
-
-impl From<rusqlite::Error> for DbError {
-    fn from(e: rusqlite::Error) -> Self {
-        DbError::Sqlite(e)
-    }
+fn from_row<T: serde::de::DeserializeOwned>(row: &rusqlite::Row) -> rusqlite::Result<T> {
+    serde_rusqlite::from_row::<T>(row).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Null, Box::new(e))
+    })
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -46,6 +29,21 @@ pub struct Post {
     pub status: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Serialize)]
+pub struct PostInput<'a> {
+    pub title: &'a str,
+    pub slug: &'a str,
+    pub content: &'a str,
+    pub status: &'a str,
+    pub alias: Option<&'a str>,
+    pub canonical_url: Option<&'a str>,
+    pub published_date: Option<&'a str>,
+    pub meta_description: Option<&'a str>,
+    pub meta_image: Option<&'a str>,
+    pub lang: &'a str,
+    pub tags: Option<&'a str>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -72,194 +70,137 @@ pub struct UploadedFile {
     pub created_at: String,
 }
 
+const SCHEMA: &str = "
+    CREATE TABLE IF NOT EXISTS posts (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_id        TEXT NOT NULL UNIQUE,
+        title           TEXT NOT NULL,
+        slug            TEXT NOT NULL UNIQUE,
+        alias           TEXT,
+        canonical_url   TEXT,
+        published_date  TEXT,
+        meta_description TEXT,
+        meta_image      TEXT,
+        lang            TEXT NOT NULL DEFAULT 'en',
+        tags            TEXT,
+        content         TEXT NOT NULL,
+        status          TEXT NOT NULL DEFAULT 'draft',
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS pages (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_id        TEXT NOT NULL UNIQUE,
+        title           TEXT NOT NULL,
+        slug            TEXT NOT NULL UNIQUE,
+        content         TEXT NOT NULL,
+        is_published    INTEGER NOT NULL DEFAULT 0,
+        nav_order       INTEGER NOT NULL DEFAULT 0,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        token           TEXT NOT NULL UNIQUE,
+        expires_at      TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS files (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_id      TEXT NOT NULL UNIQUE,
+        filename      TEXT NOT NULL UNIQUE,
+        original_name TEXT NOT NULL,
+        content_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
+        size          INTEGER NOT NULL,
+        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+";
+
+const DEFAULT_SETTINGS: &[(&str, &str)] = &[
+    ("blog_title", "My Blog"),
+    ("blog_description", "A simple blog"),
+    ("intro_content", ""),
+    ("nav_links", "[blog](/) [posts](/posts)"),
+    ("custom_css", ""),
+    ("favicon_url", ""),
+    ("og_image_url", ""),
+    ("custom_header", ""),
+    ("custom_footer", "<div>
+<a href=\"/feed.xml\" class=\"rss-link\" title=\"RSS Feed\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" fill=\"currentColor\" viewBox=\"0 0 256 256\"><path fill=\"currentColor\" d=\"M104.08 151.92A67.52 67.52 0 0 1 124 200a4 4 0 0 1-8 0a60 60 0 0 0-60-60a4 4 0 0 1 0-8a67.52 67.52 0 0 1 48.08 19.92M56 84a4 4 0 0 0 0 8a108 108 0 0 1 108 108a4 4 0 0 0 8 0A116 116 0 0 0 56 84m116 0A162.92 162.92 0 0 0 56 36a4 4 0 0 0 0 8a155 155 0 0 1 110.31 45.69A155 155 0 0 1 212 200a4 4 0 0 0 8 0a162.92 162.92 0 0 0-48-116M60 188a8 8 0 1 0 8 8a8 8 0 0 0-8-8\"/></svg></a>
+</div>"),
+];
+
 pub fn init_db() -> Db {
     let path = std::env::var("POSTS_DB_PATH").unwrap_or_else(|_| "posts.sqlite".to_string());
     let conn = Connection::open(&path).expect("Failed to open database");
 
-    conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS posts (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            short_id        TEXT NOT NULL UNIQUE,
-            title           TEXT NOT NULL,
-            slug            TEXT NOT NULL UNIQUE,
-            alias           TEXT,
-            canonical_url   TEXT,
-            published_date  TEXT,
-            meta_description TEXT,
-            meta_image      TEXT,
-            lang            TEXT NOT NULL DEFAULT 'en',
-            tags            TEXT,
-            content         TEXT NOT NULL,
-            status          TEXT NOT NULL DEFAULT 'draft',
-            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
-        );
+    conn.execute_batch(SCHEMA).expect("Failed to create tables");
 
-        CREATE TABLE IF NOT EXISTS pages (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            short_id        TEXT NOT NULL UNIQUE,
-            title           TEXT NOT NULL,
-            slug            TEXT NOT NULL UNIQUE,
-            content         TEXT NOT NULL,
-            is_published    INTEGER NOT NULL DEFAULT 0,
-            nav_order       INTEGER NOT NULL DEFAULT 0,
-            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-
-        CREATE TABLE IF NOT EXISTS sessions (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            token           TEXT NOT NULL UNIQUE,
-            expires_at      TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS settings (
-            key   TEXT PRIMARY KEY,
-            value TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS files (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            short_id      TEXT NOT NULL UNIQUE,
-            filename      TEXT NOT NULL UNIQUE,
-            original_name TEXT NOT NULL,
-            content_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
-            size          INTEGER NOT NULL,
-            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-        );"
-    )
-    .expect("Failed to create tables");
-
-    // Seed default settings
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('blog_title', 'My Blog')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('blog_description', 'A simple blog')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('intro_content', '')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('nav_links', '[blog](/) [posts](/posts)')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_css', '')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('favicon_url', '')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('og_image_url', '')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_header', '')",
-        [],
-    )
-    .ok();
-    conn.execute(
-        "INSERT OR IGNORE INTO settings (key, value) VALUES ('custom_footer', '<div>
-<a href=\"/feed.xml\" class=\"rss-link\" title=\"RSS Feed\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" fill=\"currentColor\" viewBox=\"0 0 256 256\"><path fill=\"currentColor\" d=\"M104.08 151.92A67.52 67.52 0 0 1 124 200a4 4 0 0 1-8 0a60 60 0 0 0-60-60a4 4 0 0 1 0-8a67.52 67.52 0 0 1 48.08 19.92M56 84a4 4 0 0 0 0 8a108 108 0 0 1 108 108a4 4 0 0 0 8 0A116 116 0 0 0 56 84m116 0A162.92 162.92 0 0 0 56 36a4 4 0 0 0 0 8a155 155 0 0 1 110.31 45.69A155 155 0 0 1 212 200a4 4 0 0 0 8 0a162.92 162.92 0 0 0-48-116M60 188a8 8 0 1 0 8 8a8 8 0 0 0-8-8\"/></svg></a>
-</div>')",
-        [],
-    )
-    .ok();
+    for (key, value) in DEFAULT_SETTINGS {
+        conn.execute(
+            "INSERT OR IGNORE INTO settings (key, value) VALUES (?1, ?2)",
+            params![key, value],
+        )
+        .ok();
+    }
 
     Arc::new(Mutex::new(conn))
 }
 
 // --- Post CRUD ---
 
-fn row_to_post(row: &rusqlite::Row) -> rusqlite::Result<Post> {
-    Ok(Post {
-        id: row.get(0)?,
-        short_id: row.get(1)?,
-        title: row.get(2)?,
-        slug: row.get(3)?,
-        alias: row.get(4)?,
-        canonical_url: row.get(5)?,
-        published_date: row.get(6)?,
-        meta_description: row.get(7)?,
-        meta_image: row.get(8)?,
-        lang: row.get(9)?,
-        tags: row.get(10)?,
-        content: row.get(11)?,
-        status: row.get(12)?,
-        created_at: row.get(13)?,
-        updated_at: row.get(14)?,
-    })
-}
-
 const POST_COLS: &str = "id, short_id, title, slug, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, content, status, created_at, updated_at";
 
-pub fn create_post(
-    db: &Db,
-    title: &str,
-    slug: &str,
-    content: &str,
-    status: &str,
-    alias: Option<&str>,
-    canonical_url: Option<&str>,
-    published_date: Option<&str>,
-    meta_description: Option<&str>,
-    meta_image: Option<&str>,
-    lang: &str,
-    tags: Option<&str>,
-) -> Result<Post, DbError> {
+pub fn create_post(db: &Db, input: &PostInput) -> Result<Post, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let short_id = nanoid!(10);
+    let named = serde_rusqlite::to_params_named(input)
+        .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
+    let mut bindings = named.to_slice();
+    bindings.push((":short_id", &short_id));
     conn.execute(
         "INSERT INTO posts (short_id, title, slug, content, status, alias, canonical_url, published_date, meta_description, meta_image, lang, tags)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-        params![short_id, title, slug, content, status, alias, canonical_url, published_date, meta_description, meta_image, lang, tags],
+         VALUES (:short_id, :title, :slug, :content, :status, :alias, :canonical_url, :published_date, :meta_description, :meta_image, :lang, :tags)",
+        bindings.as_slice(),
     )?;
     let id = conn.last_insert_rowid();
     let post = conn.query_row(
         &format!("SELECT {} FROM posts WHERE id = ?1", POST_COLS),
         params![id],
-        row_to_post,
+        from_row,
     )?;
     Ok(post)
 }
 
 pub fn get_post_by_short_id(db: &Db, short_id: &str) -> Result<Option<Post>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        &format!("SELECT {} FROM posts WHERE short_id = ?1", POST_COLS),
-        params![short_id],
-        row_to_post,
-    ) {
-        Ok(post) => Ok(Some(post)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let post = conn
+        .query_row(
+            &format!("SELECT {} FROM posts WHERE short_id = ?1", POST_COLS),
+            params![short_id],
+            from_row,
+        )
+        .optional()?;
+    Ok(post)
 }
 
 pub fn get_post_by_slug(db: &Db, slug: &str) -> Result<Option<Post>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        &format!("SELECT {} FROM posts WHERE slug = ?1", POST_COLS),
-        params![slug],
-        row_to_post,
-    ) {
-        Ok(post) => Ok(Some(post)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let post = conn
+        .query_row(
+            &format!("SELECT {} FROM posts WHERE slug = ?1", POST_COLS),
+            params![slug],
+            from_row,
+        )
+        .optional()?;
+    Ok(post)
 }
 
 pub fn get_all_posts(db: &Db) -> Result<Vec<Post>, DbError> {
@@ -268,7 +209,7 @@ pub fn get_all_posts(db: &Db) -> Result<Vec<Post>, DbError> {
         &format!("SELECT {} FROM posts ORDER BY id DESC", POST_COLS),
     )?;
     let posts = stmt
-        .query_map([], row_to_post)?
+        .query_map([], from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(posts)
 }
@@ -279,51 +220,36 @@ pub fn get_published_posts(db: &Db) -> Result<Vec<Post>, DbError> {
         &format!("SELECT {} FROM posts WHERE status = 'published' ORDER BY published_date DESC, id DESC", POST_COLS),
     )?;
     let posts = stmt
-        .query_map([], row_to_post)?
+        .query_map([], from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(posts)
 }
 
-pub fn update_post(
-    db: &Db,
-    short_id: &str,
-    title: &str,
-    slug: &str,
-    content: &str,
-    status: &str,
-    alias: Option<&str>,
-    canonical_url: Option<&str>,
-    published_date: Option<&str>,
-    meta_description: Option<&str>,
-    meta_image: Option<&str>,
-    lang: &str,
-    tags: Option<&str>,
-) -> Result<Option<Post>, DbError> {
+pub fn update_post(db: &Db, short_id: &str, input: &PostInput) -> Result<Option<Post>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let effective_published_date = if status == "published" {
-        Some(published_date.unwrap_or(""))
+    let effective_published_date = if input.status == "published" {
+        Some(input.published_date.unwrap_or(""))
     } else {
-        published_date
+        input.published_date
     };
     let rows = conn.execute(
         "UPDATE posts SET title = ?1, slug = ?2, content = ?3, status = ?4, alias = ?5, canonical_url = ?6,
          published_date = CASE WHEN ?4 = 'published' THEN COALESCE(?7, published_date, datetime('now')) ELSE ?7 END,
          meta_description = ?8, meta_image = ?9, lang = ?10, tags = ?11,
          updated_at = datetime('now') WHERE short_id = ?12",
-        params![title, slug, content, status, alias, canonical_url, effective_published_date, meta_description, meta_image, lang, tags, short_id],
+        params![input.title, input.slug, input.content, input.status, input.alias, input.canonical_url, effective_published_date, input.meta_description, input.meta_image, input.lang, input.tags, short_id],
     )?;
     if rows == 0 {
         return Ok(None);
     }
-    match conn.query_row(
-        &format!("SELECT {} FROM posts WHERE short_id = ?1", POST_COLS),
-        params![short_id],
-        row_to_post,
-    ) {
-        Ok(post) => Ok(Some(post)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let post = conn
+        .query_row(
+            &format!("SELECT {} FROM posts WHERE short_id = ?1", POST_COLS),
+            params![short_id],
+            from_row,
+        )
+        .optional()?;
+    Ok(post)
 }
 
 pub fn delete_post(db: &Db, short_id: &str) -> Result<bool, DbError> {
@@ -334,14 +260,16 @@ pub fn delete_post(db: &Db, short_id: &str) -> Result<bool, DbError> {
 
 pub fn toggle_post_status(db: &Db, short_id: &str) -> Result<Option<String>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let current: String = match conn.query_row(
-        "SELECT status FROM posts WHERE short_id = ?1",
-        params![short_id],
-        |row| row.get(0),
-    ) {
-        Ok(s) => s,
-        Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
-        Err(e) => return Err(DbError::Sqlite(e)),
+    let current: Option<String> = conn
+        .query_row(
+            "SELECT status FROM posts WHERE short_id = ?1",
+            params![short_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let current = match current {
+        Some(s) => s,
+        None => return Ok(None),
     };
     let new_status = if current == "published" { "draft" } else { "published" };
     if new_status == "published" {
@@ -360,32 +288,17 @@ pub fn toggle_post_status(db: &Db, short_id: &str) -> Result<Option<String>, DbE
 
 pub fn find_alias_redirect(db: &Db, alias: &str) -> Result<Option<String>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        "SELECT slug FROM posts WHERE alias = ?1 AND status = 'published'",
-        params![alias],
-        |row| row.get::<_, String>(0),
-    ) {
-        Ok(slug) => Ok(Some(format!("/posts/{}", slug))),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let slug: Option<String> = conn
+        .query_row(
+            "SELECT slug FROM posts WHERE alias = ?1 AND status = 'published'",
+            params![alias],
+            |row| row.get(0),
+        )
+        .optional()?;
+    Ok(slug.map(|s| format!("/posts/{}", s)))
 }
 
 // --- Page CRUD ---
-
-fn row_to_page(row: &rusqlite::Row) -> rusqlite::Result<Page> {
-    Ok(Page {
-        id: row.get(0)?,
-        short_id: row.get(1)?,
-        title: row.get(2)?,
-        slug: row.get(3)?,
-        content: row.get(4)?,
-        is_published: row.get::<_, i64>(5)? != 0,
-        nav_order: row.get(6)?,
-        created_at: row.get(7)?,
-        updated_at: row.get(8)?,
-    })
-}
 
 const PAGE_COLS: &str = "id, short_id, title, slug, content, is_published, nav_order, created_at, updated_at";
 
@@ -407,35 +320,33 @@ pub fn create_page(
     let page = conn.query_row(
         &format!("SELECT {} FROM pages WHERE id = ?1", PAGE_COLS),
         params![id],
-        row_to_page,
+        from_row,
     )?;
     Ok(page)
 }
 
 pub fn get_page_by_short_id(db: &Db, short_id: &str) -> Result<Option<Page>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        &format!("SELECT {} FROM pages WHERE short_id = ?1", PAGE_COLS),
-        params![short_id],
-        row_to_page,
-    ) {
-        Ok(page) => Ok(Some(page)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let page = conn
+        .query_row(
+            &format!("SELECT {} FROM pages WHERE short_id = ?1", PAGE_COLS),
+            params![short_id],
+            from_row,
+        )
+        .optional()?;
+    Ok(page)
 }
 
 pub fn get_page_by_slug(db: &Db, slug: &str) -> Result<Option<Page>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        &format!("SELECT {} FROM pages WHERE slug = ?1", PAGE_COLS),
-        params![slug],
-        row_to_page,
-    ) {
-        Ok(page) => Ok(Some(page)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let page = conn
+        .query_row(
+            &format!("SELECT {} FROM pages WHERE slug = ?1", PAGE_COLS),
+            params![slug],
+            from_row,
+        )
+        .optional()?;
+    Ok(page)
 }
 
 pub fn get_all_pages(db: &Db) -> Result<Vec<Page>, DbError> {
@@ -444,7 +355,7 @@ pub fn get_all_pages(db: &Db) -> Result<Vec<Page>, DbError> {
         &format!("SELECT {} FROM pages ORDER BY nav_order ASC, id ASC", PAGE_COLS),
     )?;
     let pages = stmt
-        .query_map([], row_to_page)?
+        .query_map([], from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(pages)
 }
@@ -455,7 +366,7 @@ pub fn get_published_pages(db: &Db) -> Result<Vec<Page>, DbError> {
         &format!("SELECT {} FROM pages WHERE is_published = 1 ORDER BY nav_order ASC, id ASC", PAGE_COLS),
     )?;
     let pages = stmt
-        .query_map([], row_to_page)?
+        .query_map([], from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(pages)
 }
@@ -477,15 +388,14 @@ pub fn update_page(
     if rows == 0 {
         return Ok(None);
     }
-    match conn.query_row(
-        &format!("SELECT {} FROM pages WHERE short_id = ?1", PAGE_COLS),
-        params![short_id],
-        row_to_page,
-    ) {
-        Ok(page) => Ok(Some(page)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let page = conn
+        .query_row(
+            &format!("SELECT {} FROM pages WHERE short_id = ?1", PAGE_COLS),
+            params![short_id],
+            from_row,
+        )
+        .optional()?;
+    Ok(page)
 }
 
 pub fn delete_page(db: &Db, short_id: &str) -> Result<bool, DbError> {
@@ -498,15 +408,14 @@ pub fn delete_page(db: &Db, short_id: &str) -> Result<bool, DbError> {
 
 pub fn get_setting(db: &Db, key: &str) -> Result<Option<String>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        "SELECT value FROM settings WHERE key = ?1",
-        params![key],
-        |row| row.get(0),
-    ) {
-        Ok(val) => Ok(Some(val)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
+    let val = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            params![key],
+            |row| row.get(0),
+        )
+        .optional()?;
+    Ok(val)
 }
 
 pub fn set_setting(db: &Db, key: &str, value: &str) -> Result<(), DbError> {
@@ -527,58 +436,7 @@ pub fn get_all_settings(db: &Db) -> Result<Vec<(String, String)>, DbError> {
     Ok(settings)
 }
 
-// --- Session functions ---
-
-pub fn insert_session(db: &Db, token: &str, expires_at: &str) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute(
-        "INSERT INTO sessions (token, expires_at) VALUES (?1, ?2)",
-        params![token, expires_at],
-    )?;
-    Ok(())
-}
-
-pub fn get_session_expiry(db: &Db, token: &str) -> Result<Option<String>, DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        "SELECT expires_at FROM sessions WHERE token = ?1",
-        params![token],
-        |row| row.get(0),
-    ) {
-        Ok(val) => Ok(Some(val)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
-}
-
-pub fn delete_session(db: &Db, token: &str) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute("DELETE FROM sessions WHERE token = ?1", params![token])?;
-    Ok(())
-}
-
-pub fn prune_expired_sessions(db: &Db) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute(
-        "DELETE FROM sessions WHERE expires_at < datetime('now')",
-        [],
-    )?;
-    Ok(())
-}
-
 // --- File CRUD ---
-
-fn row_to_file(row: &rusqlite::Row) -> rusqlite::Result<UploadedFile> {
-    Ok(UploadedFile {
-        id: row.get(0)?,
-        short_id: row.get(1)?,
-        filename: row.get(2)?,
-        original_name: row.get(3)?,
-        content_type: row.get(4)?,
-        size: row.get(5)?,
-        created_at: row.get(6)?,
-    })
-}
 
 const FILE_COLS: &str = "id, short_id, filename, original_name, content_type, size, created_at";
 
@@ -599,7 +457,7 @@ pub fn create_file(
     let file = conn.query_row(
         &format!("SELECT {} FROM files WHERE id = ?1", FILE_COLS),
         params![id],
-        row_to_file,
+        from_row,
     )?;
     Ok(file)
 }
@@ -610,24 +468,27 @@ pub fn get_all_files(db: &Db) -> Result<Vec<UploadedFile>, DbError> {
         &format!("SELECT {} FROM files ORDER BY id DESC", FILE_COLS),
     )?;
     let files = stmt
-        .query_map([], row_to_file)?
+        .query_map([], from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(files)
 }
 
 pub fn delete_file(db: &Db, short_id: &str) -> Result<Option<UploadedFile>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let file = match conn.query_row(
-        &format!("SELECT {} FROM files WHERE short_id = ?1", FILE_COLS),
-        params![short_id],
-        row_to_file,
-    ) {
-        Ok(f) => f,
-        Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
-        Err(e) => return Err(DbError::Sqlite(e)),
-    };
-    conn.execute("DELETE FROM files WHERE short_id = ?1", params![short_id])?;
-    Ok(Some(file))
+    let file: Option<UploadedFile> = conn
+        .query_row(
+            &format!("SELECT {} FROM files WHERE short_id = ?1", FILE_COLS),
+            params![short_id],
+            from_row,
+        )
+        .optional()?;
+    match file {
+        Some(f) => {
+            conn.execute("DELETE FROM files WHERE short_id = ?1", params![short_id])?;
+            Ok(Some(f))
+        }
+        None => Ok(None),
+    }
 }
 
 #[cfg(test)]
@@ -636,56 +497,24 @@ mod tests {
 
     fn test_db() -> Db {
         let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS posts (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                short_id        TEXT NOT NULL UNIQUE,
-                title           TEXT NOT NULL,
-                slug            TEXT NOT NULL UNIQUE,
-                alias           TEXT,
-                canonical_url   TEXT,
-                published_date  TEXT,
-                meta_description TEXT,
-                meta_image      TEXT,
-                lang            TEXT NOT NULL DEFAULT 'en',
-                tags            TEXT,
-                content         TEXT NOT NULL,
-                status          TEXT NOT NULL DEFAULT 'draft',
-                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
-            );
-            CREATE TABLE IF NOT EXISTS pages (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                short_id        TEXT NOT NULL UNIQUE,
-                title           TEXT NOT NULL,
-                slug            TEXT NOT NULL UNIQUE,
-                content         TEXT NOT NULL,
-                is_published    INTEGER NOT NULL DEFAULT 0,
-                nav_order       INTEGER NOT NULL DEFAULT 0,
-                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-                updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
-            );
-            CREATE TABLE IF NOT EXISTS sessions (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                token           TEXT NOT NULL UNIQUE,
-                expires_at      TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS settings (
-                key   TEXT PRIMARY KEY,
-                value TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS files (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                short_id      TEXT NOT NULL UNIQUE,
-                filename      TEXT NOT NULL UNIQUE,
-                original_name TEXT NOT NULL,
-                content_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
-                size          INTEGER NOT NULL,
-                created_at    TEXT NOT NULL DEFAULT (datetime('now'))
-            );",
-        )
-        .unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
         Arc::new(Mutex::new(conn))
+    }
+
+    fn test_post_input<'a>(title: &'a str, slug: &'a str, content: &'a str, status: &'a str) -> PostInput<'a> {
+        PostInput {
+            title,
+            slug,
+            content,
+            status,
+            alias: None,
+            canonical_url: None,
+            published_date: None,
+            meta_description: None,
+            meta_image: None,
+            lang: "en",
+            tags: None,
+        }
     }
 
     // ── Post CRUD ──────────────────────────────────────────────────────
@@ -693,11 +522,7 @@ mod tests {
     #[test]
     fn create_and_get_post() {
         let db = test_db();
-        let post = create_post(
-            &db, "Hello World", "hello-world", "# Hello", "draft",
-            None, None, None, None, None, "en", None,
-        )
-        .unwrap();
+        let post = create_post(&db, &test_post_input("Hello World", "hello-world", "# Hello", "draft")).unwrap();
         assert_eq!(post.title, "Hello World");
         assert_eq!(post.slug, "hello-world");
         assert_eq!(post.status, "draft");
@@ -709,11 +534,9 @@ mod tests {
     #[test]
     fn get_post_by_slug_works() {
         let db = test_db();
-        create_post(
-            &db, "Test", "test-slug", "content", "published",
-            None, None, Some("2024-01-01"), None, None, "en", None,
-        )
-        .unwrap();
+        let mut input = test_post_input("Test", "test-slug", "content", "published");
+        input.published_date = Some("2024-01-01");
+        create_post(&db, &input).unwrap();
 
         let post = get_post_by_slug(&db, "test-slug").unwrap().unwrap();
         assert_eq!(post.title, "Test");
@@ -722,16 +545,16 @@ mod tests {
     #[test]
     fn duplicate_slug_fails() {
         let db = test_db();
-        create_post(&db, "A", "same-slug", "a", "draft", None, None, None, None, None, "en", None).unwrap();
-        let result = create_post(&db, "B", "same-slug", "b", "draft", None, None, None, None, None, "en", None);
+        create_post(&db, &test_post_input("A", "same-slug", "a", "draft")).unwrap();
+        let result = create_post(&db, &test_post_input("B", "same-slug", "b", "draft"));
         assert!(result.is_err());
     }
 
     #[test]
     fn get_all_posts_ordered_desc() {
         let db = test_db();
-        create_post(&db, "First", "first", "a", "draft", None, None, None, None, None, "en", None).unwrap();
-        create_post(&db, "Second", "second", "b", "draft", None, None, None, None, None, "en", None).unwrap();
+        create_post(&db, &test_post_input("First", "first", "a", "draft")).unwrap();
+        create_post(&db, &test_post_input("Second", "second", "b", "draft")).unwrap();
 
         let all = get_all_posts(&db).unwrap();
         assert_eq!(all.len(), 2);
@@ -742,8 +565,10 @@ mod tests {
     #[test]
     fn get_published_posts_filters() {
         let db = test_db();
-        create_post(&db, "Draft", "draft", "a", "draft", None, None, None, None, None, "en", None).unwrap();
-        create_post(&db, "Published", "pub", "b", "published", None, None, Some("2024-01-01"), None, None, "en", None).unwrap();
+        create_post(&db, &test_post_input("Draft", "draft", "a", "draft")).unwrap();
+        let mut input = test_post_input("Published", "pub", "b", "published");
+        input.published_date = Some("2024-01-01");
+        create_post(&db, &input).unwrap();
 
         let published = get_published_posts(&db).unwrap();
         assert_eq!(published.len(), 1);
@@ -753,7 +578,7 @@ mod tests {
     #[test]
     fn delete_post_works() {
         let db = test_db();
-        let post = create_post(&db, "Del", "del", "x", "draft", None, None, None, None, None, "en", None).unwrap();
+        let post = create_post(&db, &test_post_input("Del", "del", "x", "draft")).unwrap();
         assert!(delete_post(&db, &post.short_id).unwrap());
         assert!(get_post_by_short_id(&db, &post.short_id).unwrap().is_none());
     }
@@ -761,7 +586,7 @@ mod tests {
     #[test]
     fn toggle_post_status_draft_to_published() {
         let db = test_db();
-        let post = create_post(&db, "Toggle", "toggle", "x", "draft", None, None, None, None, None, "en", None).unwrap();
+        let post = create_post(&db, &test_post_input("Toggle", "toggle", "x", "draft")).unwrap();
         let new_status = toggle_post_status(&db, &post.short_id).unwrap().unwrap();
         assert_eq!(new_status, "published");
 
@@ -773,7 +598,9 @@ mod tests {
     #[test]
     fn toggle_post_status_published_to_draft() {
         let db = test_db();
-        let post = create_post(&db, "Toggle", "toggle", "x", "published", None, None, Some("2024-01-01"), None, None, "en", None).unwrap();
+        let mut input = test_post_input("Toggle", "toggle", "x", "published");
+        input.published_date = Some("2024-01-01");
+        let post = create_post(&db, &input).unwrap();
         let new_status = toggle_post_status(&db, &post.short_id).unwrap().unwrap();
         assert_eq!(new_status, "draft");
     }
@@ -781,7 +608,10 @@ mod tests {
     #[test]
     fn find_alias_redirect_found() {
         let db = test_db();
-        create_post(&db, "Aliased", "aliased-post", "x", "published", Some("old-url"), None, Some("2024-01-01"), None, None, "en", None).unwrap();
+        let mut input = test_post_input("Aliased", "aliased-post", "x", "published");
+        input.alias = Some("old-url");
+        input.published_date = Some("2024-01-01");
+        create_post(&db, &input).unwrap();
         let redirect = find_alias_redirect(&db, "old-url").unwrap();
         assert_eq!(redirect, Some("/posts/aliased-post".to_string()));
     }
@@ -795,7 +625,9 @@ mod tests {
     #[test]
     fn find_alias_redirect_only_published() {
         let db = test_db();
-        create_post(&db, "Draft Alias", "draft-alias", "x", "draft", Some("my-alias"), None, None, None, None, "en", None).unwrap();
+        let mut input = test_post_input("Draft Alias", "draft-alias", "x", "draft");
+        input.alias = Some("my-alias");
+        create_post(&db, &input).unwrap();
         assert!(find_alias_redirect(&db, "my-alias").unwrap().is_none());
     }
 

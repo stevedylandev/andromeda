@@ -21,6 +21,7 @@ rand = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 andromeda-auth = { workspace = true }
+andromeda-db = { workspace = true, features = ["session"] }
 askama = "0.15"
 askama_web = { version = "0.15", features = ["axum-0.8"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }

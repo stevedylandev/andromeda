@@ -1,33 +1,10 @@
 use nanoid::nanoid;
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
-use std::fmt;
 use std::sync::{Arc, Mutex};
 
-pub type Db = Arc<Mutex<Connection>>;
-
-#[derive(Debug)]
-pub enum DbError {
-    Sqlite(rusqlite::Error),
-    LockPoisoned,
-}
-
-impl fmt::Display for DbError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            DbError::Sqlite(e) => write!(f, "Database error: {}", e),
-            DbError::LockPoisoned => write!(f, "Database lock poisoned"),
-        }
-    }
-}
-
-impl std::error::Error for DbError {}
-
-impl From<rusqlite::Error> for DbError {
-    fn from(e: rusqlite::Error) -> Self {
-        DbError::Sqlite(e)
-    }
-}
+pub use andromeda_db::{Db, DbError};
+pub use andromeda_db::session::{insert_session, get_session_expiry, delete_session, prune_expired_sessions};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Wine {
@@ -53,46 +30,49 @@ pub struct Wine {
     pub wishlist: bool,
 }
 
+const SCHEMA: &str = "
+    CREATE TABLE IF NOT EXISTS wines (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_id        TEXT NOT NULL UNIQUE,
+        name            TEXT NOT NULL,
+        origin          TEXT NOT NULL,
+        grape           TEXT NOT NULL,
+        notes           TEXT NOT NULL,
+        image           BLOB,
+        image_mime      TEXT,
+        sweetness       INTEGER NOT NULL CHECK(sweetness BETWEEN 1 AND 5),
+        acidity         INTEGER NOT NULL CHECK(acidity BETWEEN 1 AND 5),
+        tannin          INTEGER NOT NULL CHECK(tannin BETWEEN 1 AND 5),
+        alcohol         INTEGER NOT NULL CHECK(alcohol BETWEEN 1 AND 5),
+        body            INTEGER NOT NULL CHECK(body BETWEEN 1 AND 5),
+        clarity         INTEGER NOT NULL DEFAULT 3,
+        color_intensity INTEGER NOT NULL DEFAULT 3,
+        aroma_intensity INTEGER NOT NULL DEFAULT 3,
+        nose_complexity INTEGER NOT NULL DEFAULT 3,
+        background      TEXT NOT NULL DEFAULT '',
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        wishlist        INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        token      TEXT NOT NULL UNIQUE,
+        expires_at TEXT NOT NULL
+    );
+";
+
 pub fn init_db() -> Db {
     let path = std::env::var("CELLAR_DB_PATH").unwrap_or_else(|_| "cellar.sqlite".to_string());
     let conn = Connection::open(&path).expect("Failed to open database");
 
-    conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS wines (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            short_id   TEXT NOT NULL UNIQUE,
-            name       TEXT NOT NULL,
-            origin     TEXT NOT NULL,
-            grape      TEXT NOT NULL,
-            notes      TEXT NOT NULL,
-            image      BLOB,
-            image_mime TEXT,
-            sweetness  INTEGER NOT NULL CHECK(sweetness BETWEEN 1 AND 5),
-            acidity    INTEGER NOT NULL CHECK(acidity BETWEEN 1 AND 5),
-            tannin     INTEGER NOT NULL CHECK(tannin BETWEEN 1 AND 5),
-            alcohol    INTEGER NOT NULL CHECK(alcohol BETWEEN 1 AND 5),
-            body       INTEGER NOT NULL CHECK(body BETWEEN 1 AND 5),
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        );
+    conn.execute_batch(SCHEMA).expect("Failed to create tables");
 
-        CREATE TABLE IF NOT EXISTS sessions (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            token      TEXT NOT NULL UNIQUE,
-            expires_at TEXT NOT NULL
-        );"
-    )
-    .expect("Failed to create tables");
-
-    // Migration: add background column if it doesn't exist
+    // Migrations for existing databases (idempotent — ALTER TABLE fails silently if column exists)
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN background TEXT NOT NULL DEFAULT ''", []);
-
-    // Migration: add appearance and nose tasting attributes
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN clarity INTEGER NOT NULL DEFAULT 3", []);
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN color_intensity INTEGER NOT NULL DEFAULT 3", []);
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN aroma_intensity INTEGER NOT NULL DEFAULT 3", []);
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN nose_complexity INTEGER NOT NULL DEFAULT 3", []);
-
-    // Migration: add wishlist flag
     let _ = conn.execute("ALTER TABLE wines ADD COLUMN wishlist INTEGER NOT NULL DEFAULT 0", []);
 
     Arc::new(Mutex::new(conn))
@@ -298,81 +278,13 @@ pub fn delete_wine(db: &Db, short_id: &str) -> Result<bool, DbError> {
     Ok(rows > 0)
 }
 
-// Session functions
-
-pub fn insert_session(db: &Db, token: &str, expires_at: &str) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute(
-        "INSERT INTO sessions (token, expires_at) VALUES (?1, ?2)",
-        params![token, expires_at],
-    )?;
-    Ok(())
-}
-
-pub fn get_session_expiry(db: &Db, token: &str) -> Result<Option<String>, DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    match conn.query_row(
-        "SELECT expires_at FROM sessions WHERE token = ?1",
-        params![token],
-        |row| row.get(0),
-    ) {
-        Ok(val) => Ok(Some(val)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(DbError::Sqlite(e)),
-    }
-}
-
-pub fn delete_session(db: &Db, token: &str) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute("DELETE FROM sessions WHERE token = ?1", params![token])?;
-    Ok(())
-}
-
-pub fn prune_expired_sessions(db: &Db) -> Result<(), DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    conn.execute(
-        "DELETE FROM sessions WHERE expires_at < datetime('now')",
-        [],
-    )?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn test_db() -> Db {
         let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS wines (
-                id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                short_id        TEXT NOT NULL UNIQUE,
-                name            TEXT NOT NULL,
-                origin          TEXT NOT NULL,
-                grape           TEXT NOT NULL,
-                notes           TEXT NOT NULL,
-                image           BLOB,
-                image_mime      TEXT,
-                sweetness       INTEGER NOT NULL CHECK(sweetness BETWEEN 1 AND 5),
-                acidity         INTEGER NOT NULL CHECK(acidity BETWEEN 1 AND 5),
-                tannin          INTEGER NOT NULL CHECK(tannin BETWEEN 1 AND 5),
-                alcohol         INTEGER NOT NULL CHECK(alcohol BETWEEN 1 AND 5),
-                body            INTEGER NOT NULL CHECK(body BETWEEN 1 AND 5),
-                clarity         INTEGER NOT NULL DEFAULT 3,
-                color_intensity INTEGER NOT NULL DEFAULT 3,
-                aroma_intensity INTEGER NOT NULL DEFAULT 3,
-                nose_complexity INTEGER NOT NULL DEFAULT 3,
-                background      TEXT NOT NULL DEFAULT '',
-                created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-                wishlist        INTEGER NOT NULL DEFAULT 0
-            );
-            CREATE TABLE IF NOT EXISTS sessions (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                token      TEXT NOT NULL UNIQUE,
-                expires_at TEXT NOT NULL
-            );",
-        )
-        .unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
         Arc::new(Mutex::new(conn))
     }
 
