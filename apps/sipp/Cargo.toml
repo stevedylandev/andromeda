@@ -28,6 +28,7 @@ rust-embed = { workspace = true }
 dotenvy = { workspace = true }
 subtle = { workspace = true }
 rusqlite = { workspace = true }
+andromeda-db = { workspace = true }
 askama = "0.15.4"
 askama_web = { version = "0.15.1", features = ["axum-0.8"] }
 ratatui = "0.30"

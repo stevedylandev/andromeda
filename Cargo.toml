@@ -9,6 +9,7 @@ members = [
     "apps/cellar",
     "apps/posts",
     "crates/auth",
+    "crates/db",
 ]
 resolver = "3"
 
@@ -50,3 +51,4 @@ tempfile = "3"
 
 # Workspace crates
 andromeda-auth = { path = "crates/auth" }
+andromeda-db = { path = "crates/db" }
