@@ -6,6 +6,7 @@ WORKDIR /app
 # Copy workspace manifests
 COPY Cargo.toml Cargo.lock .
 COPY crates/auth/Cargo.toml crates/auth/
+COPY crates/db/Cargo.toml crates/db/
 COPY apps/sipp/Cargo.toml apps/sipp/
 COPY apps/feeds/Cargo.toml apps/feeds/
 COPY apps/parcels/Cargo.toml apps/parcels/
@@ -17,6 +18,7 @@ COPY apps/posts/Cargo.toml apps/posts/
 
 # Create stubs for dependency caching
 RUN mkdir -p crates/auth/src && echo '' > crates/auth/src/lib.rs \
+    && mkdir -p crates/db/src && echo '' > crates/db/src/lib.rs \
     && for app in sipp feeds parcels jotts og shrink cellar posts; do \
          mkdir -p apps/$app/src && echo 'fn main() {}' > apps/$app/src/main.rs; \
        done

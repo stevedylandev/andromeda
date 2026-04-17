@@ -6,6 +6,7 @@ WORKDIR /app
 # Copy workspace manifests
 COPY Cargo.toml Cargo.lock .
 COPY crates/auth/Cargo.toml crates/auth/
+COPY crates/db/Cargo.toml crates/db/
 COPY apps/sipp/Cargo.toml apps/sipp/
 COPY apps/feeds/Cargo.toml apps/feeds/
 COPY apps/parcels/Cargo.toml apps/parcels/
@@ -17,6 +18,7 @@ COPY apps/posts/Cargo.toml apps/posts/
 
 # Create stubs for dependency caching
 RUN mkdir -p crates/auth/src && echo '' > crates/auth/src/lib.rs \
+    && mkdir -p crates/db/src && echo '' > crates/db/src/lib.rs \
     && for app in sipp feeds parcels jotts og shrink cellar posts; do \
          mkdir -p apps/$app/src && echo 'fn main() {}' > apps/$app/src/main.rs; \
        done
@@ -25,11 +27,12 @@ RUN cargo build --release -p jotts
 
 # Copy real source
 COPY crates/auth/src crates/auth/src
+COPY crates/db/src crates/db/src
 COPY apps/jotts/src apps/jotts/src
 COPY apps/jotts/static apps/jotts/static
 COPY apps/jotts/templates apps/jotts/templates
 
-RUN touch apps/jotts/src/*.rs crates/auth/src/*.rs && cargo build --release -p jotts
+RUN touch apps/jotts/src/*.rs crates/auth/src/*.rs crates/db/src/*.rs && cargo build --release -p jotts
 
 FROM debian:bookworm-slim
 COPY --from=builder /app/target/release/jotts /usr/local/bin/jotts
