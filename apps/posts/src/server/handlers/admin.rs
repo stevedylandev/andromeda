@@ -370,15 +370,15 @@ pub async fn admin_get_settings(
     State(state): State<Arc<AppState>>,
     Query(q): Query<FlashQuery>,
 ) -> Response {
-    let blog_title = db::get_setting(&state.db, "blog_title").ok().flatten().unwrap_or_default();
-    let blog_description = db::get_setting(&state.db, "blog_description").ok().flatten().unwrap_or_default();
-    let intro_content = db::get_setting(&state.db, "intro_content").ok().flatten().unwrap_or_default();
-    let nav_links = db::get_setting(&state.db, "nav_links").ok().flatten().unwrap_or_default();
-    let custom_css = db::get_setting(&state.db, "custom_css").ok().flatten().unwrap_or_default();
-    let favicon_url = db::get_setting(&state.db, "favicon_url").ok().flatten().unwrap_or_default();
-    let og_image_url = db::get_setting(&state.db, "og_image_url").ok().flatten().unwrap_or_default();
-    let custom_header = db::get_setting(&state.db, "custom_header").ok().flatten().unwrap_or_default();
-    let custom_footer = db::get_setting(&state.db, "custom_footer").ok().flatten().unwrap_or_default();
+    let blog_title = get_setting_or_default(&state.db, "blog_title");
+    let blog_description = get_setting_or_default(&state.db, "blog_description");
+    let intro_content = get_setting_or_default(&state.db, "intro_content");
+    let nav_links = get_setting_or_default(&state.db, "nav_links");
+    let custom_css = get_setting_or_default(&state.db, "custom_css");
+    let favicon_url = get_setting_or_default(&state.db, "favicon_url");
+    let og_image_url = get_setting_or_default(&state.db, "og_image_url");
+    let custom_header = get_setting_or_default(&state.db, "custom_header");
+    let custom_footer = get_setting_or_default(&state.db, "custom_footer");
     let default_css = Static::get("styles.css")
         .map(|f| String::from_utf8_lossy(&f.data).into_owned())
         .unwrap_or_default();
@@ -541,62 +541,20 @@ pub async fn admin_download_posts(
     };
 
     let result = tokio::task::spawn_blocking(move || {
-        let mut buf = std::io::Cursor::new(Vec::new());
-        {
-            let mut zip = zip::ZipWriter::new(&mut buf);
-            let options = zip::write::SimpleFileOptions::default()
-                .compression_method(zip::CompressionMethod::Deflated);
-            for post in &posts {
-                let filename = format!("{}.md", post.slug);
-                let mut frontmatter = format!(
-                    "---\ntitle: {}\nslug: {}\nstatus: {}",
-                    post.title, post.slug, post.status
-                );
-                if let Some(ref pd) = post.published_date {
-                    frontmatter.push_str(&format!("\npublished_date: {}", pd));
-                }
-                if let Some(ref tags) = post.tags {
-                    frontmatter.push_str(&format!("\ntags: {}", tags));
-                }
-                frontmatter.push_str(&format!("\nlang: {}", post.lang));
-                if let Some(ref alias) = post.alias {
-                    frontmatter.push_str(&format!("\nalias: {}", alias));
-                }
-                if let Some(ref meta_image) = post.meta_image {
-                    frontmatter.push_str(&format!("\nmeta_image: {}", meta_image));
-                }
-                if let Some(ref meta_desc) = post.meta_description {
-                    frontmatter.push_str(&format!("\ndescription: {}", meta_desc));
-                }
-                frontmatter.push_str("\n---\n\n");
-                let content = format!("{}{}", frontmatter, post.content);
-                if let Err(e) = zip.start_file(&filename, options) {
-                    tracing::warn!("Failed to add {} to zip: {}", filename, e);
-                    continue;
-                }
-                if let Err(e) = std::io::Write::write_all(&mut zip, content.as_bytes()) {
-                    tracing::warn!("Failed to write {} to zip: {}", filename, e);
-                }
-            }
-            let _ = zip.finish();
-        }
-        buf.into_inner()
+        let markdown_files: Vec<_> = posts
+            .iter()
+            .map(|p| (format!("{}.md", p.slug), post_to_markdown(p)))
+            .collect();
+        let entries: Vec<_> = markdown_files
+            .iter()
+            .map(|(name, content)| (name.clone(), content.as_bytes()))
+            .collect();
+        build_zip(&entries, zip::CompressionMethod::Deflated)
     })
     .await;
 
     match result {
-        Ok(bytes) => (
-            StatusCode::OK,
-            [
-                (axum::http::header::CONTENT_TYPE, "application/zip"),
-                (
-                    axum::http::header::CONTENT_DISPOSITION,
-                    "attachment; filename=\"posts.zip\"",
-                ),
-            ],
-            bytes,
-        )
-            .into_response(),
+        Ok(bytes) => zip_response(bytes, "posts.zip"),
         Err(e) => {
             tracing::error!("Failed to create posts zip: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, "Export failed").into_response()
@@ -638,39 +596,16 @@ pub async fn admin_download_uploads(
     }
 
     let result = tokio::task::spawn_blocking(move || {
-        let mut buf = std::io::Cursor::new(Vec::new());
-        {
-            let mut zip = zip::ZipWriter::new(&mut buf);
-            let options = zip::write::SimpleFileOptions::default()
-                .compression_method(zip::CompressionMethod::Stored);
-            for (name, bytes) in &file_data {
-                if let Err(e) = zip.start_file(name, options) {
-                    tracing::warn!("Failed to add {} to zip: {}", name, e);
-                    continue;
-                }
-                if let Err(e) = std::io::Write::write_all(&mut zip, bytes) {
-                    tracing::warn!("Failed to write {} to zip: {}", name, e);
-                }
-            }
-            let _ = zip.finish();
-        }
-        buf.into_inner()
+        let entries: Vec<_> = file_data
+            .iter()
+            .map(|(name, bytes)| (name.clone(), bytes.as_slice()))
+            .collect();
+        build_zip(&entries, zip::CompressionMethod::Stored)
     })
     .await;
 
     match result {
-        Ok(bytes) => (
-            StatusCode::OK,
-            [
-                (axum::http::header::CONTENT_TYPE, "application/zip"),
-                (
-                    axum::http::header::CONTENT_DISPOSITION,
-                    "attachment; filename=\"uploads.zip\"",
-                ),
-            ],
-            bytes,
-        )
-            .into_response(),
+        Ok(bytes) => zip_response(bytes, "uploads.zip"),
         Err(e) => {
             tracing::error!("Failed to create uploads zip: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, "Export failed").into_response()
