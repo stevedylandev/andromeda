@@ -1,0 +1,18 @@
+[package]
+name = "andromeda-db"
+version = "0.1.0"
+edition = "2024"
+description = "Shared database types and session management for Andromeda apps"
+license = "MIT"
+repository = "https://github.com/stevedylandev/andromeda"
+homepage = "https://github.com/stevedylandev/andromeda"
+
+[dependencies]
+rusqlite = { workspace = true }
+axum = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+
+[features]
+default = []
+session = []
+axum = ["dep:axum", "dep:tracing"]
