@@ -29,11 +29,82 @@
     <p class="error-msg">{{ err }}</p>
     {% endif %}
 
+    <div class="admin-form">
+      <label for="base_url">Discover Feed</label>
+      <div class="discover-row">
+        <input type="url" id="base_url" placeholder="https://example.com" />
+        <button type="button" id="discover-btn" onclick="discoverFeeds()">Discover</button>
+      </div>
+      <div id="discover-status" class="discover-status" style="display:none;"></div>
+      <div id="discover-results" class="discover-results" style="display:none;"></div>
+    </div>
+
     <form class="admin-form" method="POST" action="/admin/add-feed">
       <label for="feed_url">Feed URL</label>
       <input type="url" id="feed_url" name="feed_url" placeholder="https://example.com/feed.xml" required />
       <button type="submit">Add Feed</button>
     </form>
+
+    <script>
+      async function discoverFeeds() {
+        const baseUrl = document.getElementById('base_url').value.trim();
+        if (!baseUrl) return;
+
+        const btn = document.getElementById('discover-btn');
+        const status = document.getElementById('discover-status');
+        const results = document.getElementById('discover-results');
+        const feedInput = document.getElementById('feed_url');
+
+        btn.disabled = true;
+        btn.textContent = 'Searching...';
+        status.style.display = 'none';
+        results.style.display = 'none';
+        results.innerHTML = '';
+
+        try {
+          const body = new URLSearchParams({ base_url: baseUrl });
+          const resp = await fetch('/admin/discover-feeds', { method: 'POST', body });
+          const data = await resp.json();
+
+          if (!resp.ok) {
+            status.textContent = data.error || 'No feeds found';
+            status.className = 'discover-status error-msg';
+            status.style.display = 'block';
+            return;
+          }
+
+          feedInput.value = data[0];
+          status.textContent = data.length + ' feed(s) found';
+          status.className = 'discover-status success-msg';
+          status.style.display = 'block';
+
+          if (data.length > 1) {
+            results.style.display = 'flex';
+            data.forEach(function(url) {
+              const item = document.createElement('button');
+              item.type = 'button';
+              item.className = 'discover-result-item' + (url === data[0] ? ' active' : '');
+              item.textContent = url;
+              item.onclick = function() {
+                feedInput.value = url;
+                results.querySelectorAll('.discover-result-item').forEach(function(el) {
+                  el.classList.remove('active');
+                });
+                item.classList.add('active');
+              };
+              results.appendChild(item);
+            });
+          }
+        } catch (e) {
+          status.textContent = 'Request failed';
+          status.className = 'discover-status error-msg';
+          status.style.display = 'block';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Discover';
+        }
+      }
+    </script>
 
     {% if let Some(subs) = subscriptions %}
     <div class="admin-subs">

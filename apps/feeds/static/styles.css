@@ -224,6 +224,62 @@ code {
 	line-height: 1.4;
 }
 
+.discover-row {
+	display: flex;
+	gap: 0.5rem;
+	width: 100%;
+}
+
+.discover-row input {
+	flex: 1;
+	background: #1a1a1c;
+	color: #ffffff;
+	border: 1px solid #333;
+	padding: 10px;
+	font-family: "Commit Mono", monospace, sans-serif;
+	font-size: 14px;
+	outline: none;
+}
+
+.discover-row input:focus {
+	border-color: #666;
+}
+
+.discover-status {
+	font-size: 12px;
+}
+
+.discover-results {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	width: 100%;
+}
+
+.discover-result-item {
+	background: #1a1a1c;
+	color: #888;
+	border: 1px solid #333;
+	padding: 8px 10px;
+	font-size: 12px;
+	text-align: left;
+	cursor: pointer;
+	width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.discover-result-item:hover {
+	border-color: #666;
+	color: #ffffff;
+}
+
+.discover-result-item.active {
+	border-color: #6bff8a;
+	color: #ffffff;
+}
+
 .admin-subs {
 	width: 100%;
 	display: flex;
