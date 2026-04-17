@@ -13,6 +13,12 @@ pub struct Snippet {
     pub name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SnippetInput {
+    pub name: String,
+    pub content: String,
+}
+
 const SNIPPET_COLS: &str = "id, short_id, content, name";
 
 fn snippet_from_row(row: &rusqlite::Row) -> rusqlite::Result<Snippet> {
