@@ -295,14 +295,8 @@ fn mime_from_path(path: &str) -> &'static str {
 }
 
 fn get_header_footer_html(db: &db::Db) -> (String, String) {
-    let custom_header = db::get_setting(db, "custom_header")
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-    let custom_footer = db::get_setting(db, "custom_footer")
-        .ok()
-        .flatten()
-        .unwrap_or_default();
+    let custom_header = get_setting_or_default(db, "custom_header");
+    let custom_footer = get_setting_or_default(db, "custom_footer");
     let header_html = render_markdown(&custom_header);
     let footer_html = render_markdown(&custom_footer);
     (header_html, footer_html)
@@ -340,11 +334,13 @@ fn opt_str(s: &str) -> Option<&str> {
     if trimmed.is_empty() { None } else { Some(trimmed) }
 }
 
+fn get_setting_or_default(db: &Db, key: &str) -> String {
+    db::get_setting(db, key).ok().flatten().unwrap_or_default()
+}
+
 fn get_blog_title(db: &Db) -> String {
-    db::get_setting(db, "blog_title")
-        .ok()
-        .flatten()
-        .unwrap_or_else(|| "My Blog".to_string())
+    let title = get_setting_or_default(db, "blog_title");
+    if title.is_empty() { "My Blog".to_string() } else { title }
 }
 
 fn parse_nav_links(input: &str) -> Vec<NavLink> {
@@ -374,17 +370,36 @@ fn get_nav_links(db: &Db) -> Vec<NavLink> {
 }
 
 fn get_favicon_url(db: &Db) -> String {
-    db::get_setting(db, "favicon_url")
-        .ok()
-        .flatten()
-        .unwrap_or_default()
+    get_setting_or_default(db, "favicon_url")
 }
 
 fn get_og_image_url(db: &Db) -> String {
-    db::get_setting(db, "og_image_url")
-        .ok()
-        .flatten()
-        .unwrap_or_default()
+    get_setting_or_default(db, "og_image_url")
+}
+
+struct SiteContext {
+    blog_title: String,
+    nav_links: Vec<NavLink>,
+    favicon_url: String,
+    og_image_url: String,
+    site_url: String,
+    header_html: String,
+    footer_html: String,
+}
+
+impl SiteContext {
+    fn from_state(state: &AppState) -> Self {
+        let (header_html, footer_html) = get_header_footer_html(&state.db);
+        Self {
+            blog_title: get_blog_title(&state.db),
+            nav_links: get_nav_links(&state.db),
+            favicon_url: get_favicon_url(&state.db),
+            og_image_url: get_og_image_url(&state.db),
+            site_url: state.site_url.clone(),
+            header_html,
+            footer_html,
+        }
+    }
 }
 
 fn render_latest_posts_embed(posts: &[&Post]) -> String {
@@ -415,6 +430,72 @@ fn render_latest_posts_embed(posts: &[&Post]) -> String {
     }
     html.push_str("</div>");
     html
+}
+
+fn post_to_markdown(post: &Post) -> String {
+    use std::fmt::Write;
+    let mut out = format!("---\ntitle: {}\nslug: {}\nstatus: {}", post.title, post.slug, post.status);
+    let optional_fields: &[(&str, &Option<String>)] = &[
+        ("published_date", &post.published_date),
+        ("tags", &post.tags),
+    ];
+    for (key, value) in optional_fields {
+        if let Some(v) = value {
+            let _ = write!(out, "\n{}: {}", key, v);
+        }
+    }
+    let _ = write!(out, "\nlang: {}", post.lang);
+    let optional_tail: &[(&str, &Option<String>)] = &[
+        ("alias", &post.alias),
+        ("meta_image", &post.meta_image),
+        ("description", &post.meta_description),
+    ];
+    for (key, value) in optional_tail {
+        if let Some(v) = value {
+            let _ = write!(out, "\n{}: {}", key, v);
+        }
+    }
+    out.push_str("\n---\n\n");
+    out.push_str(&post.content);
+    out
+}
+
+fn build_zip(
+    entries: &[(String, &[u8])],
+    compression: zip::CompressionMethod,
+) -> Vec<u8> {
+    let mut buf = std::io::Cursor::new(Vec::new());
+    {
+        let mut zip = zip::ZipWriter::new(&mut buf);
+        let options = zip::write::SimpleFileOptions::default().compression_method(compression);
+        for (name, data) in entries {
+            if let Err(e) = zip.start_file(name, options) {
+                tracing::warn!("Failed to add {} to zip: {}", name, e);
+                continue;
+            }
+            if let Err(e) = std::io::Write::write_all(&mut zip, data) {
+                tracing::warn!("Failed to write {} to zip: {}", name, e);
+            }
+        }
+        let _ = zip.finish();
+    }
+    buf.into_inner()
+}
+
+fn zip_response(bytes: Vec<u8>, filename: &str) -> axum::response::Response {
+    use axum::response::IntoResponse;
+    (
+        axum::http::StatusCode::OK,
+        [
+            (axum::http::header::CONTENT_TYPE, "application/zip"),
+            (
+                axum::http::header::CONTENT_DISPOSITION,
+                &format!("attachment; filename=\"{}\"", filename),
+            ),
+        ],
+        bytes,
+    )
+        .into_response()
 }
 
 // --- Router ---
