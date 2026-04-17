@@ -22,6 +22,7 @@ A Rust workspace of minimal, self-hosted web apps. Each app compiles to a single
 | Crate | Description |
 |---|---|
 | [`andromeda-auth`](crates/auth) | Session-based password authentication |
+| [`andromeda-db`](crates/db) | Shared database types and session management |
 
 ## Stack
 

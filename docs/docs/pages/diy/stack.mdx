@@ -39,13 +39,25 @@ struct IndexTemplate {
 
 [Tokio](https://tokio.rs) provides the async runtime that Axum runs on.
 
-## Shared Crate: andromeda-auth
+## Shared Crates
+
+### andromeda-auth
 
 The `andromeda-auth` crate provides session-based password authentication used across apps that require login. It handles:
 
 - Constant-time password verification
 - Session cookie management
 - Secure cookie configuration via `COOKIE_SECURE` env var
+
+### andromeda-db
+
+The `andromeda-db` crate provides shared database types and utilities used across apps. It handles:
+
+- `Db` type alias (`Arc<Mutex<Connection>>`) for thread-safe SQLite access
+- `HasDb` trait for consistent database access across app states
+- `DbError` type with automatic conversion from rusqlite errors
+- Optional Axum integration (`axum` feature) for `IntoResponse` on errors
+- Optional session management (`session` feature)
 
 ## App Pattern
 
