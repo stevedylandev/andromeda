@@ -1,5 +1,7 @@
 use crate::models::{FeedItem, FreshRSSResponse, SubscriptionList};
+use scraper::{Html, Selector};
 use std::time::Duration;
+use url::Url;
 
 #[derive(Clone)]
 pub struct FreshRSSConfig {
@@ -318,6 +320,90 @@ pub async fn add_freshrss_subscription(
     feed_url: &str,
 ) -> Result<String, String> {
     FreshRSSClient::new(config).await?.add_subscription(feed_url).await
+}
+
+pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
+    let parsed = Url::parse(base_url).map_err(|e| format!("Invalid URL: {e}"))?;
+    let client = build_client();
+
+    let mut feeds = Vec::new();
+
+    // Strategy A: parse HTML for <link rel="alternate"> tags
+    if let Ok(response) = client.get(base_url).send().await {
+        if let Ok(body) = response.text().await {
+            let document = Html::parse_document(&body);
+            let selector = Selector::parse(r#"link[rel="alternate"]"#).unwrap();
+
+            for element in document.select(&selector) {
+                let type_attr = element.attr("type").unwrap_or_default();
+                if type_attr.contains("rss")
+                    || type_attr.contains("atom")
+                    || type_attr.contains("xml")
+                {
+                    if let Some(href) = element.attr("href") {
+                        let resolved = parsed
+                            .join(href)
+                            .map(|u| u.to_string())
+                            .unwrap_or_else(|_| href.to_string());
+                        if !feeds.contains(&resolved) {
+                            feeds.push(resolved);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Strategy B: probe common feed paths
+    if feeds.is_empty() {
+        let common_paths = [
+            "/feed",
+            "/feed.xml",
+            "/rss",
+            "/rss.xml",
+            "/atom.xml",
+            "/index.xml",
+            "/feed/rss",
+            "/blog/feed",
+            "/blog/rss",
+        ];
+
+        let mut handles = Vec::new();
+        for path in common_paths {
+            let probe_url = match parsed.join(path) {
+                Ok(u) => u.to_string(),
+                Err(_) => continue,
+            };
+            let client = client.clone();
+            handles.push(tokio::spawn(async move {
+                if let Ok(resp) = client.head(&probe_url).send().await {
+                    if resp.status().is_success() {
+                        if let Some(ct) = resp.headers().get("content-type") {
+                            let ct = ct.to_str().unwrap_or_default();
+                            if ct.contains("xml") || ct.contains("rss") || ct.contains("atom") {
+                                return Some(probe_url);
+                            }
+                        }
+                    }
+                }
+                None
+            }));
+        }
+
+        for handle in handles {
+            if let Ok(Some(url)) = handle.await {
+                if !feeds.contains(&url) {
+                    feeds.push(url);
+                }
+            }
+        }
+    }
+
+    if feeds.is_empty() {
+        Err("No feeds found at this URL".to_string())
+    } else {
+        Ok(feeds)
+    }
 }
 
 #[cfg(test)]
