@@ -278,6 +278,11 @@ struct AddFeedForm {
     feed_url: String,
 }
 
+#[derive(Deserialize)]
+struct DiscoverFeedsForm {
+    base_url: String,
+}
+
 async fn login_get_handler(Query(q): Query<FlashQuery>) -> impl IntoResponse {
     Html(LoginTemplate { error: q.error }.render().unwrap())
 }
@@ -351,6 +356,20 @@ async fn admin_handler(
     .into_response()
 }
 
+async fn discover_feeds_handler(
+    _session: auth::AuthSession,
+    Form(form): Form<DiscoverFeedsForm>,
+) -> Response {
+    match feeds::discover_feeds(&form.base_url).await {
+        Ok(urls) => Json(serde_json::json!(urls)).into_response(),
+        Err(e) => (
+            axum::http::StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": e })),
+        )
+            .into_response(),
+    }
+}
+
 async fn add_feed_handler(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
@@ -401,6 +420,7 @@ async fn main() {
         )
         .route("/admin/logout", get(logout_handler))
         .route("/admin/add-feed", post(add_feed_handler))
+        .route("/admin/discover-feeds", post(discover_feeds_handler))
         .route("/static/{*path}", get(static_handler))
         .with_state(state);
 
