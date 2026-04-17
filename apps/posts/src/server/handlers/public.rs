@@ -25,16 +25,9 @@ pub async fn serve_static(Path(path): Path<String>) -> Response {
 }
 
 pub async fn public_index(State(state): State<Arc<AppState>>) -> Response {
-    let blog_title = get_blog_title(&state.db);
-    let blog_description = db::get_setting(&state.db, "blog_description")
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-    let intro_content = db::get_setting(&state.db, "intro_content")
-        .ok()
-        .flatten()
-        .unwrap_or_default();
-    let nav_links = get_nav_links(&state.db);
+    let ctx = SiteContext::from_state(&state);
+    let blog_description = get_setting_or_default(&state.db, "blog_description");
+    let intro_content = get_setting_or_default(&state.db, "intro_content");
 
     match db::get_published_posts(&state.db) {
         Ok(posts) => {
@@ -47,20 +40,17 @@ pub async fn public_index(State(state): State<Arc<AppState>>) -> Response {
                 intro_html = intro_html.replace("{{latest_posts}}", &embed_html);
             }
 
-            let favicon_url = get_favicon_url(&state.db);
-            let og_image_url = get_og_image_url(&state.db);
-            let (header_html, footer_html) = get_header_footer_html(&state.db);
             WebTemplate(IndexTemplate {
-                blog_title,
+                blog_title: ctx.blog_title,
                 blog_description,
                 intro_html,
                 posts,
-                nav_links,
-                favicon_url,
-                og_image_url,
-                site_url: state.site_url.clone(),
-                header_html,
-                footer_html,
+                nav_links: ctx.nav_links,
+                favicon_url: ctx.favicon_url,
+                og_image_url: ctx.og_image_url,
+                site_url: ctx.site_url,
+                header_html: ctx.header_html,
+                footer_html: ctx.footer_html,
             })
             .into_response()
         }
@@ -77,22 +67,18 @@ pub async fn public_post(
 ) -> Response {
     match db::get_post_by_slug(&state.db, &slug) {
         Ok(Some(post)) if post.status == "published" => {
+            let ctx = SiteContext::from_state(&state);
             let rendered_content = render_markdown(&post.content);
-            let blog_title = get_blog_title(&state.db);
-            let nav_links = get_nav_links(&state.db);
-            let favicon_url = get_favicon_url(&state.db);
-            let og_image_url = get_og_image_url(&state.db);
-            let (header_html, footer_html) = get_header_footer_html(&state.db);
             WebTemplate(PostTemplate {
-                blog_title,
-                nav_links,
+                blog_title: ctx.blog_title,
+                nav_links: ctx.nav_links,
                 post,
                 rendered_content,
-                favicon_url,
-                og_image_url,
-                site_url: state.site_url.clone(),
-                header_html,
-                footer_html,
+                favicon_url: ctx.favicon_url,
+                og_image_url: ctx.og_image_url,
+                site_url: ctx.site_url,
+                header_html: ctx.header_html,
+                footer_html: ctx.footer_html,
             })
             .into_response()
         }
@@ -110,22 +96,18 @@ pub async fn public_page(
 ) -> Response {
     match db::get_page_by_slug(&state.db, &slug) {
         Ok(Some(page)) if page.is_published => {
+            let ctx = SiteContext::from_state(&state);
             let rendered_content = render_markdown(&page.content);
-            let blog_title = get_blog_title(&state.db);
-            let nav_links = get_nav_links(&state.db);
-            let favicon_url = get_favicon_url(&state.db);
-            let og_image_url = get_og_image_url(&state.db);
-            let (header_html, footer_html) = get_header_footer_html(&state.db);
             WebTemplate(PageTemplate {
-                blog_title,
-                nav_links,
+                blog_title: ctx.blog_title,
+                nav_links: ctx.nav_links,
                 page,
                 rendered_content,
-                favicon_url,
-                og_image_url,
-                site_url: state.site_url.clone(),
-                header_html,
-                footer_html,
+                favicon_url: ctx.favicon_url,
+                og_image_url: ctx.og_image_url,
+                site_url: ctx.site_url,
+                header_html: ctx.header_html,
+                footer_html: ctx.footer_html,
             })
             .into_response()
         }
@@ -138,23 +120,18 @@ pub async fn public_page(
 }
 
 pub async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
-    let blog_title = get_blog_title(&state.db);
-    let nav_links = get_nav_links(&state.db);
-    let favicon_url = get_favicon_url(&state.db);
-    let og_image_url = get_og_image_url(&state.db);
-
-    let (header_html, footer_html) = get_header_footer_html(&state.db);
+    let ctx = SiteContext::from_state(&state);
 
     match db::get_published_posts(&state.db) {
         Ok(posts) => WebTemplate(PostsListTemplate {
-            blog_title,
-            nav_links,
+            blog_title: ctx.blog_title,
+            nav_links: ctx.nav_links,
             posts,
-            favicon_url,
-            og_image_url,
-            site_url: state.site_url.clone(),
-            header_html,
-            footer_html,
+            favicon_url: ctx.favicon_url,
+            og_image_url: ctx.og_image_url,
+            site_url: ctx.site_url,
+            header_html: ctx.header_html,
+            footer_html: ctx.footer_html,
         })
         .into_response(),
         Err(e) => {
@@ -165,10 +142,7 @@ pub async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
 }
 
 pub async fn serve_custom_css(State(state): State<Arc<AppState>>) -> Response {
-    let css = db::get_setting(&state.db, "custom_css")
-        .ok()
-        .flatten()
-        .unwrap_or_default();
+    let css = get_setting_or_default(&state.db, "custom_css");
     (
         StatusCode::OK,
         [(axum::http::header::CONTENT_TYPE, HeaderValue::from_static("text/css"))],
@@ -221,10 +195,7 @@ fn xml_escape(s: &str) -> String {
 
 pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
     let blog_title = get_blog_title(&state.db);
-    let blog_description = db::get_setting(&state.db, "blog_description")
-        .ok()
-        .flatten()
-        .unwrap_or_default();
+    let blog_description = get_setting_or_default(&state.db, "blog_description");
     let site_url = &state.site_url;
 
     let posts = match db::get_published_posts(&state.db) {
