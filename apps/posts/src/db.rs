@@ -360,17 +360,6 @@ pub fn get_all_pages(db: &Db) -> Result<Vec<Page>, DbError> {
     Ok(pages)
 }
 
-pub fn get_published_pages(db: &Db) -> Result<Vec<Page>, DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let mut stmt = conn.prepare(
-        &format!("SELECT {} FROM pages WHERE is_published = 1 ORDER BY nav_order ASC, id ASC", PAGE_COLS),
-    )?;
-    let pages = stmt
-        .query_map([], from_row)?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(pages)
-}
-
 pub fn update_page(
     db: &Db,
     short_id: &str,
@@ -425,15 +414,6 @@ pub fn set_setting(db: &Db, key: &str, value: &str) -> Result<(), DbError> {
         params![key, value],
     )?;
     Ok(())
-}
-
-pub fn get_all_settings(db: &Db) -> Result<Vec<(String, String)>, DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let mut stmt = conn.prepare("SELECT key, value FROM settings ORDER BY key")?;
-    let settings = stmt
-        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
-        .collect::<Result<Vec<_>, _>>()?;
-    Ok(settings)
 }
 
 // --- File CRUD ---
@@ -653,17 +633,6 @@ mod tests {
     }
 
     #[test]
-    fn get_published_pages_filters() {
-        let db = test_db();
-        create_page(&db, "Pub", "pub", "x", true, 1).unwrap();
-        create_page(&db, "Draft", "draft", "x", false, 2).unwrap();
-
-        let published = get_published_pages(&db).unwrap();
-        assert_eq!(published.len(), 1);
-        assert_eq!(published[0].title, "Pub");
-    }
-
-    #[test]
     fn update_page_works() {
         let db = test_db();
         let page = create_page(&db, "Old", "old", "old content", false, 0).unwrap();
@@ -705,17 +674,6 @@ mod tests {
     fn settings_missing_key() {
         let db = test_db();
         assert!(get_setting(&db, "nonexistent").unwrap().is_none());
-    }
-
-    #[test]
-    fn get_all_settings_works() {
-        let db = test_db();
-        set_setting(&db, "a", "1").unwrap();
-        set_setting(&db, "b", "2").unwrap();
-
-        let all = get_all_settings(&db).unwrap();
-        assert_eq!(all.len(), 2);
-        assert_eq!(all[0], ("a".to_string(), "1".to_string()));
     }
 
     // ── File CRUD ──────────────────────────────────────────────────────

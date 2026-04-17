@@ -39,7 +39,6 @@ struct BaseTemplate {
     blog_title: String,
     nav_links: Vec<NavLink>,
     favicon_url: String,
-    og_image_url: String,
     header_html: String,
     footer_html: String,
 }
