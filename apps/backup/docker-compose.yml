@@ -6,6 +6,7 @@ services:
       - sipp-data:/data/sipp:ro
       - cellar-data:/data/cellar:ro
       - posts-data:/data/posts:ro
+      - feeds-data:/data/feeds:ro
     env_file: .env
     restart: unless-stopped
 
@@ -22,3 +23,6 @@ volumes:
   posts-data:
     external: true
     name: ${POSTS_VOLUME:-posts_posts-data}
+  feeds-data:
+    external: true
+    name: ${FEEDS_VOLUME:-feeds_feeds-data}

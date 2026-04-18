@@ -3,6 +3,9 @@ use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 
+pub use andromeda_db::session::{
+    delete_session, get_session_expiry, insert_session, prune_expired_sessions,
+};
 pub use andromeda_db::{Db, DbError};
 
 #[derive(Serialize, Deserialize)]
@@ -44,6 +47,12 @@ const SCHEMA: &str = "
         short_id TEXT NOT NULL UNIQUE,
         content TEXT NOT NULL,
         name TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        token      TEXT NOT NULL UNIQUE,
+        expires_at TEXT NOT NULL
     );
 ";
 

@@ -8,6 +8,7 @@ services:
     environment:
       - SIPP_API_KEY=${SIPP_API_KEY:-changeme}
       - SIPP_AUTH_ENDPOINTS=api_delete,api_list
+      - SIPP_DB_PATH=/data/sipp.sqlite
     volumes:
       - sipp-data:/data
     restart: unless-stopped
