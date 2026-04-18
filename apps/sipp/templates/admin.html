@@ -27,32 +27,31 @@
   </head>
   <body>
 
-    <div class="nav">
-      <a href="/" class="header">
-        <h1>SIPP</h1>
-      </a>
-
-      <form method="POST" action="/admin/logout" class="nav-form">
-        <button type="submit" class="nav-link">logout</button>
-      </form>
+    <div class="header">
+      <a href="/" class="logo"><h1>SIPP</h1></a>
     </div>
 
-    <div id="snippetList">
-      {% if snippets.is_empty() %}
-        <p>No snippets found.</p>
-      {% else %}
+    {% if snippets.is_empty() %}
+      <p class="empty">no snippets yet</p>
+    {% else %}
+      <div class="admin-list">
         {% for s in snippets %}
-          <div class="snippet-item">
-            <a class="snippet-link" href="/s/{{ s.short_id }}">
-              <span class="snippet-name">{{ s.name }}</span>
-              <span class="snippet-id">/s/{{ s.short_id }}</span>
-            </a>
-            <form method="POST" action="/admin/snippets/{{ s.short_id }}/delete" class="inline-form" onsubmit="return confirm('delete this snippet?')">
-              <button type="submit" class="link-button">delete</button>
-            </form>
+          <div class="admin-list-item">
+            <div class="admin-list-info">
+              <a href="/s/{{ s.short_id }}" class="admin-list-title">{{ s.name }}</a>
+              <div class="admin-list-meta">
+                <span class="admin-list-date">/s/{{ s.short_id }}</span>
+              </div>
+            </div>
+            <div class="admin-list-actions">
+              <a href="/s/{{ s.short_id }}">view</a>
+              <form method="POST" action="/admin/snippets/{{ s.short_id }}/delete" class="inline-form" onsubmit="return confirm('delete this snippet?')">
+                <button type="submit" class="link-button danger">delete</button>
+              </form>
+            </div>
           </div>
         {% endfor %}
-      {% endif %}
-    </div>
+      </div>
+    {% endif %}
   </body>
 </html>
