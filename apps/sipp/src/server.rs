@@ -1,16 +1,16 @@
 use askama::Template;
 use askama_web::WebTemplate;
-use subtle::ConstantTimeEq;
 use axum::{
     Form, Json, Router,
-    extract::{Path, Request, State},
-    http::{HeaderMap, StatusCode, header},
+    extract::{Path, Query, Request, State},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware::{self, Next},
     response::{Html, IntoResponse, Redirect, Response},
     routing::{delete, get, post, put},
 };
 use rust_embed::Embed;
 use serde::Deserialize;
+use crate::auth;
 use crate::db::{self, Db, Snippet};
 use crate::highlight::Highlighter;
 use std::collections::HashSet;
@@ -21,7 +21,7 @@ use std::sync::Arc;
 struct Static;
 
 #[derive(Clone)]
-struct ServerConfig {
+pub struct ServerConfig {
     api_key: Option<String>,
     auth_endpoints: HashSet<String>,
     max_content_size: usize,
@@ -48,11 +48,12 @@ impl ServerConfig {
 }
 
 #[derive(Clone)]
-struct AppState {
-    db: Db,
-    highlighter: Arc<Highlighter>,
-    server_config: ServerConfig,
-    base_url: String,
+pub struct AppState {
+    pub db: Db,
+    pub highlighter: Arc<Highlighter>,
+    pub server_config: ServerConfig,
+    pub base_url: String,
+    pub cookie_secure: bool,
 }
 
 #[derive(Template)]
@@ -65,6 +66,14 @@ struct IndexTemplate {
 #[template(path = "admin.html")]
 struct AdminTemplate {
     base_url: String,
+    snippets: Vec<Snippet>,
+}
+
+#[derive(Template)]
+#[template(path = "login.html")]
+struct LoginTemplate {
+    error: Option<String>,
+    next: Option<String>,
 }
 
 #[derive(Template)]
@@ -82,12 +91,108 @@ struct CreateSnippetForm {
     content: String,
 }
 
+#[derive(Deserialize)]
+struct LoginForm {
+    api_key: String,
+}
+
+#[derive(Deserialize, Default)]
+struct FlashQuery {
+    error: Option<String>,
+    next: Option<String>,
+}
+
 async fn index(State(state): State<AppState>) -> WebTemplate<IndexTemplate> {
     WebTemplate(IndexTemplate { base_url: state.base_url.clone() })
 }
 
-async fn admin(State(state): State<AppState>) -> WebTemplate<AdminTemplate> {
-    WebTemplate(AdminTemplate { base_url: state.base_url.clone() })
+async fn admin(
+    _session: auth::AuthSession,
+    State(state): State<AppState>,
+) -> Response {
+    match db::get_all_snippets(&state.db) {
+        Ok(snippets) => WebTemplate(AdminTemplate {
+            base_url: state.base_url.clone(),
+            snippets,
+        })
+        .into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Html("<h1>Internal server error</h1>".to_string()),
+        )
+            .into_response(),
+    }
+}
+
+async fn get_login(Query(q): Query<FlashQuery>) -> WebTemplate<LoginTemplate> {
+    WebTemplate(LoginTemplate {
+        error: q.error,
+        next: q.next,
+    })
+}
+
+async fn post_login(
+    State(state): State<AppState>,
+    Query(q): Query<FlashQuery>,
+    Form(form): Form<LoginForm>,
+) -> Response {
+    let next = q.next.as_deref().unwrap_or("/admin");
+    let server_key = match &state.server_config.api_key {
+        Some(k) => k,
+        None => {
+            return Redirect::to("/admin/login?error=No+API+key+configured").into_response();
+        }
+    };
+
+    if !auth::verify_api_key(&form.api_key, server_key) {
+        return Redirect::to(&format!(
+            "/admin/login?error=Invalid+API+key&next={}",
+            auth::urlencoding(next)
+        ))
+        .into_response();
+    }
+
+    let token = auth::generate_session_token();
+    let expires_at = andromeda_auth::datetime::expiry_datetime_string(7 * 24 * 3600);
+
+    if db::insert_session(&state.db, &token, &expires_at).is_err() {
+        return Redirect::to("/admin/login?error=Server+error").into_response();
+    }
+    let _ = db::prune_expired_sessions(&state.db);
+
+    let cookie = auth::build_session_cookie(&token, state.cookie_secure);
+    let redirect_to = if next.starts_with('/') { next } else { "/admin" };
+    let mut resp = Redirect::to(redirect_to).into_response();
+    resp.headers_mut().insert(
+        header::SET_COOKIE,
+        HeaderValue::from_str(&cookie).unwrap(),
+    );
+    resp
+}
+
+async fn post_logout(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
+    if let Some(token) = andromeda_auth::extract_session_cookie(&headers) {
+        let _ = db::delete_session(&state.db, &token);
+    }
+    let cookie = auth::clear_session_cookie();
+    let mut resp = Redirect::to("/admin/login").into_response();
+    resp.headers_mut().insert(
+        header::SET_COOKIE,
+        HeaderValue::from_str(&cookie).unwrap(),
+    );
+    resp
+}
+
+async fn admin_delete_snippet(
+    _session: auth::AuthSession,
+    State(state): State<AppState>,
+    Path(short_id): Path<String>,
+) -> Response {
+    let _ = db::delete_snippet_by_short_id(&state.db, &short_id);
+    Redirect::to("/admin").into_response()
 }
 
 fn is_cli_user_agent(headers: &HeaderMap) -> bool {
@@ -175,13 +280,20 @@ async fn require_api_key(
     let provided = headers
         .get("x-api-key")
         .and_then(|v| v.to_str().ok());
-    match provided {
-        Some(k) if k.as_bytes().ct_eq(server_key.as_bytes()).into() => Ok(next.run(request).await),
-        _ => Err((
-            StatusCode::UNAUTHORIZED,
-            Json(serde_json::json!({"error": "Invalid or missing API key"})),
-        )),
+    if let Some(k) = provided {
+        if auth::verify_api_key(k, server_key) {
+            return Ok(next.run(request).await);
+        }
     }
+    if let Some(token) = andromeda_auth::extract_session_cookie(&headers) {
+        if auth::is_valid_session(&state, &token) {
+            return Ok(next.run(request).await);
+        }
+    }
+    Err((
+        StatusCode::UNAUTHORIZED,
+        Json(serde_json::json!({"error": "Invalid or missing API key"})),
+    ))
 }
 
 async fn api_list_snippets(
@@ -369,11 +481,19 @@ pub async fn run(host: String, port: u16) {
 
     let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
+    let cookie_secure = std::env::var("SIPP_COOKIE_SECURE")
+        .map(|v| v == "true")
+        .unwrap_or(false);
+
+    let db = db::init_db().expect("Failed to initialize database");
+    let _ = db::prune_expired_sessions(&db);
+
     let state = AppState {
-        db: db::init_db().expect("Failed to initialize database"),
+        db,
         highlighter: Arc::new(Highlighter::new()),
         server_config,
         base_url,
+        cookie_secure,
     };
 
     let api_routes = build_api_routes(&state);
@@ -381,6 +501,9 @@ pub async fn run(host: String, port: u16) {
     let app = Router::new()
         .route("/", get(index))
         .route("/admin", get(admin))
+        .route("/admin/login", get(get_login).post(post_login))
+        .route("/admin/logout", post(post_logout))
+        .route("/admin/snippets/{short_id}/delete", post(admin_delete_snippet))
         .route("/s/{short_id}", get(view_snippet))
         .route("/snippets", post(create_snippet))
         .merge(api_routes)
