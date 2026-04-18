@@ -287,6 +287,50 @@ code {
 	gap: 1rem;
 }
 
+.feed-item form.inline {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.feed-item form.inline input {
+	flex: 1;
+	background: #1a1a1c;
+	color: #ffffff;
+	border: 1px solid #333;
+	padding: 10px;
+	font-family: "Commit Mono", monospace, sans-serif;
+	font-size: 14px;
+	outline: none;
+}
+
+.feed-item form.inline input:focus {
+	border-color: #666;
+}
+
+button.loading {
+	cursor: wait;
+}
+
+.spinner::after {
+	content: "⠋";
+	display: inline-block;
+	animation: braille-spin 0.8s steps(10) infinite;
+}
+
+@keyframes braille-spin {
+	0%   { content: "⠋"; }
+	10%  { content: "⠙"; }
+	20%  { content: "⠹"; }
+	30%  { content: "⠸"; }
+	40%  { content: "⠼"; }
+	50%  { content: "⠴"; }
+	60%  { content: "⠦"; }
+	70%  { content: "⠧"; }
+	80%  { content: "⠇"; }
+	90%  { content: "⠏"; }
+}
+
 .admin-subs h3 {
 	font-size: 14px;
 	color: #888;

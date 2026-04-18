@@ -45,3 +45,6 @@ impl axum::response::IntoResponse for DbError {
 
 #[cfg(feature = "session")]
 pub mod session;
+
+#[cfg(feature = "feeds")]
+pub mod feeds;
