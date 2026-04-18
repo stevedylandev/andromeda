@@ -15,21 +15,19 @@
   </head>
   <body>
 
-    <div class="nav">
-      <a href="/" class="header">
-        <h1>SIPP</h1>
-      </a>
-    </div>
+    <header class="header">
+      <a href="/" class="logo"><h1>SIPP</h1></a>
+    </header>
+    <main>
+      {% if let Some(error) = error %}
+        <p class="error">{{ error }}</p>
+      {% endif %}
 
-    {% if let Some(error) = error %}
-      <p class="error">{{ error }}</p>
-    {% endif %}
-
-    <form id="loginForm" method="POST" action="/admin/login{% if let Some(next) = next %}?next={{ next }}{% endif %}">
-      <div>
-        <input placeholder="API Key" type="password" id="api_key" name="api_key" autofocus required>
-      </div>
-      <button type="submit">Login</button>
-    </form>
+      <form method="POST" action="/admin/login{% if let Some(next) = next %}?next={{ next }}{% endif %}" class="form">
+        <label for="api_key">api key</label>
+        <input type="password" id="api_key" name="api_key" autofocus required>
+        <button type="submit">login</button>
+      </form>
+    </main>
   </body>
 </html>
