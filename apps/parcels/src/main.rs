@@ -372,6 +372,7 @@ async fn main() {
         .route("/packages/{id}/refresh", post(post_refresh_package))
         .route("/packages/{id}/delete", post(post_delete_package))
         .nest_service("/static", ServeDir::new("static"))
+        .merge(andromeda_darkmatter_css::router::<Arc<AppState>>())
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(&bind_addr)

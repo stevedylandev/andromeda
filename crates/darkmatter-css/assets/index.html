@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#121113">
+  <title>Darkmatter — Gallery</title>
+  <link rel="stylesheet" href="/assets/darkmatter.css">
+  <style>
+    .section { width: 100%; border-bottom: 1px solid #333; padding-bottom: 2rem; }
+    .section h2 { font-size: 16px; margin-bottom: 0.5rem; }
+    .section p.desc { font-size: 12px; opacity: 0.5; margin-bottom: 0.75rem; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+    .swatch { width: 40px; height: 24px; border: 1px solid #333; }
+    .opacity-scale { display: flex; flex-direction: column; gap: 0.25rem; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <a href="/darkmatter" class="logo">DARKMATTER</a>
+    <nav class="links">
+      <a href="#reset">reset</a>
+      <a href="#typography">typography</a>
+      <a href="#buttons">buttons</a>
+      <a href="#forms">forms</a>
+      <a href="#feedback">feedback</a>
+      <a href="#lists">lists</a>
+      <a href="#tags">tags</a>
+      <a href="#table">table</a>
+      <a href="#code">code</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="section" id="reset">
+      <h2>Palette</h2>
+      <p class="desc">Background <code>#121113</code>, foreground <code>#ffffff</code>, grays <code>#1e1c1f</code> / <code>#333</code> / <code>#555</code>. No accent colors.</p>
+      <div class="row">
+        <div class="swatch" style="background:#121113"></div>
+        <div class="swatch" style="background:#1e1c1f"></div>
+        <div class="swatch" style="background:#333"></div>
+        <div class="swatch" style="background:#555"></div>
+        <div class="swatch" style="background:#ffffff"></div>
+      </div>
+    </section>
+
+    <section class="section" id="typography">
+      <h2>Typography</h2>
+      <p class="desc">Commit Mono. Hierarchy by opacity, not gray hex.</p>
+      <div class="opacity-scale">
+        <div>Primary text — opacity 1.0</div>
+        <div style="opacity: 0.7">Secondary text — opacity 0.7 (labels, blockquotes)</div>
+        <div style="opacity: 0.5">Tertiary text — opacity 0.5 (metadata, dates, table headers)</div>
+        <div style="opacity: 0.3">Muted text — opacity 0.3 (null, placeholder)</div>
+      </div>
+      <div class="row" style="margin-top: 0.75rem">
+        <span style="font-size: 28px; font-weight: 700; text-transform: uppercase">LOGO 28</span>
+        <span style="font-size: 18px">h1 18</span>
+        <span style="font-size: 16px">h2 / title 16</span>
+        <span style="font-size: 14px">body 14</span>
+        <span style="font-size: 12px">meta 12</span>
+        <span style="font-size: 11px">tag 11</span>
+      </div>
+    </section>
+
+    <section class="section" id="buttons">
+      <h2>Buttons &amp; links</h2>
+      <p class="desc"><code>button</code>, <code>.btn</code>, <code>.link-button</code>, <code>.link-button.danger</code>, <code>.spinner</code>.</p>
+      <div class="row">
+        <button>Submit</button>
+        <a href="#" class="btn">Link as button</a>
+        <button class="loading">Saving<span class="spinner"></span></button>
+        <button class="link-button">edit</button>
+        <button class="link-button danger">delete</button>
+        <a href="#">plain link</a>
+      </div>
+    </section>
+
+    <section class="section" id="forms">
+      <h2>Form controls</h2>
+      <p class="desc">Inputs use 16px font-size to prevent iOS focus zoom. All <code>-webkit-appearance: none</code> to kill default iOS chrome.</p>
+      <form class="form" onsubmit="event.preventDefault()">
+        <div class="form-field">
+          <label for="demo-text">Text input</label>
+          <input id="demo-text" type="text" placeholder="placeholder">
+        </div>
+        <div class="form-field">
+          <label for="demo-search">Search</label>
+          <input id="demo-search" type="search" placeholder="search...">
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="demo-a">Split field A</label>
+            <input id="demo-a" type="text">
+          </div>
+          <div class="form-field">
+            <label for="demo-b">Split field B</label>
+            <input id="demo-b" type="text">
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="demo-select">Select</label>
+          <select id="demo-select">
+            <option>one</option>
+            <option>two</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="demo-textarea">Textarea</label>
+          <textarea id="demo-textarea" style="min-height: 120px">multiline input</textarea>
+        </div>
+        <div class="form-field">
+          <label for="demo-file">File upload</label>
+          <input id="demo-file" type="file">
+        </div>
+        <div class="form-field checkbox-field">
+          <label>
+            <input type="checkbox" checked>
+            Checkbox (checked)
+          </label>
+          <label>
+            <input type="checkbox">
+            Checkbox (unchecked)
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <input type="radio" name="demo-radio" checked> Option A
+          </label>
+          <label>
+            <input type="radio" name="demo-radio"> Option B
+          </label>
+        </div>
+        <div class="switch-row">
+          <label class="switch">
+            <input type="checkbox" checked>
+            <span class="switch-slider"></span>
+          </label>
+          <span class="switch-label">Switch toggle</span>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Save</button>
+          <button type="button" class="link-button danger">Cancel</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="section" id="feedback">
+      <h2>Feedback</h2>
+      <p class="desc"><code>.error</code>, <code>.success</code>, <code>.empty</code>. No red/green — borders + opacity only.</p>
+      <div class="error">Something went wrong.</div>
+      <div class="success" style="margin-top: 0.5rem">Saved successfully.</div>
+      <div class="empty" style="margin-top: 0.5rem">No items yet.</div>
+    </section>
+
+    <section class="section" id="lists">
+      <h2>Item list</h2>
+      <p class="desc"><code>.item-list</code> / <code>.item</code> — stacked with <code>#333</code> bottom divider.</p>
+      <div class="item-list">
+        <a href="#" class="item">
+          <div class="item-title">First entry title</div>
+          <div class="item-meta">apr 18, 2026</div>
+        </a>
+        <a href="#" class="item">
+          <div class="item-title">Second entry title</div>
+          <div class="item-meta">apr 17, 2026</div>
+        </a>
+      </div>
+
+      <h2 style="margin-top: 1rem">Admin list</h2>
+      <p class="desc"><code>.admin-list</code> — horizontal row with inline actions.</p>
+      <div class="admin-list">
+        <div class="admin-list-item">
+          <div class="admin-list-info">
+            <div class="admin-list-title">example-item-one</div>
+            <div class="admin-list-meta">
+              <span class="status-badge status-published">published</span>
+              <span class="admin-list-date">2026-04-18</span>
+            </div>
+          </div>
+          <div class="admin-list-actions">
+            <a href="#">edit</a>
+            <button class="link-button danger">delete</button>
+          </div>
+        </div>
+        <div class="admin-list-item">
+          <div class="admin-list-info">
+            <div class="admin-list-title">example-item-two</div>
+            <div class="admin-list-meta">
+              <span class="status-badge status-draft">draft</span>
+              <span class="admin-list-date">2026-04-17</span>
+            </div>
+          </div>
+          <div class="admin-list-actions">
+            <a href="#">edit</a>
+            <button class="link-button danger">delete</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="tags">
+      <h2>Tags</h2>
+      <div class="row">
+        <span class="tag">rust</span>
+        <span class="tag">web</span>
+        <span class="tag">css</span>
+      </div>
+    </section>
+
+    <section class="section" id="table">
+      <h2>Table</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>name</th>
+            <th>status</th>
+            <th>date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>first</td>
+            <td>ok</td>
+            <td style="opacity: 0.5">2026-04-18</td>
+          </tr>
+          <tr>
+            <td>second</td>
+            <td>ok</td>
+            <td style="opacity: 0.5">2026-04-17</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" id="code">
+      <h2>Code</h2>
+      <p>Inline <code>let x = 42;</code> and block:</p>
+      <pre><code>fn main() {
+    println!("hello, darkmatter");
+}</code></pre>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span style="opacity: 0.5; font-size: 12px">darkmatter-css · andromeda workspace</span>
+  </footer>
+</body>
+</html>
