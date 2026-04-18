@@ -687,7 +687,7 @@ dependencies = [
 
 [[package]]
 name = "cellar"
-version = "0.1.4"
+version = "0.2.0"
 dependencies = [
  "andromeda-auth",
  "andromeda-db",
