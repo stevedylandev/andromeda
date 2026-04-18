@@ -166,74 +166,108 @@ async fn index_handler(
     .into_response()
 }
 
-/// Export current subscriptions as OPML.
-async fn feeds_opml_handler(State(state): State<Arc<AppState>>) -> Response {
+/// Export current subscriptions. `?format=json` (default) or `?format=opml`.
+async fn feeds_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<HashMap<String, String>>,
+) -> Response {
+    let format = params
+        .get("format")
+        .map(|s| s.as_str())
+        .unwrap_or("json");
+
     let subs = match fdb::list_subscriptions(&state.db) {
         Ok(s) => s,
         Err(e) => {
-            tracing::error!("opml export failed: {e}");
+            tracing::error!("feeds export failed: {e}");
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
     };
-    let cats: HashMap<i64, String> = fdb::list_categories(&state.db)
-        .unwrap_or_default()
-        .into_iter()
-        .map(|c| (c.id, c.name))
-        .collect();
 
-    let now = chrono::Utc::now().to_rfc2822();
-    let mut by_cat: HashMap<String, Vec<&fdb::Subscription>> = HashMap::new();
-    for sub in &subs {
-        let key = sub
-            .category_id
-            .and_then(|id| cats.get(&id).cloned())
-            .unwrap_or_default();
-        by_cat.entry(key).or_default().push(sub);
-    }
-
-    let mut opml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<opml version=\"2.0\">\n  <head>\n    <title>Feeds</title>\n    <dateCreated>{now}</dateCreated>\n  </head>\n  <body>\n"
-    );
-
-    let mut keys: Vec<&String> = by_cat.keys().collect();
-    keys.sort();
-    for key in keys {
-        let subs = &by_cat[key];
-        let indent = if key.is_empty() { "    " } else { "      " };
-        if !key.is_empty() {
-            opml.push_str(&format!(
-                "    <outline text=\"{}\" title=\"{}\">\n",
-                escape_xml(key),
-                escape_xml(key)
-            ));
+    match format {
+        "json" => {
+            let subscriptions: Vec<_> = subs
+                .iter()
+                .map(|s| {
+                    serde_json::json!({
+                        "id": format!("feed/{}", s.id),
+                        "title": s.title,
+                        "url": s.feed_url,
+                        "htmlUrl": s.site_url.clone().unwrap_or_default(),
+                    })
+                })
+                .collect();
+            Json(serde_json::json!({ "subscriptions": subscriptions })).into_response()
         }
-        for sub in subs {
-            opml.push_str(&format!(
-                "{indent}<outline type=\"rss\" text=\"{}\" title=\"{}\" xmlUrl=\"{}\" htmlUrl=\"{}\" />\n",
-                escape_xml(&sub.title),
-                escape_xml(&sub.title),
-                escape_xml(&sub.feed_url),
-                escape_xml(sub.site_url.as_deref().unwrap_or("")),
-            ));
-        }
-        if !key.is_empty() {
-            opml.push_str("    </outline>\n");
-        }
-    }
+        "opml" => {
+            let cats: HashMap<i64, String> = fdb::list_categories(&state.db)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|c| (c.id, c.name))
+                .collect();
 
-    opml.push_str("  </body>\n</opml>");
+            let now = chrono::Utc::now().to_rfc2822();
+            let mut by_cat: HashMap<String, Vec<&fdb::Subscription>> = HashMap::new();
+            for sub in &subs {
+                let key = sub
+                    .category_id
+                    .and_then(|id| cats.get(&id).cloned())
+                    .unwrap_or_default();
+                by_cat.entry(key).or_default().push(sub);
+            }
 
-    (
-        [
-            (header::CONTENT_TYPE, "application/xml"),
+            let mut opml = format!(
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<opml version=\"2.0\">\n  <head>\n    <title>Feeds</title>\n    <dateCreated>{now}</dateCreated>\n  </head>\n  <body>\n"
+            );
+
+            let mut keys: Vec<&String> = by_cat.keys().collect();
+            keys.sort();
+            for key in keys {
+                let subs = &by_cat[key];
+                let indent = if key.is_empty() { "    " } else { "      " };
+                if !key.is_empty() {
+                    opml.push_str(&format!(
+                        "    <outline text=\"{}\" title=\"{}\">\n",
+                        escape_xml(key),
+                        escape_xml(key)
+                    ));
+                }
+                for sub in subs {
+                    opml.push_str(&format!(
+                        "{indent}<outline type=\"rss\" text=\"{}\" title=\"{}\" xmlUrl=\"{}\" htmlUrl=\"{}\" />\n",
+                        escape_xml(&sub.title),
+                        escape_xml(&sub.title),
+                        escape_xml(&sub.feed_url),
+                        escape_xml(sub.site_url.as_deref().unwrap_or("")),
+                    ));
+                }
+                if !key.is_empty() {
+                    opml.push_str("    </outline>\n");
+                }
+            }
+
+            opml.push_str("  </body>\n</opml>");
+
             (
-                header::CONTENT_DISPOSITION,
-                "attachment; filename=\"feeds.opml\"",
-            ),
-        ],
-        opml,
-    )
-        .into_response()
+                [
+                    (header::CONTENT_TYPE, "application/xml"),
+                    (
+                        header::CONTENT_DISPOSITION,
+                        "attachment; filename=\"feeds.opml\"",
+                    ),
+                ],
+                opml,
+            )
+                .into_response()
+        }
+        _ => (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": "Invalid format. Use ?format=json or ?format=opml"
+            })),
+        )
+            .into_response(),
+    }
 }
 
 fn escape_xml(s: &str) -> String {
@@ -606,7 +640,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(index_handler))
-        .route("/feeds.opml", get(feeds_opml_handler))
+        .route("/feeds", get(feeds_handler))
         .route("/static/{*path}", get(static_handler))
         .merge(admin_router)
         .merge(api_router)
