@@ -508,6 +508,7 @@ pub async fn run(host: String, port: u16) {
         .route("/snippets", post(create_snippet))
         .merge(api_routes)
         .route("/static/{*path}", get(serve_static))
+        .merge(andromeda_darkmatter_css::router::<AppState>())
         .with_state(state);
 
     let addr = format!("{}:{}", host, port);

@@ -17,6 +17,7 @@ rust-embed = { workspace = true, features = ["mime-guess"] }
 dotenvy = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+andromeda-darkmatter-css = { workspace = true }
 askama = "0.13"
 reqwest = { version = "0.12", features = ["rustls-tls"], default-features = false }
 scraper = "0.22"

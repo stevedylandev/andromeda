@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -21,10 +22,10 @@
     </div>
 
     {% if let Some(msg) = success %}
-    <p class="success-msg">{{ msg }}</p>
+    <p class="success">{{ msg }}</p>
     {% endif %}
     {% if let Some(err) = error %}
-    <p class="error-msg">{{ err }}</p>
+    <p class="error">{{ err }}</p>
     {% endif %}
 
     <section class="admin-form">
@@ -94,7 +95,7 @@
             <a href="{% if let Some(url) = sub.site_url %}{{ url }}{% else %}{{ sub.feed_url }}{% endif %}" target="_blank" rel="noopener noreferrer">{{ sub.title }}</a>
           </h3>
           {% if let Some(last) = sub.last_fetched_at %}
-          <p class="feed-meta"><span class="feed-date">last: {{ last }}</span>{% if let Some(err) = sub.last_error %} <span class="error-msg">· {{ err }}</span>{% endif %}</p>
+          <p class="feed-meta"><span class="feed-date">last: {{ last }}</span>{% if let Some(err) = sub.last_error %} <span class="error">· {{ err }}</span>{% endif %}</p>
           {% endif %}
           <form method="POST" action="/admin/feeds/{{ sub.id }}/category" class="inline">
             <input type="text" name="category_name" placeholder="category" list="categories-list"
@@ -140,13 +141,13 @@
           const data = await resp.json();
           if (!resp.ok) {
             status.textContent = data.error || 'No feeds found';
-            status.className = 'discover-status error-msg';
+            status.className = 'discover-status error';
             status.style.display = 'block';
             return;
           }
           feedInput.value = data[0];
           status.textContent = data.length + ' feed(s) found';
-          status.className = 'discover-status success-msg';
+          status.className = 'discover-status success';
           status.style.display = 'block';
           if (data.length > 1) {
             results.style.display = 'flex';
@@ -167,7 +168,7 @@
           }
         } catch (e) {
           status.textContent = 'Request failed';
-          status.className = 'discover-status error-msg';
+          status.className = 'discover-status error';
           status.style.display = 'block';
         } finally {
           btn.disabled = false;

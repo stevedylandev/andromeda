@@ -140,7 +140,8 @@ pub async fn run() {
     let app = Router::new()
         .route("/", get(get_index))
         .route("/check", post(post_check))
-        .route("/static/{*path}", get(static_handler));
+        .route("/static/{*path}", get(static_handler))
+        .merge(andromeda_darkmatter_css::router::<()>());
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("0.0.0.0:{port}");
