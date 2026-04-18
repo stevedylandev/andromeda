@@ -12,72 +12,142 @@
     <title>Feeds | Admin</title>
   </head>
   <body>
-    <a href="/" class="header">
-      <h1>FEEDS</h1>
-    </a>
-    {% if !freshrss_configured %}
-    <div class="admin-notice">
-      <p>FreshRSS is not configured. Set <code>FRESHRSS_URL</code>, <code>FRESHRSS_USERNAME</code>, and <code>FRESHRSS_PASSWORD</code> environment variables to use this feature.</p>
+    <div class="header">
+      <a href="/" class="logo"><h1>FEEDS</h1></a>
+      <nav class="links">
+        <a href="/feeds?format=opml">opml</a>
+        <a href="/admin/logout">logout</a>
+      </nav>
     </div>
-    {% else %}
 
     {% if let Some(msg) = success %}
     <p class="success-msg">{{ msg }}</p>
     {% endif %}
-
     {% if let Some(err) = error %}
     <p class="error-msg">{{ err }}</p>
     {% endif %}
 
-    <div class="admin-form">
-      <label for="base_url">Discover Feed</label>
+    <section class="admin-form">
+      <h3>Discover</h3>
       <div class="discover-row">
         <input type="url" id="base_url" placeholder="https://example.com" />
         <button type="button" id="discover-btn" onclick="discoverFeeds()">Discover</button>
       </div>
       <div id="discover-status" class="discover-status" style="display:none;"></div>
       <div id="discover-results" class="discover-results" style="display:none;"></div>
-    </div>
+    </section>
 
     <form class="admin-form" method="POST" action="/admin/add-feed">
+      <h3>Add Feed</h3>
       <label for="feed_url">Feed URL</label>
       <input type="url" id="feed_url" name="feed_url" placeholder="https://example.com/feed.xml" required />
+      <label for="category_name">Category (optional)</label>
+      <input type="text" id="category_name" name="category_name" placeholder="Tech" list="categories-list" />
+      <datalist id="categories-list">
+        {% for c in categories %}
+        <option value="{{ c.name }}"></option>
+        {% endfor %}
+      </datalist>
       <button type="submit">Add Feed</button>
     </form>
 
+    <form class="admin-form" id="opml-form" method="POST" action="/admin/import-opml" enctype="multipart/form-data">
+      <h3>Import OPML</h3>
+      <input type="file" name="file" accept=".opml,.xml,application/xml,text/xml" required />
+      <button type="submit" id="opml-submit"><span id="opml-submit-label">Import</span></button>
+    </form>
+
+    <form class="admin-form" method="POST" action="/admin/settings">
+      <h3>Settings</h3>
+      <label for="poll_interval_minutes">Poll interval (minutes)</label>
+      <input type="number" id="poll_interval_minutes" name="poll_interval_minutes"
+             min="1" max="1440" value="{{ poll_interval_minutes }}" required />
+      <p class="hint">Item cap per feed: {{ item_cap }} (set via ITEM_CAP_PER_FEED)</p>
+      <p class="hint">API key: {% if api_key_configured %}configured{% else %}not set{% endif %}</p>
+      <button type="submit">Save</button>
+    </form>
+
+    <section class="admin-subs">
+      <h3>Categories ({{ categories.len() }})</h3>
+      <form class="admin-form inline" method="POST" action="/admin/categories">
+        <input type="text" name="name" placeholder="New category" required />
+        <button type="submit">Add</button>
+      </form>
+      <ul class="category-list">
+        {% for c in categories %}
+        <li>
+          <span>{{ c.name }}</span>
+          <form method="POST" action="/admin/categories/{{ c.id }}/delete" class="inline">
+            <button type="submit" class="danger">Delete</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="admin-subs">
+      <h3>Subscriptions ({{ subscriptions.len() }})</h3>
+      <div class="feeds-list">
+        {% for sub in subscriptions %}
+        <div class="feed-item">
+          <h3 class="feed-title">
+            <a href="{% if let Some(url) = sub.site_url %}{{ url }}{% else %}{{ sub.feed_url }}{% endif %}" target="_blank" rel="noopener noreferrer">{{ sub.title }}</a>
+          </h3>
+          {% if let Some(last) = sub.last_fetched_at %}
+          <p class="feed-meta"><span class="feed-date">last: {{ last }}</span>{% if let Some(err) = sub.last_error %} <span class="error-msg">· {{ err }}</span>{% endif %}</p>
+          {% endif %}
+          <form method="POST" action="/admin/feeds/{{ sub.id }}/category" class="inline">
+            <input type="text" name="category_name" placeholder="category" list="categories-list"
+                   value="{% if let Some(n) = sub.category_name %}{{ n }}{% endif %}" />
+            <button type="submit">Save</button>
+          </form>
+          <form method="POST" action="/admin/feeds/{{ sub.id }}/delete" class="inline">
+            <button type="submit" class="danger">Delete</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
     <script>
+      (function() {
+        const form = document.getElementById('opml-form');
+        if (!form) return;
+        form.addEventListener('submit', function() {
+          const btn = document.getElementById('opml-submit');
+          const label = document.getElementById('opml-submit-label');
+          btn.disabled = true;
+          btn.classList.add('loading');
+          label.innerHTML = 'Importing <span class="spinner"></span>';
+        });
+      })();
+
       async function discoverFeeds() {
         const baseUrl = document.getElementById('base_url').value.trim();
         if (!baseUrl) return;
-
         const btn = document.getElementById('discover-btn');
         const status = document.getElementById('discover-status');
         const results = document.getElementById('discover-results');
         const feedInput = document.getElementById('feed_url');
-
         btn.disabled = true;
         btn.textContent = 'Searching...';
         status.style.display = 'none';
         results.style.display = 'none';
         results.innerHTML = '';
-
         try {
           const body = new URLSearchParams({ base_url: baseUrl });
           const resp = await fetch('/admin/discover-feeds', { method: 'POST', body });
           const data = await resp.json();
-
           if (!resp.ok) {
             status.textContent = data.error || 'No feeds found';
             status.className = 'discover-status error-msg';
             status.style.display = 'block';
             return;
           }
-
           feedInput.value = data[0];
           status.textContent = data.length + ' feed(s) found';
           status.className = 'discover-status success-msg';
           status.style.display = 'block';
-
           if (data.length > 1) {
             results.style.display = 'flex';
             data.forEach(function(url) {
@@ -105,22 +175,5 @@
         }
       }
     </script>
-
-    {% if let Some(subs) = subscriptions %}
-    <div class="admin-subs">
-      <h3>Current Subscriptions ({{ subs.len() }})</h3>
-      <div class="feeds-list">
-        {% for sub in subs %}
-        <div class="feed-item">
-          <h3 class="feed-title">
-            <a href="{{ sub.url }}" target="_blank" rel="noopener noreferrer">{{ sub.title }}</a>
-          </h3>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endif %}
-
-    {% endif %}
   </body>
 </html>
