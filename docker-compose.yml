@@ -12,7 +12,7 @@ services:
     image: ghcr.io/stevedylandev/andromeda/jotts:latest
     restart: unless-stopped
     ports:
-      - "3030:3030"
+      - "3030:3000"
     volumes:
       - jotts_data:/data
     env_file: apps/jotts/.env
