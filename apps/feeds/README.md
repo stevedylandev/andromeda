@@ -36,7 +36,7 @@ cargo run -p feeds
 | `BASE_URL` | Public base URL of the app | `http://localhost:3000` |
 | `HOST` | Bind address | `0.0.0.0` |
 | `PORT` | Bind port | `3000` |
-| `DB_PATH` | SQLite database path | `feeds.sqlite` |
+| `FEEDS_DB_PATH` | SQLite database path | `/data/feeds.sqlite` |
 | `DEFAULT_POLL_MINUTES` | Background poll interval in minutes (overridable from the admin panel) | `30` |
 | `ITEM_CAP_PER_FEED` | Maximum stored items per subscription; older items pruned | `200` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
@@ -146,7 +146,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Mount a volume at `DB_PATH` to persist the SQLite database.
+Mount a volume at `FEEDS_DB_PATH` to persist the SQLite database.
 
 ### Binary
 

@@ -558,7 +558,8 @@ async fn main() {
         )
         .init();
 
-    let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| "feeds.sqlite".to_string());
+    let db_path =
+        std::env::var("FEEDS_DB_PATH").unwrap_or_else(|_| "/data/feeds.sqlite".to_string());
     let conn = Connection::open(&db_path).expect("open sqlite");
     conn.execute_batch(SESSION_SCHEMA).expect("session schema");
     conn.execute_batch(fdb::FEEDS_SCHEMA).expect("feeds schema");
