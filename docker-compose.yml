@@ -5,7 +5,7 @@ services:
     ports:
       - "4555:3000"
     volumes:
-      - feeds_data:/app/data
+      - feeds_data:/data
     env_file: apps/feeds/.env
 
   jotts:
