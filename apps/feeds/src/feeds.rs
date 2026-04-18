@@ -1,339 +1,282 @@
-use crate::models::{FeedItem, FreshRSSResponse, SubscriptionList};
+use crate::models::FeedItem;
+use quick_xml::events::Event;
 use scraper::{Html, Selector};
 use std::time::Duration;
 use url::Url;
 
-#[derive(Clone)]
-pub struct FreshRSSConfig {
-    pub url: String,
-    pub username: String,
-    pub password: String,
+/// One outline entry from an OPML document (subscription plus optional category name).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OpmlEntry {
+    pub xml_url: String,
+    pub title: Option<String>,
+    pub html_url: Option<String>,
+    pub category: Option<String>,
 }
 
-impl FreshRSSConfig {
-    pub fn from_env() -> Option<Self> {
-        Some(Self {
-            url: std::env::var("FRESHRSS_URL").ok()?,
-            username: std::env::var("FRESHRSS_USERNAME").ok()?,
-            password: std::env::var("FRESHRSS_PASSWORD").ok()?,
-        })
-    }
+/// Result of a conditional fetch against an RSS/Atom feed.
+#[derive(Debug)]
+pub struct FetchResult {
+    /// HTTP status code. 304 means nothing changed; items will be empty.
+    pub status: u16,
+    pub etag: Option<String>,
+    pub last_modified: Option<String>,
+    pub title: Option<String>,
+    pub site_url: Option<String>,
+    pub entries: Vec<ParsedEntry>,
 }
 
-struct FreshRSSClient {
-    client: reqwest::Client,
-    base_url: String,
-    token: String,
-}
-
-impl FreshRSSClient {
-    async fn new(config: &FreshRSSConfig) -> Result<Self, String> {
-        let client = build_client();
-        let auth_url = format!(
-            "{}/api/greader.php/accounts/ClientLogin?Email={}&Passwd={}",
-            config.url, config.username, config.password
-        );
-
-        let text = client
-            .get(&auth_url)
-            .send()
-            .await
-            .map_err(|e| format!("Auth request failed: {e}"))?
-            .text()
-            .await
-            .map_err(|e| format!("Failed to read auth response: {e}"))?;
-
-        let token = text
-            .lines()
-            .find_map(|line| line.strip_prefix("Auth="))
-            .map(|t| t.trim().to_string())
-            .ok_or_else(|| "Authentication failed: no Auth token found".to_string())?;
-
-        Ok(Self {
-            client,
-            base_url: config.url.clone(),
-            token,
-        })
-    }
-
-    fn api_url(&self, path: &str) -> String {
-        format!("{}/api/greader.php/{}", self.base_url, path)
-    }
-
-    fn auth_get(&self, path: &str) -> reqwest::RequestBuilder {
-        self.client
-            .get(self.api_url(path))
-            .header("Authorization", format!("GoogleLogin auth={}", self.token))
-    }
-
-    fn auth_post(&self, path: &str) -> reqwest::RequestBuilder {
-        self.client
-            .post(self.api_url(path))
-            .header("Authorization", format!("GoogleLogin auth={}", self.token))
-    }
-
-    async fn fetch_items(&self) -> Result<Vec<FeedItem>, String> {
-        let data: FreshRSSResponse = self
-            .auth_get("reader/api/0/stream/contents/reading-list?n=60&r=d")
-            .send()
-            .await
-            .map_err(|e| format!("Failed to fetch reading list: {e}"))?
-            .json()
-            .await
-            .map_err(|e| format!("Failed to parse FreshRSS response: {e}"))?;
-
-        let mut items: Vec<FeedItem> = data
-            .items
-            .iter()
-            .map(|item| {
-                let link = item
-                    .canonical
-                    .as_ref()
-                    .and_then(|c| c.first())
-                    .map(|l| l.href.clone())
-                    .unwrap_or_default();
-
-                FeedItem {
-                    id: item.id.clone(),
-                    title: item.title.clone(),
-                    published: item.published,
-                    author: item.origin.title.clone(),
-                    link,
-                    origin: item.origin.title.clone(),
-                }
-            })
-            .collect();
-
-        items.sort_by(|a, b| b.published.cmp(&a.published));
-        Ok(items)
-    }
-
-    async fn fetch_subscriptions(&self) -> Result<SubscriptionList, String> {
-        let response = self
-            .auth_get("reader/api/0/subscription/list?output=json")
-            .send()
-            .await
-            .map_err(|e| format!("Failed to fetch subscriptions: {e}"))?;
-
-        if !response.status().is_success() {
-            return Err(format!("FreshRSS API error: {}", response.status()));
-        }
-
-        response
-            .json()
-            .await
-            .map_err(|e| format!("Failed to parse subscription list: {e}"))
-    }
-
-    async fn add_subscription(&self, feed_url: &str) -> Result<String, String> {
-        let response = self
-            .auth_post("reader/api/0/subscription/quickadd")
-            .form(&[("quickadd", feed_url)])
-            .send()
-            .await
-            .map_err(|e| format!("Failed to add subscription: {e}"))?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(format!("FreshRSS API error ({}): {}", status, body));
-        }
-
-        let stream_id = format!("feed/{feed_url}");
-        let response = self
-            .auth_post("reader/api/0/subscription/edit")
-            .form(&[
-                ("ac", "edit"),
-                ("s", &stream_id),
-                ("a", "user/-/label/Feeds"),
-            ])
-            .send()
-            .await
-            .map_err(|e| format!("Feed added but failed to set category: {e}"))?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(format!(
-                "Feed added but failed to set category ({}): {}",
-                status, body
-            ));
-        }
-
-        Ok(format!("Successfully added feed: {feed_url}"))
-    }
+#[derive(Debug, Clone)]
+pub struct ParsedEntry {
+    pub guid: String,
+    pub title: String,
+    pub link: String,
+    pub author: Option<String>,
+    pub published_at: i64,
 }
 
 fn build_client() -> reqwest::Client {
     reqwest::Client::builder()
-        .timeout(Duration::from_secs(5))
+        .timeout(Duration::from_secs(15))
+        .user_agent("andromeda-feeds/0.1 (+https://github.com/stevedylandev/andromeda)")
         .build()
         .expect("Failed to build HTTP client")
 }
 
-async fn fetch_feed_from_url(client: &reqwest::Client, url: &str) -> Vec<FeedItem> {
-    let response = match client.get(url).send().await {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("Failed to fetch feed {url}: {e}");
-            return Vec::new();
-        }
-    };
+pub async fn fetch_feed(
+    url: &str,
+    etag: Option<&str>,
+    last_modified: Option<&str>,
+) -> Result<FetchResult, String> {
+    let client = build_client();
+    let mut req = client.get(url);
+    if let Some(tag) = etag {
+        req = req.header("If-None-Match", tag);
+    }
+    if let Some(lm) = last_modified {
+        req = req.header("If-Modified-Since", lm);
+    }
 
-    let body = match response.bytes().await {
-        Ok(b) => b,
-        Err(e) => {
-            eprintln!("Failed to read feed body {url}: {e}");
-            return Vec::new();
-        }
-    };
+    let resp = req.send().await.map_err(|e| format!("fetch failed: {e}"))?;
+    let status = resp.status().as_u16();
+    let headers = resp.headers().clone();
+    let new_etag = headers
+        .get(reqwest::header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+    let new_last_modified = headers
+        .get(reqwest::header::LAST_MODIFIED)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
 
-    let feed = match feed_rs::parser::parse(&body[..]) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Failed to parse feed {url}: {e}");
-            return Vec::new();
-        }
-    };
+    if status == 304 {
+        return Ok(FetchResult {
+            status,
+            etag: new_etag.or_else(|| etag.map(|s| s.to_string())),
+            last_modified: new_last_modified.or_else(|| last_modified.map(|s| s.to_string())),
+            title: None,
+            site_url: None,
+            entries: Vec::new(),
+        });
+    }
 
-    let feed_title = feed
-        .title
-        .as_ref()
-        .map(|t| t.content.clone())
-        .unwrap_or_default();
+    if !resp.status().is_success() {
+        return Err(format!("upstream returned {status}"));
+    }
 
-    feed.entries
+    let body = resp
+        .bytes()
+        .await
+        .map_err(|e| format!("read body failed: {e}"))?;
+    let feed =
+        feed_rs::parser::parse(&body[..]).map_err(|e| format!("feed parse failed: {e}"))?;
+
+    let title = feed.title.as_ref().map(|t| t.content.clone());
+    let site_url = feed
+        .links
         .iter()
+        .find(|l| l.rel.as_deref() != Some("self"))
+        .map(|l| l.href.clone())
+        .or_else(|| feed.links.first().map(|l| l.href.clone()));
+
+    let entries = feed
+        .entries
+        .into_iter()
         .map(|entry| {
-            let published = entry
+            let published_at = entry
                 .published
                 .or(entry.updated)
                 .map(|dt| dt.timestamp())
                 .unwrap_or(0);
-
             let link = entry
                 .links
                 .first()
                 .map(|l| l.href.clone())
                 .unwrap_or_default();
-
             let title = entry
                 .title
                 .as_ref()
                 .map(|t| t.content.clone())
                 .unwrap_or_default();
-
-            let id = entry.id.clone();
-
-            let entry_author = entry
-                .authors
-                .first()
-                .map(|a| a.name.clone())
-                .unwrap_or_default();
-
-            let author = if entry_author.is_empty() {
-                feed_title.clone()
+            let author = entry.authors.first().map(|a| a.name.clone());
+            let guid = if !entry.id.is_empty() {
+                entry.id
             } else {
-                format!("{} - {}", feed_title, entry_author)
+                link.clone()
             };
-
-            FeedItem {
-                id,
+            ParsedEntry {
+                guid,
                 title,
-                published,
-                author,
                 link,
-                origin: feed_title.clone(),
+                author,
+                published_at,
             }
         })
-        .collect()
+        .collect();
+
+    Ok(FetchResult {
+        status,
+        etag: new_etag,
+        last_modified: new_last_modified,
+        title,
+        site_url,
+        entries,
+    })
 }
 
-pub async fn parse_urls(urls: &[String]) -> Vec<FeedItem> {
-    let client = build_client();
+/// Ad-hoc preview: parse one or more feed URLs and return flattened items.
+/// Kept for the `?url=` bypass mode on the index page.
+pub async fn preview_urls(urls: &[String]) -> Vec<FeedItem> {
     let mut handles = Vec::new();
-
     for url in urls {
-        let client = client.clone();
         let url = url.clone();
         handles.push(tokio::spawn(async move {
-            fetch_feed_from_url(&client, &url).await
+            let result = fetch_feed(&url, None, None).await;
+            match result {
+                Ok(r) => {
+                    let feed_title = r.title.clone().unwrap_or_default();
+                    r.entries
+                        .into_iter()
+                        .map(|e| FeedItem {
+                            title: e.title,
+                            link: e.link,
+                            published: e.published_at,
+                            author: match e.author {
+                                Some(a) if !a.is_empty() && !feed_title.is_empty() => {
+                                    format!("{feed_title} - {a}")
+                                }
+                                Some(a) if !a.is_empty() => a,
+                                _ => feed_title.clone(),
+                            },
+                        })
+                        .collect::<Vec<_>>()
+                }
+                Err(e) => {
+                    tracing::warn!("preview fetch failed for {url}: {e}");
+                    Vec::new()
+                }
+            }
         }));
     }
 
-    let mut all_items = Vec::new();
-    for handle in handles {
-        if let Ok(items) = handle.await {
-            all_items.extend(items);
+    let mut all = Vec::new();
+    for h in handles {
+        if let Ok(items) = h.await {
+            all.extend(items);
         }
     }
-
-    all_items.sort_by(|a, b| b.published.cmp(&a.published));
-    all_items
+    all.sort_by(|a, b| b.published.cmp(&a.published));
+    all
 }
 
-pub fn parse_opml(content: &str) -> Vec<String> {
-    let mut urls = Vec::new();
+/// Parse an OPML document into outline entries, carrying the parent `<outline>` title
+/// as a category when the parent has no `xmlUrl`.
+pub fn parse_opml(content: &str) -> Vec<OpmlEntry> {
+    let mut entries = Vec::new();
     let mut reader = quick_xml::Reader::from_str(content);
+    let mut category_stack: Vec<String> = Vec::new();
 
     loop {
         match reader.read_event() {
-            Ok(quick_xml::events::Event::Empty(ref e))
-            | Ok(quick_xml::events::Event::Start(ref e)) => {
-                if e.name().as_ref() == b"outline" {
-                    for attr in e.attributes().flatten() {
-                        if attr.key.as_ref() == b"xmlUrl" {
-                            if let Ok(val) = attr.decode_and_unescape_value(reader.decoder()) {
-                                let url = val.to_string();
-                                if !url.is_empty() {
-                                    urls.push(url);
-                                }
-                            }
-                        }
+            Ok(Event::Start(ref e)) if e.name().as_ref() == b"outline" => {
+                let mut xml_url: Option<String> = None;
+                let mut title: Option<String> = None;
+                let mut html_url: Option<String> = None;
+                for attr in e.attributes().flatten() {
+                    let val = attr
+                        .decode_and_unescape_value(reader.decoder())
+                        .ok()
+                        .map(|v| v.to_string());
+                    match attr.key.as_ref() {
+                        b"xmlUrl" => xml_url = val.filter(|v| !v.is_empty()),
+                        b"title" => title = val,
+                        b"text" if title.is_none() => title = val,
+                        b"htmlUrl" => html_url = val,
+                        _ => {}
                     }
                 }
+
+                if let Some(xml) = xml_url {
+                    entries.push(OpmlEntry {
+                        xml_url: xml,
+                        title,
+                        html_url,
+                        category: category_stack.last().cloned(),
+                    });
+                    category_stack.push(String::new()); // balance Close event
+                } else {
+                    category_stack.push(title.unwrap_or_default());
+                }
             }
-            Ok(quick_xml::events::Event::Eof) => break,
+            Ok(Event::Empty(ref e)) if e.name().as_ref() == b"outline" => {
+                let mut xml_url: Option<String> = None;
+                let mut title: Option<String> = None;
+                let mut html_url: Option<String> = None;
+                for attr in e.attributes().flatten() {
+                    let val = attr
+                        .decode_and_unescape_value(reader.decoder())
+                        .ok()
+                        .map(|v| v.to_string());
+                    match attr.key.as_ref() {
+                        b"xmlUrl" => xml_url = val.filter(|v| !v.is_empty()),
+                        b"title" => title = val,
+                        b"text" if title.is_none() => title = val,
+                        b"htmlUrl" => html_url = val,
+                        _ => {}
+                    }
+                }
+                if let Some(xml) = xml_url {
+                    entries.push(OpmlEntry {
+                        xml_url: xml,
+                        title,
+                        html_url,
+                        category: category_stack.last().cloned().filter(|c| !c.is_empty()),
+                    });
+                }
+            }
+            Ok(Event::End(ref e)) if e.name().as_ref() == b"outline" => {
+                category_stack.pop();
+            }
+            Ok(Event::Eof) => break,
             Err(e) => {
-                eprintln!("Error parsing OPML: {e}");
+                tracing::warn!("OPML parse error: {e}");
                 break;
             }
             _ => {}
         }
     }
 
-    urls
-}
-
-pub async fn fetch_freshrss_items(config: &FreshRSSConfig) -> Result<Vec<FeedItem>, String> {
-    FreshRSSClient::new(config).await?.fetch_items().await
-}
-
-pub async fn fetch_freshrss_subscriptions(
-    config: &FreshRSSConfig,
-) -> Result<SubscriptionList, String> {
-    FreshRSSClient::new(config).await?.fetch_subscriptions().await
-}
-
-pub async fn add_freshrss_subscription(
-    config: &FreshRSSConfig,
-    feed_url: &str,
-) -> Result<String, String> {
-    FreshRSSClient::new(config).await?.add_subscription(feed_url).await
+    entries
 }
 
 pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
     let parsed = Url::parse(base_url).map_err(|e| format!("Invalid URL: {e}"))?;
     let client = build_client();
-
     let mut feeds = Vec::new();
 
-    // Strategy A: parse HTML for <link rel="alternate"> tags
     if let Ok(response) = client.get(base_url).send().await {
         if let Ok(body) = response.text().await {
             let document = Html::parse_document(&body);
             let selector = Selector::parse(r#"link[rel="alternate"]"#).unwrap();
-
             for element in document.select(&selector) {
                 let type_attr = element.attr("type").unwrap_or_default();
                 if type_attr.contains("rss")
@@ -354,7 +297,6 @@ pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
         }
     }
 
-    // Strategy B: probe common feed paths
     if feeds.is_empty() {
         let common_paths = [
             "/feed",
@@ -367,7 +309,6 @@ pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
             "/blog/feed",
             "/blog/rss",
         ];
-
         let mut handles = Vec::new();
         for path in common_paths {
             let probe_url = match parsed.join(path) {
@@ -389,9 +330,8 @@ pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
                 None
             }));
         }
-
-        for handle in handles {
-            if let Ok(Some(url)) = handle.await {
+        for h in handles {
+            if let Ok(Some(url)) = h.await {
                 if !feeds.contains(&url) {
                     feeds.push(url);
                 }
@@ -411,43 +351,62 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_opml_extracts_xml_urls() {
+    fn parse_opml_flat_outlines() {
         let opml = r#"<?xml version="1.0" encoding="UTF-8"?>
-<opml version="2.0">
-  <body>
+<opml version="2.0"><body>
     <outline type="rss" text="Blog A" xmlUrl="https://a.com/feed" />
     <outline type="rss" text="Blog B" xmlUrl="https://b.com/rss" />
-  </body>
-</opml>"#;
-        let urls = parse_opml(opml);
-        assert_eq!(urls, vec!["https://a.com/feed", "https://b.com/rss"]);
+</body></opml>"#;
+        let entries = parse_opml(opml);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].xml_url, "https://a.com/feed");
+        assert_eq!(entries[0].title.as_deref(), Some("Blog A"));
+        assert!(entries[0].category.is_none());
     }
 
     #[test]
-    fn parse_opml_empty_document() {
+    fn parse_opml_empty() {
         let opml = r#"<?xml version="1.0"?><opml><body></body></opml>"#;
         assert!(parse_opml(opml).is_empty());
     }
 
     #[test]
-    fn parse_opml_no_xml_url_attribute() {
+    fn parse_opml_no_xml_url_skipped() {
         let opml = r#"<?xml version="1.0"?>
-<opml><body>
-  <outline type="rss" text="No URL" htmlUrl="https://example.com" />
-</body></opml>"#;
+<opml><body><outline type="rss" text="No URL" htmlUrl="https://example.com" /></body></opml>"#;
         assert!(parse_opml(opml).is_empty());
     }
 
     #[test]
-    fn parse_opml_nested_outlines() {
+    fn parse_opml_nested_carries_category() {
         let opml = r#"<?xml version="1.0"?>
 <opml><body>
-  <outline text="Category">
-    <outline type="rss" text="Nested" xmlUrl="https://nested.com/feed" />
+  <outline text="Tech">
+    <outline type="rss" text="Inner" xmlUrl="https://inner.com/feed" />
   </outline>
 </body></opml>"#;
-        let urls = parse_opml(opml);
-        assert_eq!(urls, vec!["https://nested.com/feed"]);
+        let entries = parse_opml(opml);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].category.as_deref(), Some("Tech"));
+    }
+
+    #[test]
+    fn parse_opml_deeply_nested() {
+        let opml = r#"<?xml version="1.0"?>
+<opml><body>
+  <outline text="Root">
+    <outline text="Tech">
+      <outline type="rss" text="A" xmlUrl="https://a.com/feed" />
+    </outline>
+    <outline type="rss" text="B" xmlUrl="https://b.com/feed" />
+  </outline>
+</body></opml>"#;
+        let entries = parse_opml(opml);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].xml_url, "https://a.com/feed");
+        assert_eq!(entries[0].category.as_deref(), Some("Tech"));
+        assert_eq!(entries[1].xml_url, "https://b.com/feed");
+        assert_eq!(entries[1].category.as_deref(), Some("Root"));
     }
 
     #[test]
@@ -457,53 +416,8 @@ mod tests {
   <outline type="rss" text="Empty" xmlUrl="" />
   <outline type="rss" text="Valid" xmlUrl="https://valid.com/feed" />
 </body></opml>"#;
-        let urls = parse_opml(opml);
-        assert_eq!(urls, vec!["https://valid.com/feed"]);
+        let entries = parse_opml(opml);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].xml_url, "https://valid.com/feed");
     }
-}
-
-pub async fn get_feed_items(
-    url_query: Option<&str>,
-    freshrss_config: Option<&FreshRSSConfig>,
-) -> Result<(Vec<FeedItem>, Option<Vec<String>>), String> {
-    if let Some(query) = url_query {
-        let urls: Vec<String> = query
-            .split(',')
-            .map(|u| u.trim().to_string())
-            .filter(|u| !u.is_empty())
-            .collect();
-
-        if !urls.is_empty() {
-            let items = parse_urls(&urls).await;
-            return Ok((items, Some(urls)));
-        }
-    }
-
-    if let Ok(content) = tokio::fs::read_to_string("feeds.opml").await {
-        let urls = parse_opml(&content);
-        if !urls.is_empty() {
-            let items = parse_urls(&urls).await;
-            return Ok((items, None));
-        }
-    }
-
-    if let Some(config) = freshrss_config {
-        let items = fetch_freshrss_items(config).await?;
-        return Ok((items, None));
-    }
-
-    if let Ok(default_feed) = std::env::var("DEFAULT_FEED") {
-        let urls: Vec<String> = default_feed
-            .split(',')
-            .map(|u| u.trim().to_string())
-            .filter(|u| !u.is_empty())
-            .collect();
-
-        if !urls.is_empty() {
-            let items = parse_urls(&urls).await;
-            return Ok((items, Some(urls)));
-        }
-    }
-
-    Err("No feed source configured. Set FRESHRSS_URL/FRESHRSS_USERNAME/FRESHRSS_PASSWORD or DEFAULT_FEED.".to_string())
 }
