@@ -1,15 +1,21 @@
 services:
-  feeds:
+  app:
     build:
       context: ../..
       dockerfile: apps/feeds/Dockerfile
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - API_KEY=${API_KEY:-}
+      - FEEDS_DB_PATH=/data/feeds.sqlite
+      - BASE_URL=${BASE_URL:-http://localhost:3000}
+      - COOKIE_SECURE=false
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
     volumes:
-      - feeds_data:/app/data
-    env_file:
-      - .env
+      - feeds-data:/data
     restart: unless-stopped
 
 volumes:
-  feeds_data:
+  feeds-data:
