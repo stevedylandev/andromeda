@@ -18,6 +18,9 @@ pub struct AppState {
     pub app_password: String,
     pub cookie_secure: bool,
     pub anthropic_api_key: Option<String>,
+    pub site_url: String,
+    pub site_title: String,
+    pub site_description: String,
 }
 
 #[derive(Embed)]
@@ -512,16 +515,29 @@ pub async fn run(host: String, port: u16) {
 
     let anthropic_api_key = std::env::var("ANTHROPIC_API_KEY").ok().filter(|k| !k.is_empty());
 
+    let site_url = std::env::var("SITE_URL")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string())
+        .trim_end_matches('/')
+        .to_string();
+
+    let site_title = std::env::var("SITE_TITLE").unwrap_or_else(|_| "Cellar".to_string());
+    let site_description = std::env::var("SITE_DESCRIPTION")
+        .unwrap_or_else(|_| "Personal wine tasting log".to_string());
+
     let state = Arc::new(AppState {
         db,
         app_password,
         cookie_secure,
         anthropic_api_key,
+        site_url,
+        site_title,
+        site_description,
     });
 
     let app = Router::new()
         // Public routes
         .route("/", get(public::get_index))
+        .route("/feed.xml", get(public::rss_feed))
         .route("/wines/{short_id}", get(public::get_wine_detail))
         .route("/wines/{short_id}/image", get(public::get_wine_image))
         // Admin auth routes
