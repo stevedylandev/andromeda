@@ -106,6 +106,82 @@ pub async fn get_wine_image(
     }
 }
 
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
+    let site_url = &state.site_url;
+
+    let wines = match db::get_cellar_wines(&state.db) {
+        Ok(wines) => wines,
+        Err(e) => {
+            tracing::error!("Failed to get wines for RSS: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "Server error").into_response();
+        }
+    };
+
+    let mut items = String::new();
+    for wine in &wines {
+        let link = format!("{}/wines/{}", site_url, xml_escape(&wine.short_id));
+        let title = xml_escape(&wine.name);
+        let mut desc_parts: Vec<String> = Vec::new();
+        if !wine.origin.is_empty() {
+            desc_parts.push(format!("Origin: {}", wine.origin));
+        }
+        if !wine.grape.is_empty() {
+            desc_parts.push(format!("Grape: {}", wine.grape));
+        }
+        if !wine.notes.is_empty() {
+            desc_parts.push(wine.notes.clone());
+        }
+        let description = xml_escape(&desc_parts.join(" — "));
+        let pub_date = &wine.created_at;
+        let guid = format!("{}/wines/{}", site_url, xml_escape(&wine.short_id));
+
+        items.push_str(&format!(
+            "    <item>\n      <title>{title}</title>\n      <link>{link}</link>\n      <guid>{guid}</guid>\n      <description>{description}</description>\n      <pubDate>{pub_date}</pubDate>\n    </item>\n"
+        ));
+    }
+
+    let last_build = wines
+        .first()
+        .map(|w| w.created_at.as_str())
+        .unwrap_or("");
+
+    let xml = format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{title}</title>
+    <link>{site_url}</link>
+    <description>{desc}</description>
+    <lastBuildDate>{last_build}</lastBuildDate>
+    <atom:link href="{site_url}/feed.xml" rel="self" type="application/rss+xml"/>
+{items}  </channel>
+</rss>"#,
+        title = xml_escape(&state.site_title),
+        desc = xml_escape(&state.site_description),
+        site_url = site_url,
+        last_build = last_build,
+        items = items,
+    );
+
+    (
+        StatusCode::OK,
+        [(
+            axum::http::header::CONTENT_TYPE,
+            HeaderValue::from_static("application/rss+xml; charset=utf-8"),
+        )],
+        xml,
+    )
+        .into_response()
+}
+
 pub async fn get_wishlist(
     State(state): State<Arc<AppState>>,
     headers: axum::http::HeaderMap,
