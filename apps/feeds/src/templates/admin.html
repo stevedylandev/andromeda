@@ -91,7 +91,7 @@
         {% for sub in subscriptions %}
         <div class="feed-item">
           <h3 class="feed-title">
-            <a href="{{ sub.feed_url }}" target="_blank" rel="noopener noreferrer">{{ sub.title }}</a>
+            <a href="{% if let Some(url) = sub.site_url %}{{ url }}{% else %}{{ sub.feed_url }}{% endif %}" target="_blank" rel="noopener noreferrer">{{ sub.title }}</a>
           </h3>
           {% if let Some(last) = sub.last_fetched_at %}
           <p class="feed-meta"><span class="feed-date">last: {{ last }}</span>{% if let Some(err) = sub.last_error %} <span class="error-msg">· {{ err }}</span>{% endif %}</p>
@@ -118,7 +118,7 @@
           const label = document.getElementById('opml-submit-label');
           btn.disabled = true;
           btn.classList.add('loading');
-          label.innerHTML = '<span class="spinner"></span> Importing';
+          label.innerHTML = 'Importing <span class="spinner"></span>';
         });
       })();
 
