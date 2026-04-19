@@ -1,43 +1,17 @@
 # Build from repo root: docker build -t jotts -f apps/jotts/Dockerfile .
-FROM rust:1-slim-bookworm AS builder
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+FROM lukemathwalker/cargo-chef:latest-rust-1-slim-bookworm AS chef
 WORKDIR /app
 
-# Copy workspace manifests
-COPY Cargo.toml Cargo.lock .
-COPY crates/auth/Cargo.toml crates/auth/
-COPY crates/db/Cargo.toml crates/db/
-COPY crates/darkmatter-css/Cargo.toml crates/darkmatter-css/
-COPY apps/sipp/Cargo.toml apps/sipp/
-COPY apps/feeds/Cargo.toml apps/feeds/
-COPY apps/parcels/Cargo.toml apps/parcels/
-COPY apps/jotts/Cargo.toml apps/jotts/
-COPY apps/og/Cargo.toml apps/og/
-COPY apps/shrink/Cargo.toml apps/shrink/
-COPY apps/cellar/Cargo.toml apps/cellar/
-COPY apps/posts/Cargo.toml apps/posts/
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Create stubs for dependency caching
-RUN mkdir -p crates/auth/src && echo '' > crates/auth/src/lib.rs \
-    && mkdir -p crates/db/src && echo '' > crates/db/src/lib.rs \
-    && mkdir -p crates/darkmatter-css/src && echo '' > crates/darkmatter-css/src/lib.rs \
-    && mkdir -p crates/darkmatter-css/assets \
-    && for app in sipp feeds parcels jotts og shrink cellar posts; do \
-         mkdir -p apps/$app/src && echo 'fn main() {}' > apps/$app/src/main.rs; \
-       done
-
+FROM chef AS builder
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json -p jotts
+COPY . .
 RUN cargo build --release -p jotts
-
-# Copy real source
-COPY crates/auth/src crates/auth/src
-COPY crates/db/src crates/db/src
-COPY crates/darkmatter-css/src crates/darkmatter-css/src
-COPY crates/darkmatter-css/assets crates/darkmatter-css/assets
-COPY apps/jotts/src apps/jotts/src
-COPY apps/jotts/static apps/jotts/static
-COPY apps/jotts/templates apps/jotts/templates
-
-RUN touch apps/jotts/src/*.rs crates/auth/src/*.rs crates/db/src/*.rs crates/darkmatter-css/src/*.rs && cargo build --release -p jotts
 
 FROM debian:bookworm-slim
 COPY --from=builder /app/target/release/jotts /usr/local/bin/jotts
