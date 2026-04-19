@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
     <link rel="stylesheet" href="/static/styles.css" />
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -16,7 +17,7 @@
       <h1>FEEDS</h1>
     </a>
     {% if let Some(err) = error %}
-    <p class="error-msg">{{ err }}</p>
+    <p class="error">{{ err }}</p>
     {% endif %}
 
     <form class="admin-form" method="POST" action="/admin/login">

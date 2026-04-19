@@ -21,6 +21,7 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 andromeda-auth = { workspace = true }
 andromeda-db = { workspace = true, features = ["axum", "session", "feeds"] }
+andromeda-darkmatter-css = { workspace = true }
 askama = "0.13"
 reqwest = { version = "0.12", features = ["json"] }
 feed-rs = "2"

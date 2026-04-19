@@ -428,6 +428,7 @@ pub async fn run(host: String, port: u16) {
         // Static assets
         .route("/static/{*path}", get(serve_static))
         .merge(api_router)
+        .merge(andromeda_darkmatter_css::router::<Arc<AppState>>())
         .with_state(state);
 
     let addr = format!("{}:{}", host, port);

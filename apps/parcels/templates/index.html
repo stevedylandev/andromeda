@@ -2,16 +2,17 @@
 {% block title %}PARCELS{% endblock %}
 {% block content %}
 <div class="header">
-  <h1>PARCELS</h1>
-  <div class="links">
+  <a href="/" class="logo">PARCELS</a>
+  <nav class="links">
     <a href="/packages/add">add package</a>
-  </div>
+    <a href="/logout">logout</a>
+  </nav>
 </div>
 {% if let Some(err) = error %}
-<div class="error">{{ err }}</div>
+<p class="error">{{ err }}</p>
 {% endif %}
 {% if packages.is_empty() %}
-<p style="opacity: 0.4;">no packages. <a href="/packages/add">add one</a></p>
+<p class="empty">no packages. <a href="/packages/add">add one</a></p>
 {% else %}
 <div class="parcel-list">
   {% for pkg in packages %}

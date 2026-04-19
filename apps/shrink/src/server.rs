@@ -20,7 +20,8 @@ pub async fn run(host: String, port: u16) {
         .route("/", get(get_index))
         .route("/compress", post(post_compress))
         .layer(DefaultBodyLimit::max(20 * 1024 * 1024))
-        .nest_service("/static", ServeDir::new("static"));
+        .nest_service("/static", ServeDir::new("static"))
+        .merge(andromeda_darkmatter_css::router::<()>());
 
     let addr = format!("{}:{}", host, port);
     tracing::info!("Listening on {}", addr);
