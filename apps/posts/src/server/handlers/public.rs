@@ -193,6 +193,12 @@ fn xml_escape(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
+fn to_rfc2822(sqlite_ts: &str) -> String {
+    chrono::NaiveDateTime::parse_from_str(sqlite_ts, "%Y-%m-%d %H:%M:%S")
+        .map(|naive| naive.and_utc().to_rfc2822())
+        .unwrap_or_else(|_| sqlite_ts.to_string())
+}
+
 pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
     let blog_title = get_blog_title(&state.db);
     let blog_description = get_setting_or_default(&state.db, "blog_description");
@@ -217,7 +223,8 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
                 xml_escape(&plain)
             }
         };
-        let pub_date = post.published_date.as_deref().unwrap_or(&post.created_at);
+        let raw_date = post.published_date.as_deref().unwrap_or(&post.created_at);
+        let pub_date = to_rfc2822(raw_date);
         let guid = format!("{}/posts/{}", site_url, xml_escape(&post.slug));
 
         items.push_str(&format!(
@@ -228,7 +235,8 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
     let last_build = posts
         .first()
         .and_then(|p| p.published_date.as_deref())
-        .unwrap_or("");
+        .map(to_rfc2822)
+        .unwrap_or_default();
 
     let xml = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>

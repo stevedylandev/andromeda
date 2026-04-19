@@ -114,6 +114,12 @@ fn xml_escape(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
+fn to_rfc2822(sqlite_ts: &str) -> String {
+    chrono::NaiveDateTime::parse_from_str(sqlite_ts, "%Y-%m-%d %H:%M:%S")
+        .map(|naive| naive.and_utc().to_rfc2822())
+        .unwrap_or_else(|_| sqlite_ts.to_string())
+}
+
 pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
     let site_url = &state.site_url;
 
@@ -140,7 +146,7 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
             desc_parts.push(wine.notes.clone());
         }
         let description = xml_escape(&desc_parts.join(" — "));
-        let pub_date = &wine.created_at;
+        let pub_date = to_rfc2822(&wine.created_at);
         let guid = format!("{}/wines/{}", site_url, xml_escape(&wine.short_id));
 
         items.push_str(&format!(
@@ -150,8 +156,8 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
 
     let last_build = wines
         .first()
-        .map(|w| w.created_at.as_str())
-        .unwrap_or("");
+        .map(|w| to_rfc2822(&w.created_at))
+        .unwrap_or_default();
 
     let xml = format!(
         r#"<?xml version="1.0" encoding="UTF-8"?>

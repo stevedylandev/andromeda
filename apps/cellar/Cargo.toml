@@ -1,6 +1,6 @@
 [package]
 name = "cellar"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "Personal wine tasting log"
 license = "MIT"
@@ -29,3 +29,4 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-feature
 base64 = "0.22"
 image = "0.25"
 serde_rusqlite = "0.41"
+chrono = "0.4"
