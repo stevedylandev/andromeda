@@ -9,6 +9,38 @@ description: Applies the Darkmatter aesthetic - Commit Mono font, #121113 backgr
 
 The Darkmatter aesthetic: dark, minimal, monospace. No frameworks, no decorative flourishes. Everything is functional and stark.
 
+The canonical reset, tokens, fonts, and component styles ship in the [`andromeda-darkmatter-css`](https://github.com/stevedylandev/andromeda/tree/main/crates/darkmatter-css) crate. **Do not duplicate the CSS per app** — mount the crate's router and link its stylesheet.
+
+## Using the Crate
+
+Add to `Cargo.toml`:
+
+```toml
+[dependencies]
+andromeda-darkmatter-css = { path = "../../crates/darkmatter-css" }
+```
+
+Mount in the Axum app:
+
+```rust
+let app = Router::new()
+    .route("/", get(index))
+    .merge(andromeda_darkmatter_css::router());
+```
+
+Link from templates:
+
+```html
+<link rel="stylesheet" href="/assets/darkmatter.css" />
+<meta name="theme-color" content="#121113" />
+```
+
+The crate serves:
+
+- `/assets/darkmatter.css` — full stylesheet (reset + tokens + components)
+- `/assets/fonts/CommitMono-400-Regular.otf`, `…-700-Regular.otf`
+- `/darkmatter` — live component gallery (reference when building)
+
 ## Core Palette
 
 | Token | Value | Usage |
@@ -38,8 +70,8 @@ Use opacity on white text instead of gray hex colors for secondary/tertiary text
 
 ## Typography
 
-- **Font:** `"Commit Mono"` (self-hosted .otf), fallback `monospace, sans-serif`
-- Applied globally via `* { font-family: ... }`
+- **Font:** `"Commit Mono"` (served by the crate), fallback `monospace, sans-serif`
+- Applied globally via the crate's `* { font-family: ... }`
 - **Body font-size:** 14px
 - **Line-height:** 1.6
 
@@ -55,232 +87,37 @@ Use opacity on white text instead of gray hex colors for secondary/tertiary text
 | 13px | Inline code, error messages |
 | 12px | Nav links, form labels, metadata, dates, table headers, action links |
 
-### Font Face Declarations
+## Shared Component Classes
 
-```css
-@font-face {
-  font-family: "Commit Mono";
-  src: url("/static/fonts/CommitMono-400-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-}
+The stylesheet ships ready-to-use classes. Prefer these over writing new rules:
 
-@font-face {
-  font-family: "Commit Mono";
-  src: url("/static/fonts/CommitMono-700-Regular.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-}
-```
+- Layout: `.header`, `.logo`, `.links`, `.footer`
+- Forms: `.form`, `.form-row`, `.form-field`, `.form-actions`, `.checkbox-field`, `.switch`, `.switch-slider`
+- Buttons: `button`, `.btn`, `.link-button`, `.link-button.danger`
+- Lists: `.item-list` / `.item` / `.item-title` / `.item-meta`
+- Admin lists: `.admin-list`, `.admin-list-item`, `.admin-toolbar`, `.admin-list-actions`
+- Feedback: `.error`, `.success`, `.empty`
+- Tags: `.tag`, `.status-badge`, `.status-published`, `.status-draft`
+- Misc: `.spinner`, `.scroll-x`, `.hidden`, `.inline-form`
 
-## Base Reset
+Visit `/darkmatter` on any app that mounts the crate to see live examples.
 
-```css
-* {
-  padding: 0;
-  margin: 0;
-  box-sizing: border-box;
-  font-family: "Commit Mono", monospace, sans-serif;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+## Writing New Styles
 
-html {
-  background: #121113;
-  color: #ffffff;
-  font-size: 14px;
-  line-height: 1.6;
-}
+Only add app-specific CSS when the shared sheet does not cover the pattern. When you do:
 
-html::-webkit-scrollbar {
-  display: none;
-}
-```
-
-## Layout
-
-Single-column, centered, max 700px wide. No top body padding — top spacing comes from header `margin-top`:
-
-```css
-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: start;
-  align-items: start;
-  gap: 1.5rem;
-  min-height: 100vh;
-  max-width: 700px;
-  margin: auto;
-  padding: 0 1rem;
-}
-
-@media (max-width: 480px) {
-  body {
-    padding: 1rem;
-    gap: 1rem;
-  }
-}
-```
-
-## Header
-
-The header uses a border-bottom separator and `margin-top: 2rem` for top spacing. The site title/logo is **always uppercase**, 28px bold:
-
-```css
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
-  margin-top: 2rem;
-  border-bottom: 1px solid #333;
-  padding-bottom: 1rem;
-}
-
-.logo {
-  font-size: 28px;
-  font-weight: 700;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-```
-
-## Navigation Links
-
-Compact gap, small font:
-
-```css
-.links {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 12px;
-}
-```
-
-## Interactive Elements
-
-All inputs, textareas, and buttons match the background — they blend into the surface with only a white border. **No border-radius**, padding uses `0.4rem 0.75rem`:
-
-```css
-input, textarea {
-  background: #121113;
-  color: #ffffff;
-  border: 1px solid white;
-  padding: 0.4rem 0.75rem;
-  font-size: 14px;
-  width: 100%;
-  border-radius: 0;
-}
-
-textarea {
-  min-height: 400px;
-  resize: vertical;
-}
-
-button {
-  background: #121113;
-  color: #ffffff;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid white;
-  cursor: pointer;
-  width: fit-content;
-  font-size: 14px;
-  border-radius: 0;
-}
-
-button:hover, a:hover {
-  opacity: 0.7;
-}
-
-a {
-  color: #ffffff;
-  text-decoration: none;
-}
-```
-
-## Labels
-
-```css
-label {
-  font-size: 12px;
-  opacity: 0.7;
-}
-```
-
-## Errors
-
-Use a left border accent, not a full box border:
-
-```css
-.error {
-  color: #ffffff;
-  border-left: 2px solid #ffffff;
-  padding-left: 0.5rem;
-  font-size: 13px;
-  opacity: 0.8;
-}
-```
-
-## List Items
-
-Vertical stacking with bottom borders as dividers, 16px title size:
-
-```css
-.item-list {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #333;
-}
-
-.item:hover {
-  opacity: 0.7;
-}
-
-.item-title {
-  font-size: 16px;
-}
-
-.item-meta {
-  font-size: 12px;
-  opacity: 0.5;
-}
-```
-
-## Table Headers
-
-Uppercase, dimmed, lightweight:
-
-```css
-th {
-  opacity: 0.5;
-  font-weight: 400;
-  font-size: 12px;
-  text-transform: uppercase;
-}
-```
-
-## Meta Tags
-
-Always include:
-```html
-<meta name="theme-color" content="#121113" />
-```
+- Match the palette and opacity scale above
+- `border-radius: 0` everywhere
+- Keep selectors shallow and class-based
+- Prefer extending existing classes over inventing new ones
 
 ## What NOT to Do
 
-- No `border-radius` — keep all corners sharp (explicitly set `border-radius: 0` on inputs/buttons)
+- Do not copy Darkmatter CSS into an app's static assets — link the crate's `/assets/darkmatter.css` instead
+- No `border-radius` — keep all corners sharp
 - No box shadows or drop shadows
 - No color other than `#121113`, `#ffffff`, and the gray tones (`#1e1c1f`, `#333`, `#555`)
 - **No `color: #888`** — use `opacity` on white text for visual hierarchy instead
-- No external font CDNs — fonts are self-hosted
+- No external font CDNs — fonts come from the crate
 - No utility frameworks (no Tailwind, no Bootstrap)
 - No decorative elements, icons, or emojis

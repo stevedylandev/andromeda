@@ -19,6 +19,8 @@ New apps land under `apps/` in the workspace and share dependencies via the root
 
 [`darkmatter-styles`](https://github.com/stevedylandev/andromeda/tree/main/skills/darkmatter-styles/SKILL.md) applies the shared Andromeda aesthetic: dark background, white borders, Commit Mono, minimal layout, no frameworks. Use it when building new pages or components that need to match the rest of the lineup.
 
+The canonical CSS and fonts live in the [`andromeda-darkmatter-css`](https://github.com/stevedylandev/andromeda/tree/main/crates/darkmatter-css) crate. Mount its router and link `/assets/darkmatter.css` from your templates — the skill guides style decisions while the crate serves the actual bytes.
+
 ## Installing
 
 Use [`npx skills add`](https://github.com/vercel-labs/skills) to pull either skill directly from the repo:
