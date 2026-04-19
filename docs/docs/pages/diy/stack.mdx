@@ -59,6 +59,24 @@ The `andromeda-db` crate provides shared database types and utilities used acros
 - Optional Axum integration (`axum` feature) for `IntoResponse` on errors
 - Optional session management (`session` feature)
 
+### andromeda-darkmatter-css
+
+The `andromeda-darkmatter-css` crate ships the canonical Darkmatter stylesheet and Commit Mono fonts as an embedded Axum router. Mount it once and every app inherits the shared aesthetic:
+
+- `/assets/darkmatter.css` — reset, tokens, and shared component styles
+- `/assets/fonts/*` — Commit Mono 400/700
+- `/darkmatter` — live component gallery
+
+```rust
+use andromeda_darkmatter_css;
+
+let app = Router::new()
+    .route("/", get(index))
+    .merge(andromeda_darkmatter_css::router());
+```
+
+Then reference `/assets/darkmatter.css` from your templates instead of duplicating the styles per app.
+
 ## App Pattern
 
 Every app follows a consistent structure:
