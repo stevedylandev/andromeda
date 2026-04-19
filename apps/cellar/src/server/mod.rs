@@ -573,6 +573,7 @@ pub async fn run(host: String, port: u16) {
         .route("/admin/analyze-image", post(admin::post_analyze_image))
         // Static assets
         .route("/static/{*path}", get(public::serve_static))
+        .merge(andromeda_darkmatter_css::router::<Arc<AppState>>())
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
         .with_state(state);
 

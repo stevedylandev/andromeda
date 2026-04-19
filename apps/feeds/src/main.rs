@@ -559,7 +559,7 @@ async fn main() {
         .init();
 
     let db_path =
-        std::env::var("FEEDS_DB_PATH").unwrap_or_else(|_| "/data/feeds.sqlite".to_string());
+        std::env::var("FEEDS_DB_PATH").unwrap_or_else(|_| "feeds.sqlite".to_string());
     let conn = Connection::open(&db_path).expect("open sqlite");
     conn.execute_batch(SESSION_SCHEMA).expect("session schema");
     conn.execute_batch(fdb::FEEDS_SCHEMA).expect("feeds schema");
@@ -647,6 +647,7 @@ async fn main() {
         .route("/static/{*path}", get(static_handler))
         .merge(admin_router)
         .merge(api_router)
+        .merge(andromeda_darkmatter_css::router::<Arc<AppState>>())
         .with_state(state);
 
     let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());

@@ -580,6 +580,8 @@ pub async fn run(host: String, port: u16) {
         .route("/files/{filename}", get(public::serve_uploaded_file))
         // Static assets
         .route("/static/{*path}", get(public::serve_static))
+        // Shared Darkmatter CSS assets + /darkmatter gallery
+        .merge(andromeda_darkmatter_css::router::<Arc<AppState>>())
         // Fallback
         .fallback(get(public::fallback_handler))
         .with_state(state)
