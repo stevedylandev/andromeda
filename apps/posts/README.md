@@ -93,6 +93,10 @@ cargo build --release
 
 The resulting binary at `./target/release/posts` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
 
+## Acknowledgements
+
+Posts is heavily inspired by [Bear Blog](https://bearblog.dev). If you'd rather not self-host, Bear Blog is a great alternative with the same minimal, no-nonsense approach to blogging.
+
 ## License
 
 [MIT](LICENSE)
