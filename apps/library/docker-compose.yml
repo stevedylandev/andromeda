@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/library/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
+      - LIBRARY_DB_PATH=/data/library.sqlite
+      - GOOGLE_BOOKS_API_KEY=${GOOGLE_BOOKS_API_KEY:-}
+      - BASE_URL=${BASE_URL:-}
+      - COOKIE_SECURE=false
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+    volumes:
+      - library-data:/data
+    restart: unless-stopped
+
+volumes:
+  library-data:
