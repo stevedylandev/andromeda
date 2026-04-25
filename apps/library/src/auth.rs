@@ -1,6 +1,6 @@
 use axum::{
     extract::{FromRef, FromRequestParts},
-    http::{request::Parts, StatusCode},
+    http::request::Parts,
     response::{IntoResponse, Redirect, Response},
 };
 use chrono::{Duration, Utc};
@@ -11,7 +11,7 @@ use andromeda_db::session;
 
 pub use andromeda_auth::{
     build_session_cookie, clear_session_cookie, extract_session_cookie, generate_session_token,
-    verify_api_key, verify_password,
+    verify_password,
 };
 
 const SESSION_DAYS: i64 = 7;
@@ -58,40 +58,3 @@ where
     }
 }
 
-pub struct ApiAuth;
-
-impl<S> FromRequestParts<S> for ApiAuth
-where
-    S: Send + Sync,
-    Arc<AppState>: FromRef<S>,
-{
-    type Rejection = Response;
-
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let state = Arc::<AppState>::from_ref(state);
-
-        if let Some(expected_key) = state.api_key.as_deref() {
-            if let Some(header) = parts.headers.get(axum::http::header::AUTHORIZATION) {
-                if let Ok(s) = header.to_str() {
-                    if let Some(token) = s.strip_prefix("Bearer ").or_else(|| s.strip_prefix("bearer ")) {
-                        if verify_api_key(token.trim(), expected_key) {
-                            return Ok(ApiAuth);
-                        }
-                    }
-                }
-            }
-        }
-
-        if let Some(token) = extract_session_cookie(&parts.headers) {
-            if is_valid_session(&state.db, &token) {
-                return Ok(ApiAuth);
-            }
-        }
-
-        Err((
-            StatusCode::UNAUTHORIZED,
-            axum::Json(serde_json::json!({ "error": "unauthorized" })),
-        )
-            .into_response())
-    }
-}

@@ -20,7 +20,7 @@ use rusqlite::Connection;
 use rust_embed::Embed;
 use serde::Deserialize;
 
-use crate::db::{Book, BookStatus, NewBook, StatusCounts};
+use crate::db::{Book, BookStatus, NewBook};
 
 #[derive(Embed)]
 #[folder = "static/"]
@@ -29,7 +29,6 @@ struct Static;
 pub struct AppState {
     pub db: Db,
     pub admin_password: Option<String>,
-    pub api_key: Option<String>,
     pub google_books_api_key: Option<String>,
     pub cookie_secure: bool,
     pub base_url: String,
@@ -51,7 +50,6 @@ struct IndexTemplate {
     tab: &'static str,
     tab_label: &'static str,
     books: Vec<BookView>,
-    counts: StatusCounts,
 }
 
 #[derive(Template)]
@@ -76,8 +74,6 @@ struct AdminTemplate {
     success: Option<String>,
     error: Option<String>,
     books: Vec<AdminBookRow>,
-    api_key_configured: bool,
-    google_key_configured: bool,
 }
 
 fn render_index(
@@ -96,14 +92,12 @@ fn render_index(
             notes: b.notes,
         })
         .collect();
-    let counts = db::count_by_status(&state.db).unwrap_or_default();
     Html(
         IndexTemplate {
             base_url: state.base_url.clone(),
             tab,
             tab_label: label,
             books,
-            counts,
         }
         .render()
         .unwrap(),
@@ -216,8 +210,6 @@ async fn admin_handler(
             success: q.success,
             error: q.error,
             books,
-            api_key_configured: state.api_key.is_some(),
-            google_key_configured: state.google_books_api_key.is_some(),
         }
         .render()
         .unwrap(),
@@ -373,114 +365,6 @@ async fn api_get_book(
     }
 }
 
-#[derive(Deserialize)]
-struct CreateBookBody {
-    google_id: Option<String>,
-    title: String,
-    authors: String,
-    isbn: Option<String>,
-    cover_url: Option<String>,
-    notes: Option<String>,
-    status: String,
-}
-
-async fn api_create_book(
-    _auth: auth::ApiAuth,
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<CreateBookBody>,
-) -> Response {
-    let Some(status) = BookStatus::parse(&body.status) else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({ "error": "invalid status" })),
-        )
-            .into_response();
-    };
-    let new_book = NewBook {
-        google_id: body.google_id,
-        title: body.title,
-        authors: body.authors,
-        isbn: body.isbn,
-        cover_url: body.cover_url,
-        notes: body.notes,
-        status,
-    };
-    match db::insert_book(&state.db, &new_book) {
-        Ok(id) => match db::get_book(&state.db, id) {
-            Ok(Some(book)) => (StatusCode::CREATED, Json(book)).into_response(),
-            _ => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        },
-        Err(e) => {
-            tracing::error!("create book: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
-        }
-    }
-}
-
-#[derive(Deserialize)]
-struct PatchBookBody {
-    status: Option<String>,
-    notes: Option<String>,
-}
-
-async fn api_patch_book(
-    _auth: auth::ApiAuth,
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<i64>,
-    Json(body): Json<PatchBookBody>,
-) -> Response {
-    if let Some(s) = body.status.as_deref() {
-        let Some(status) = BookStatus::parse(s) else {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({ "error": "invalid status" })),
-            )
-                .into_response();
-        };
-        if let Err(e) = db::update_book_status(&state.db, id, status) {
-            tracing::error!("update status: {e}");
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-    }
-    if let Some(notes) = body.notes.as_deref() {
-        let trimmed = notes.trim();
-        let n = if trimmed.is_empty() { None } else { Some(trimmed) };
-        if let Err(e) = db::update_book_notes(&state.db, id, n) {
-            tracing::error!("update notes: {e}");
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-    }
-    match db::get_book(&state.db, id) {
-        Ok(Some(book)) => Json(book).into_response(),
-        Ok(None) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "not found" })))
-            .into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-}
-
-async fn api_delete_book(
-    _auth: auth::ApiAuth,
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<i64>,
-) -> Response {
-    match db::delete_book(&state.db, id) {
-        Ok(true) => StatusCode::NO_CONTENT.into_response(),
-        Ok(false) => (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "not found" })))
-            .into_response(),
-        Err(e) => {
-            tracing::error!("delete book: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
-        }
-    }
-}
-
-async fn api_counts(State(state): State<Arc<AppState>>) -> Response {
-    match db::count_by_status(&state.db) {
-        Ok(counts) => Json(counts).into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-    }
-}
-
 // ── main ─────────────────────────────────────────────────────────────────
 
 #[tokio::main]
@@ -506,10 +390,6 @@ async fn main() {
     let base_url =
         std::env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
-    let api_key = std::env::var("API_KEY").ok().filter(|s| !s.is_empty());
-    if api_key.is_none() {
-        tracing::warn!("API_KEY not set; write API accessible via session cookie only");
-    }
     let google_books_api_key = std::env::var("GOOGLE_BOOKS_API_KEY")
         .ok()
         .filter(|s| !s.is_empty());
@@ -517,7 +397,6 @@ async fn main() {
     let state = Arc::new(AppState {
         db,
         admin_password: std::env::var("ADMIN_PASSWORD").ok(),
-        api_key,
         google_books_api_key,
         cookie_secure,
         base_url,
@@ -537,12 +416,8 @@ async fn main() {
         .route("/admin/books/{id}/delete", post(admin_delete_book));
 
     let api_router = Router::new()
-        .route("/api/books", get(api_list_books).post(api_create_book))
-        .route(
-            "/api/books/{id}",
-            get(api_get_book).patch(api_patch_book).delete(api_delete_book),
-        )
-        .route("/api/counts", get(api_counts));
+        .route("/api/books", get(api_list_books))
+        .route("/api/books/{id}", get(api_get_book));
 
     let app = Router::new()
         .route("/", get(root_redirect))

@@ -165,30 +165,3 @@ pub fn delete_book(db: &Db, id: i64) -> Result<bool, DbError> {
     Ok(n > 0)
 }
 
-#[derive(Debug, Default, Clone, Copy, Serialize)]
-pub struct StatusCounts {
-    pub read: i64,
-    pub reading: i64,
-    pub want: i64,
-}
-
-pub fn count_by_status(db: &Db) -> Result<StatusCounts, DbError> {
-    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
-    let mut stmt = conn.prepare("SELECT status, COUNT(*) FROM books GROUP BY status")?;
-    let mut counts = StatusCounts::default();
-    let rows = stmt.query_map([], |row| {
-        let s: String = row.get(0)?;
-        let n: i64 = row.get(1)?;
-        Ok((s, n))
-    })?;
-    for r in rows {
-        let (s, n) = r?;
-        match s.as_str() {
-            "read" => counts.read = n,
-            "reading" => counts.reading = n,
-            "want" => counts.want = n,
-            _ => {}
-        }
-    }
-    Ok(counts)
-}

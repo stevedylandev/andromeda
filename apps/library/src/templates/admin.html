@@ -35,7 +35,6 @@
       </div>
       <div id="search-status" class="search-status" style="display:none;"></div>
       <div id="search-results" class="search-results"></div>
-      <p class="hint">Google Books API key: {% if google_key_configured %}configured{% else %}not set (default rate limits apply){% endif %}</p>
     </section>
 
     <section class="admin-subs">
@@ -66,7 +65,7 @@
               <noscript><button type="submit">Save</button></noscript>
             </form>
             <form method="POST" action="/admin/books/{{ b.id }}/notes" class="inline notes-form">
-              <textarea name="notes" rows="2" placeholder="notes">{% if let Some(n) = b.notes %}{{ n }}{% endif %}</textarea>
+              <textarea name="notes" rows="5" placeholder="notes">{% if let Some(n) = b.notes %}{{ n }}{% endif %}</textarea>
               <button type="submit">Save notes</button>
             </form>
             <form method="POST" action="/admin/books/{{ b.id }}/delete" class="inline">
@@ -78,8 +77,6 @@
       </div>
       {% endif %}
     </section>
-
-    <p class="hint">API key: {% if api_key_configured %}configured{% else %}not set (write API requires session cookie){% endif %}</p>
 
     <script>
       async function searchBooks() {
