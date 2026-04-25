@@ -1,0 +1,80 @@
+# Library
+
+A simple, self-hosted book tracker built with Rust.
+
+- Single binary with embedded assets
+- Password authentication with session cookies
+- Track books across Read, Reading, and Want to Read
+- Google Books search to add titles with cover art and ISBN
+- Per-book notes
+- JSON API for listing and fetching books
+- Dark themed UI with Commit Mono font
+- SQLite for persistent storage
+
+## Configure
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `ADMIN_PASSWORD` | Password for admin login | `changeme` |
+| `LIBRARY_DB_PATH` | SQLite database file path | `library.sqlite` |
+| `GOOGLE_BOOKS_API_KEY` | Google Books API key for search | |
+| `BASE_URL` | Public base URL | `http://localhost:3000` |
+| `HOST` | Server bind address | `127.0.0.1` |
+| `PORT` | Server port | `3000` |
+| `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+
+The `GOOGLE_BOOKS_API_KEY` is optional — searches work without it but are rate-limited.
+
+## Deploy
+
+### Docker
+
+From the repo root:
+
+```bash
+cp apps/library/.env.example apps/library/.env
+# Edit .env with your admin password
+docker compose up -d library
+```
+
+This will start Library on port `4646` with a persistent volume for the SQLite database.
+
+### Binary
+
+Build from source:
+
+```bash
+cargo build --release -p library
+```
+
+The resulting binary at `./target/release/library` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Your library is publicly viewable at `/`, which redirects to `/read`. Three tabs split the collection:
+
+| Page | Description |
+|---|---|
+| `/read` | Books you've finished |
+| `/reading` | Books you're currently reading |
+| `/want` | Books you want to read |
+
+### Admin
+
+Log in at `/admin/login` with your configured password to access the admin pages.
+
+| Page | Description |
+|---|---|
+| `/admin` | Admin dashboard listing every book in your library |
+| `/admin/search?q=...` | Search Google Books to add a title |
+
+From the admin dashboard you can change a book's status, save notes, or remove a book.
+
+### API
+
+| Endpoint | Description |
+|---|---|
+| `GET /api/books` | List all books. Filter with `?status=read\|reading\|want` |
+| `GET /api/books/{id}` | Fetch a single book by ID |
