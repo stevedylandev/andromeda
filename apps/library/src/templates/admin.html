@@ -87,6 +87,7 @@
       {% endif %}
     </section>
 
+    <script src="https://unpkg.com/@zxing/browser@0.1.5/umd/zxing-browser.min.js"></script>
     <script>
       async function searchBooks() {
         const q = document.getElementById('book-query').value.trim();
@@ -193,9 +194,13 @@
 
       let scanStream = null;
       let scanRaf = null;
+      let zxingControls = null;
+
+      const hasNativeBarcode = 'BarcodeDetector' in window;
+      const hasZxing = typeof ZXingBrowser !== 'undefined';
 
       (function initScan() {
-        if ('BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        if ((hasNativeBarcode || hasZxing) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           document.getElementById('scan-btn').hidden = false;
         }
       })();
@@ -206,28 +211,54 @@
         const status = document.getElementById('scan-status');
         status.textContent = 'Point camera at barcode';
         modal.hidden = false;
+
+        const onHit = (isbn) => {
+          closeScanner();
+          document.getElementById('book-query').value = isbn;
+          searchBooks();
+        };
+
         try {
-          scanStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' }
-          });
-          video.srcObject = scanStream;
-          await video.play();
-          const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a'] });
-          const tick = async () => {
-            if (!scanStream) return;
+          let detector = null;
+          if (hasNativeBarcode) {
             try {
-              const codes = await detector.detect(video);
-              if (codes.length) {
-                const isbn = codes[0].rawValue;
-                closeScanner();
-                document.getElementById('book-query').value = isbn;
-                searchBooks();
-                return;
+              detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a'] });
+            } catch (_) {
+              detector = null;
+            }
+          }
+
+          if (detector) {
+            scanStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'environment' }
+            });
+            video.srcObject = scanStream;
+            await video.play();
+            const tick = async () => {
+              if (!scanStream) return;
+              try {
+                const codes = await detector.detect(video);
+                if (codes.length) return onHit(codes[0].rawValue);
+              } catch (_) {}
+              scanRaf = requestAnimationFrame(tick);
+            };
+            tick();
+            return;
+          }
+
+          if (hasZxing) {
+            const reader = new ZXingBrowser.BrowserMultiFormatReader();
+            zxingControls = await reader.decodeFromVideoDevice(undefined, video, (result, err, controls) => {
+              if (result) {
+                controls.stop();
+                zxingControls = null;
+                onHit(result.getText());
               }
-            } catch (_) {}
-            scanRaf = requestAnimationFrame(tick);
-          };
-          tick();
+            });
+            return;
+          }
+
+          status.textContent = 'Scanner not supported';
         } catch (e) {
           status.textContent = 'Camera unavailable';
         }
@@ -236,6 +267,10 @@
       function closeScanner() {
         if (scanRaf) cancelAnimationFrame(scanRaf);
         scanRaf = null;
+        if (zxingControls) {
+          try { zxingControls.stop(); } catch (_) {}
+          zxingControls = null;
+        }
         if (scanStream) {
           scanStream.getTracks().forEach(function(t) { t.stop(); });
           scanStream = null;
