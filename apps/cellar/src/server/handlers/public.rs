@@ -1,5 +1,6 @@
 use askama_web::WebTemplate;
 use axum::{
+    Json,
     extract::{Path, State},
     http::{HeaderValue, StatusCode},
     response::{Html, IntoResponse, Response},
@@ -79,6 +80,30 @@ pub async fn get_wine_detail(
         Err(e) => {
             tracing::error!("Failed to get wine: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, Html("Server error".to_string())).into_response()
+        }
+    }
+}
+
+pub async fn api_list_wines(State(state): State<Arc<AppState>>) -> Response {
+    match db::get_cellar_wines(&state.db) {
+        Ok(wines) => Json(wines).into_response(),
+        Err(e) => {
+            tracing::error!("api_list_wines: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn api_get_wine(
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::get_wine_by_short_id(&state.db, &short_id) {
+        Ok(Some(wine)) => Json(wine).into_response(),
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => {
+            tracing::error!("api_get_wine: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
 }

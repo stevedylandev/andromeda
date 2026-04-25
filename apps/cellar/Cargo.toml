@@ -1,6 +1,6 @@
 [package]
 name = "cellar"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 description = "Personal wine tasting log"
 license = "MIT"
@@ -30,3 +30,4 @@ base64 = "0.22"
 image = "0.25"
 serde_rusqlite = "0.41"
 chrono = "0.4"
+tower-http = { workspace = true, features = ["cors"] }
