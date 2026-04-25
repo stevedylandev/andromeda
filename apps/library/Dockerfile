@@ -1,4 +1,3 @@
-# Build from repo root: docker build -t library -f apps/library/Dockerfile .
 FROM lukemathwalker/cargo-chef:latest-rust-1-slim-bookworm AS chef
 WORKDIR /app
 
