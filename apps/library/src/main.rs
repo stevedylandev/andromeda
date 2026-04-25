@@ -43,13 +43,16 @@ struct BookView {
     notes: Option<String>,
 }
 
+struct SectionView {
+    label: &'static str,
+    books: Vec<BookView>,
+}
+
 #[derive(Template)]
 #[template(path = "index.html")]
 struct IndexTemplate {
     base_url: String,
-    tab: &'static str,
-    tab_label: &'static str,
-    books: Vec<BookView>,
+    sections: Vec<SectionView>,
 }
 
 #[derive(Template)]
@@ -76,47 +79,49 @@ struct AdminTemplate {
     books: Vec<AdminBookRow>,
 }
 
-fn render_index(
-    state: &AppState,
-    status: BookStatus,
-    tab: &'static str,
-    label: &'static str,
-) -> Response {
-    let books = db::list_books(&state.db, Some(status))
-        .unwrap_or_default()
-        .into_iter()
-        .map(|b: Book| BookView {
-            title: b.title,
-            authors: b.authors,
-            cover_url: b.cover_url,
-            notes: b.notes,
+fn make_book_view(b: Book) -> BookView {
+    BookView {
+        title: b.title,
+        authors: b.authors,
+        cover_url: b.cover_url,
+        notes: b.notes,
+    }
+}
+
+async fn index_handler(State(state): State<Arc<AppState>>) -> Response {
+    let all_books = db::list_books(&state.db, None).unwrap_or_default();
+
+    let section_defs: &[(&'static str, BookStatus)] = &[
+        ("Reading", BookStatus::Reading),
+        ("Read", BookStatus::Read),
+        ("Want to Read", BookStatus::Want),
+    ];
+
+    let sections = section_defs
+        .iter()
+        .filter_map(|(label, status)| {
+            let books: Vec<BookView> = all_books
+                .iter()
+                .filter(|b| b.status == status.as_str())
+                .map(|b| make_book_view(b.clone()))
+                .collect();
+            if books.is_empty() {
+                None
+            } else {
+                Some(SectionView { label, books })
+            }
         })
         .collect();
+
     Html(
         IndexTemplate {
             base_url: state.base_url.clone(),
-            tab,
-            tab_label: label,
-            books,
+            sections,
         }
         .render()
         .unwrap(),
     )
     .into_response()
-}
-
-async fn root_redirect() -> Response {
-    Redirect::to("/read").into_response()
-}
-
-async fn read_handler(State(state): State<Arc<AppState>>) -> Response {
-    render_index(&state, BookStatus::Read, "read", "Read")
-}
-async fn reading_handler(State(state): State<Arc<AppState>>) -> Response {
-    render_index(&state, BookStatus::Reading, "reading", "Reading")
-}
-async fn want_handler(State(state): State<Arc<AppState>>) -> Response {
-    render_index(&state, BookStatus::Want, "want", "Want to Read")
 }
 
 async fn static_handler(Path(path): Path<String>) -> Response {
@@ -420,10 +425,7 @@ async fn main() {
         .route("/api/books/{id}", get(api_get_book));
 
     let app = Router::new()
-        .route("/", get(root_redirect))
-        .route("/read", get(read_handler))
-        .route("/reading", get(reading_handler))
-        .route("/want", get(want_handler))
+        .route("/", get(index_handler))
         .route("/static/{*path}", get(static_handler))
         .merge(admin_router)
         .merge(api_router)
