@@ -8,6 +8,7 @@ members = [
     "apps/shrink",
     "apps/cellar",
     "apps/posts",
+    "apps/library",
     "crates/auth",
     "crates/db",
     "crates/darkmatter-css",

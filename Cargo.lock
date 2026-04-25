@@ -2322,6 +2322,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 
 [[package]]
+name = "library"
+version = "0.1.0"
+dependencies = [
+ "andromeda-auth",
+ "andromeda-darkmatter-css",
+ "andromeda-db",
+ "askama 0.13.1",
+ "axum",
+ "chrono",
+ "dotenvy",
+ "mime_guess",
+ "rand 0.8.5",
+ "reqwest 0.12.28",
+ "rusqlite",
+ "rust-embed",
+ "serde",
+ "serde_json",
+ "subtle",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "urlencoding",
+]
+
+[[package]]
 name = "libsqlite3-sys"
 version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

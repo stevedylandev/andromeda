@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Library | {{ tab_label }}</title>
+    <meta name="description" content="Personal book tracker" />
+
+    <meta property="og:url" content="{{ base_url }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Library" />
+    <meta property="og:description" content="Personal book tracker" />
+    <meta property="og:image" content="{{ base_url }}/static/og.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="{{ base_url }}" />
+    <meta name="twitter:title" content="Library" />
+    <meta name="twitter:description" content="Personal book tracker" />
+    <meta name="twitter:image" content="{{ base_url }}/static/og.png" />
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>LIBRARY</h1></a>
+      <nav class="links">
+        <a href="/admin">add</a>
+      </nav>
+    </div>
+
+    <nav class="tabs">
+      <a href="/read" class="tab{% if tab == "read" %} active{% endif %}">Read <span class="count">{{ counts.read }}</span></a>
+      <a href="/reading" class="tab{% if tab == "reading" %} active{% endif %}">Reading <span class="count">{{ counts.reading }}</span></a>
+      <a href="/want" class="tab{% if tab == "want" %} active{% endif %}">Want to Read <span class="count">{{ counts.want }}</span></a>
+    </nav>
+
+    {% if books.is_empty() %}
+    <p class="no-books">No books in {{ tab_label }}.</p>
+    {% else %}
+    <div class="books-list">
+      {% for book in books %}
+      <article class="book-card">
+        {% if let Some(url) = book.cover_url %}
+        <img class="book-cover" src="{{ url }}" alt="" loading="lazy" />
+        {% else %}
+        <div class="book-cover placeholder"></div>
+        {% endif %}
+        <div class="book-info">
+          <h3 class="book-title">{{ book.title }}</h3>
+          <p class="book-authors">{{ book.authors }}</p>
+          {% if let Some(n) = book.notes %}
+          <p class="book-notes">{{ n }}</p>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </body>
+</html>
