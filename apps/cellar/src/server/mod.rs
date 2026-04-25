@@ -7,6 +7,7 @@ use axum::{
 use image::ImageDecoder;
 use rust_embed::Embed;
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::db::{self, Db, Wine};
 
@@ -534,12 +535,22 @@ pub async fn run(host: String, port: u16) {
         site_description,
     });
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([axum::http::Method::GET]);
+
+    let api = Router::new()
+        .route("/api/wines", get(public::api_list_wines))
+        .route("/api/wines/{short_id}", get(public::api_get_wine))
+        .layer(cors);
+
     let app = Router::new()
         // Public routes
         .route("/", get(public::get_index))
         .route("/feed.xml", get(public::rss_feed))
         .route("/wines/{short_id}", get(public::get_wine_detail))
         .route("/wines/{short_id}/image", get(public::get_wine_image))
+        .merge(api)
         // Admin auth routes
         .route("/admin/login", get(admin::get_login).post(admin::post_login))
         .route("/admin/logout", get(admin::get_logout))
