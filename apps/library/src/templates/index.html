@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
     <link rel="manifest" href="/static/site.webmanifest" />
-    <title>Library | {{ tab_label }}</title>
+    <title>Library</title>
     <meta name="description" content="Personal book tracker" />
 
     <meta property="og:url" content="{{ base_url }}" />
@@ -29,34 +29,36 @@
     <div class="header">
       <a href="/" class="logo"><h1>LIBRARY</h1></a>
       <nav class="links">
-        <a href="/read"{% if tab == "read" %} class="active"{% endif %}>read</a>
-        <a href="/reading"{% if tab == "reading" %} class="active"{% endif %}>reading</a>
-        <a href="/want"{% if tab == "want" %} class="active"{% endif %}>want to read</a>
         <a href="/admin">add</a>
       </nav>
     </div>
 
-    {% if books.is_empty() %}
-    <p class="no-books">No books in {{ tab_label }}.</p>
+    {% if sections.is_empty() %}
+    <p class="no-books">No books yet.</p>
     {% else %}
-    <div class="books-list">
-      {% for book in books %}
-      <article class="book-card">
-        {% if let Some(url) = book.cover_url %}
-        <img class="book-cover" src="{{ url }}" alt="" loading="lazy" />
-        {% else %}
-        <div class="book-cover placeholder"></div>
-        {% endif %}
-        <div class="book-info">
-          <h3 class="book-title">{{ book.title }}</h3>
-          <p class="book-authors">{{ book.authors }}</p>
-          {% if let Some(n) = book.notes %}
-          <p class="book-notes">{{ n }}</p>
+    {% for section in sections %}
+    <div class="section">
+      <h2 class="section-label">{{ section.label }}</h2>
+      <div class="books-list">
+        {% for book in section.books %}
+        <article class="book-card">
+          {% if let Some(url) = book.cover_url %}
+          <img class="book-cover" src="{{ url }}" alt="" loading="lazy" />
+          {% else %}
+          <div class="book-cover placeholder"></div>
           {% endif %}
-        </div>
-      </article>
-      {% endfor %}
+          <div class="book-info">
+            <h3 class="book-title">{{ book.title }}</h3>
+            <p class="book-authors">{{ book.authors }}</p>
+            {% if let Some(n) = book.notes %}
+            <p class="book-notes">{{ n }}</p>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
     </div>
+    {% endfor %}
     {% endif %}
   </body>
 </html>
