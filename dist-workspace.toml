@@ -8,6 +8,7 @@ members = [
     "cargo:apps/shrink",
     "cargo:apps/cellar",
     "cargo:apps/posts",
+    "cargo:apps/library",
 ]
 
 # Config for 'dist'
