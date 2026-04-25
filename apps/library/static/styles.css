@@ -8,36 +8,10 @@
   text-transform: uppercase;
 }
 
-/* Tabs */
+/* Active nav link (current tab) */
 
-.tabs {
-  display: flex;
-  gap: 1.5rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #333;
-  margin-bottom: 1.5rem;
-}
-
-.tab {
-  font-size: 14px;
-  text-decoration: none;
-  opacity: 0.5;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.tab:hover {
-  opacity: 0.7;
-}
-
-.tab.active {
+.links a.active {
   opacity: 1;
-}
-
-.tab .count {
-  font-size: 12px;
-  opacity: 0.5;
 }
 
 /* Books list */
@@ -173,12 +147,14 @@
 
 .book-card.admin textarea {
   width: 100%;
+  min-height: 1.6rem;
   font-family: inherit;
   font-size: 13px;
+  line-height: 1.4;
   background: #121113;
   color: #ffffff;
   border: 1px solid #333;
-  padding: 0.4rem;
+  padding: 0.3rem 0.4rem;
   resize: vertical;
 }
 

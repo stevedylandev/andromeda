@@ -29,15 +29,12 @@
     <div class="header">
       <a href="/" class="logo"><h1>LIBRARY</h1></a>
       <nav class="links">
+        <a href="/read"{% if tab == "read" %} class="active"{% endif %}>read</a>
+        <a href="/reading"{% if tab == "reading" %} class="active"{% endif %}>reading</a>
+        <a href="/want"{% if tab == "want" %} class="active"{% endif %}>want to read</a>
         <a href="/admin">add</a>
       </nav>
     </div>
-
-    <nav class="tabs">
-      <a href="/read" class="tab{% if tab == "read" %} active{% endif %}">Read <span class="count">{{ counts.read }}</span></a>
-      <a href="/reading" class="tab{% if tab == "reading" %} active{% endif %}">Reading <span class="count">{{ counts.reading }}</span></a>
-      <a href="/want" class="tab{% if tab == "want" %} active{% endif %}">Want to Read <span class="count">{{ counts.want }}</span></a>
-    </nav>
 
     {% if books.is_empty() %}
     <p class="no-books">No books in {{ tab_label }}.</p>
