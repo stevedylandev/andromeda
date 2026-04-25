@@ -49,10 +49,24 @@ struct ImageLinks {
 }
 
 pub async fn search(query: &str, api_key: Option<&str>) -> Result<Vec<SearchHit>, String> {
-    let q = urlencoding::encode(query.trim());
-    if q.is_empty() {
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
         return Ok(Vec::new());
     }
+    let normalized: String = trimmed
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '-')
+        .collect();
+    let is_isbn = matches!(normalized.len(), 10 | 13)
+        && normalized
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == 'X' || c == 'x');
+    let query_str = if is_isbn {
+        format!("isbn:{}", normalized.to_uppercase())
+    } else {
+        trimmed.to_string()
+    };
+    let q = urlencoding::encode(&query_str);
     let mut url = format!(
         "https://www.googleapis.com/books/v1/volumes?q={q}&maxResults=10&printType=books"
     );
