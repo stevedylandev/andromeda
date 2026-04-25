@@ -108,6 +108,70 @@ pub async fn api_get_wine(
     }
 }
 
+pub async fn api_get_pentagon_svg(
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::get_wine_by_short_id(&state.db, &short_id) {
+        Ok(Some(wine)) => {
+            let svg = build_pentagon_svg(
+                wine.sweetness,
+                wine.acidity,
+                wine.tannin,
+                wine.alcohol,
+                wine.body,
+                250.0,
+                true,
+            );
+            (
+                StatusCode::OK,
+                [(
+                    axum::http::header::CONTENT_TYPE,
+                    HeaderValue::from_static("image/svg+xml"),
+                )],
+                svg,
+            )
+                .into_response()
+        }
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => {
+            tracing::error!("api_get_pentagon_svg: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn api_get_bars_svg(
+    State(state): State<Arc<AppState>>,
+    Path(short_id): Path<String>,
+) -> Response {
+    match db::get_wine_by_short_id(&state.db, &short_id) {
+        Ok(Some(wine)) => {
+            let svg = build_bars_svg(
+                wine.clarity,
+                wine.color_intensity,
+                wine.aroma_intensity,
+                wine.nose_complexity,
+                250.0,
+            );
+            (
+                StatusCode::OK,
+                [(
+                    axum::http::header::CONTENT_TYPE,
+                    HeaderValue::from_static("image/svg+xml"),
+                )],
+                svg,
+            )
+                .into_response()
+        }
+        Ok(None) => StatusCode::NOT_FOUND.into_response(),
+        Err(e) => {
+            tracing::error!("api_get_bars_svg: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
 pub async fn get_wine_image(
     State(state): State<Arc<AppState>>,
     Path(short_id): Path<String>,

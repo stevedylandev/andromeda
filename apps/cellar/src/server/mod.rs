@@ -542,6 +542,8 @@ pub async fn run(host: String, port: u16) {
     let api = Router::new()
         .route("/api/wines", get(public::api_list_wines))
         .route("/api/wines/{short_id}", get(public::api_get_wine))
+        .route("/api/wines/{short_id}/pentagon.svg", get(public::api_get_pentagon_svg))
+        .route("/api/wines/{short_id}/bars.svg", get(public::api_get_bars_svg))
         .layer(cors);
 
     let app = Router::new()
