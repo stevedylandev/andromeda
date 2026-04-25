@@ -32,10 +32,19 @@
       <div class="search-row">
         <input type="text" id="book-query" placeholder="title, author, isbn" />
         <button type="button" id="search-btn" onclick="searchBooks()">Search</button>
+        <button type="button" id="scan-btn" onclick="openScanner()" hidden>Scan</button>
       </div>
       <div id="search-status" class="search-status" style="display:none;"></div>
       <div id="search-results" class="search-results"></div>
     </section>
+
+    <div id="scan-modal" class="scan-modal" hidden>
+      <div class="scan-inner">
+        <video id="scan-video" playsinline muted></video>
+        <p id="scan-status" class="scan-status">Point camera at barcode</p>
+        <button type="button" onclick="closeScanner()">Cancel</button>
+      </div>
+    </div>
 
     <section class="admin-subs">
       <h3>Library ({{ books.len() }})</h3>
@@ -180,6 +189,58 @@
         return String(s || '').replace(/[&<>"']/g, function(c) {
           return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c];
         });
+      }
+
+      let scanStream = null;
+      let scanRaf = null;
+
+      (function initScan() {
+        if ('BarcodeDetector' in window && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          document.getElementById('scan-btn').hidden = false;
+        }
+      })();
+
+      async function openScanner() {
+        const modal = document.getElementById('scan-modal');
+        const video = document.getElementById('scan-video');
+        const status = document.getElementById('scan-status');
+        status.textContent = 'Point camera at barcode';
+        modal.hidden = false;
+        try {
+          scanStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+          });
+          video.srcObject = scanStream;
+          await video.play();
+          const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a'] });
+          const tick = async () => {
+            if (!scanStream) return;
+            try {
+              const codes = await detector.detect(video);
+              if (codes.length) {
+                const isbn = codes[0].rawValue;
+                closeScanner();
+                document.getElementById('book-query').value = isbn;
+                searchBooks();
+                return;
+              }
+            } catch (_) {}
+            scanRaf = requestAnimationFrame(tick);
+          };
+          tick();
+        } catch (e) {
+          status.textContent = 'Camera unavailable';
+        }
+      }
+
+      function closeScanner() {
+        if (scanRaf) cancelAnimationFrame(scanRaf);
+        scanRaf = null;
+        if (scanStream) {
+          scanStream.getTracks().forEach(function(t) { t.stop(); });
+          scanStream = null;
+        }
+        document.getElementById('scan-modal').hidden = true;
       }
     </script>
   </body>
