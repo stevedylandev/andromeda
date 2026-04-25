@@ -53,6 +53,10 @@ export default defineConfig({
           link: '/apps/jotts',
         },
         {
+          text: 'Library',
+          link: '/apps/library',
+        },
+        {
           text: 'OG',
           link: '/apps/og',
         },

@@ -68,12 +68,22 @@ services:
       - posts_data:/data
     env_file: apps/posts/.env
 
+  library:
+    image: ghcr.io/stevedylandev/andromeda/library:latest
+    restart: unless-stopped
+    ports:
+      - "4646:3000"
+    volumes:
+      - library_data:/data
+    env_file: apps/library/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
       - jotts_data:/data/jotts:ro
       - sipp_data:/data/sipp:ro
       - cellar_data:/data/cellar:ro
+      - library_data:/data/library:ro
     env_file: apps/backup/.env
     restart: unless-stopped
 
@@ -96,3 +106,6 @@ volumes:
   posts_data:
     external: true
     name: posts_posts-data
+  library_data:
+    external: true
+    name: library_library-data

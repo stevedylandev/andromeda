@@ -1,0 +1,230 @@
+/* library — app-specific styles.
+ * Shared reset / tokens / components come from /assets/darkmatter.css.
+ */
+
+.logo h1 {
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Active nav link (current tab) */
+
+.links a.active {
+  opacity: 1;
+}
+
+/* Books list */
+
+.books-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.book-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #333;
+}
+
+.book-card:last-child {
+  border-bottom: none;
+}
+
+.book-cover {
+  width: 72px;
+  height: 108px;
+  object-fit: cover;
+  background: #1e1c1f;
+  flex-shrink: 0;
+  display: block;
+}
+
+.book-cover.placeholder {
+  background: #1e1c1f;
+}
+
+.book-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.book-title {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.book-authors {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.book-meta {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.book-notes {
+  font-size: 13px;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+
+.no-books {
+  text-align: center;
+  opacity: 0.5;
+  padding: 2rem;
+}
+
+/* Admin */
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.admin-form h3 {
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.hint {
+  font-size: 12px;
+  opacity: 0.5;
+  line-height: 1.4;
+}
+
+.search-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.search-row input {
+  flex: 1;
+}
+
+.search-status {
+  font-size: 12px;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.book-card.hit,
+.book-card.admin {
+  border: 1px solid #333;
+  padding: 0.75rem;
+  border-bottom: 1px solid #333;
+}
+
+.book-card.admin .inline {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.book-card.admin .notes-form {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.book-card.admin textarea {
+  width: 100%;
+  min-height: 1.6rem;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid #333;
+  padding: 0.3rem 0.4rem;
+  resize: vertical;
+}
+
+.admin-subs {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-subs h3 {
+  font-size: 14px;
+  opacity: 0.5;
+  font-weight: 400;
+}
+
+button.danger,
+.btn.danger {
+  opacity: 0.5;
+}
+
+button.danger:hover,
+.btn.danger:hover {
+  opacity: 0.3;
+}
+
+@media (max-width: 480px) {
+  .book-card {
+    gap: 0.75rem;
+  }
+  .book-cover {
+    width: 56px;
+    height: 84px;
+  }
+  .book-title {
+    font-size: 14px;
+  }
+}
+
+.scan-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.scan-modal[hidden] {
+  display: none;
+}
+
+.scan-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(90vw, 480px);
+}
+
+.scan-inner video {
+  width: 100%;
+  max-height: 70vh;
+  background: #000;
+  border-radius: 8px;
+}
+
+.scan-status {
+  color: #eee;
+  font-size: 14px;
+  margin: 0;
+}
