@@ -1,0 +1,74 @@
+# Bookmarks
+
+Bookmarks is a single-user link saver. Add links via the admin panel or JSON API, organize them into categories, and view them on a public index page grouped by category.
+
+- Single Rust binary with embedded assets
+- Local SQLite storage
+- Password-protected admin panel for managing categories and links
+- JSON read API (open) and write API (key-guarded)
+- Dark themed UI with Commit Mono font
+
+## Configure
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `BOOKMARKS_PASSWORD` | Password for the admin panel | -- |
+| `BOOKMARKS_API_KEY` | API key for `POST /api/links` (omit to disable write API) | -- |
+| `BOOKMARKS_DB_PATH` | SQLite database path | `bookmarks.sqlite` |
+| `HOST` | Bind address | `127.0.0.1` |
+| `PORT` | Bind port | `3000` |
+| `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+
+`BOOKMARKS_PASSWORD` is required to access the admin panel. `BOOKMARKS_API_KEY` is only needed if you want to create links from outside the browser.
+
+## Deploy
+
+### Docker
+
+```bash
+cd apps/bookmarks
+cp .env.example .env
+# Edit .env with your credentials
+docker compose up -d
+```
+
+### Binary
+
+```bash
+cargo build --release -p bookmarks
+```
+
+The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+### Admin Panel
+
+Set `BOOKMARKS_PASSWORD` and visit `/login`. From the admin panel you can:
+
+- Create and remove categories
+- Add links with title, URL, and category
+- Remove links
+
+The public index at `/` shows all links grouped by category.
+
+### JSON API
+
+Read endpoints are open. Write endpoints require `x-api-key: <BOOKMARKS_API_KEY>`.
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/categories` | open | List categories |
+| `GET` | `/api/links` | open | List links grouped by category. Query: `category` to filter by name |
+| `POST` | `/api/links` | api key | Create link. Body: `{category, title, url}` |
+
+Example:
+
+```bash
+curl -X POST http://localhost:3000/api/links \
+  -H "x-api-key: $BOOKMARKS_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{"category":"Reading","title":"Example","url":"https://example.com"}'
+```
