@@ -16,6 +16,11 @@ CREATE TABLE IF NOT EXISTS books (
     updated_at    INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_books_status_added ON books(status, added_at DESC);
+
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 "#;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -163,5 +168,85 @@ pub fn delete_book(db: &Db, id: i64) -> Result<bool, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let n = conn.execute("DELETE FROM books WHERE id = ?1", [id])?;
     Ok(n > 0)
+}
+
+pub fn search_books(db: &Db, q: &str) -> Result<Vec<Book>, DbError> {
+    let term = q.trim();
+    if term.is_empty() {
+        return Ok(Vec::new());
+    }
+    let pattern = format!("%{}%", term.to_lowercase());
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let sql = format!(
+        "SELECT {SELECT_COLS} FROM books \
+         WHERE LOWER(title) LIKE ?1 OR LOWER(authors) LIKE ?1 OR LOWER(IFNULL(isbn, '')) LIKE ?1 \
+         ORDER BY added_at DESC LIMIT 50"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt.query_map([&pattern], map_book)?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CategoryLabels {
+    pub reading: String,
+    pub read: String,
+    pub want: String,
+}
+
+impl Default for CategoryLabels {
+    fn default() -> Self {
+        Self {
+            reading: "Reading".to_string(),
+            read: "Read".to_string(),
+            want: "Want to Read".to_string(),
+        }
+    }
+}
+
+impl CategoryLabels {
+    pub fn label_for(&self, status: BookStatus) -> &str {
+        match status {
+            BookStatus::Reading => &self.reading,
+            BookStatus::Read => &self.read,
+            BookStatus::Want => &self.want,
+        }
+    }
+}
+
+pub fn get_setting(db: &Db, key: &str) -> Result<Option<String>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let val = conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            [key],
+            |r| r.get::<_, String>(0),
+        )
+        .optional()?;
+    Ok(val)
+}
+
+pub fn set_setting(db: &Db, key: &str, value: &str) -> Result<(), DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    conn.execute(
+        "INSERT INTO settings (key, value) VALUES (?1, ?2) \
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        params![key, value],
+    )?;
+    Ok(())
+}
+
+pub fn get_category_labels(db: &Db) -> Result<CategoryLabels, DbError> {
+    let mut labels = CategoryLabels::default();
+    if let Some(v) = get_setting(db, "category_label.reading")? {
+        labels.reading = v;
+    }
+    if let Some(v) = get_setting(db, "category_label.read")? {
+        labels.read = v;
+    }
+    if let Some(v) = get_setting(db, "category_label.want")? {
+        labels.want = v;
+    }
+    Ok(labels)
 }
 
