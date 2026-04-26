@@ -41,6 +41,10 @@ export default defineConfig({
       text: 'Apps',
       items: [
         {
+          text: 'Bookmarks',
+          link: '/apps/bookmarks',
+        },
+        {
           text: 'Cellar',
           link: '/apps/cellar',
         },
