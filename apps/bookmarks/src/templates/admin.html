@@ -56,6 +56,12 @@
             <span class="admin-list-title">{{ cat.name }}</span>
           </div>
           <div class="admin-list-actions">
+            <form method="POST" action="/admin/categories/{{ cat.short_id }}/move/up" class="inline-form">
+              <button type="submit" class="link-button">↑</button>
+            </form>
+            <form method="POST" action="/admin/categories/{{ cat.short_id }}/move/down" class="inline-form">
+              <button type="submit" class="link-button">↓</button>
+            </form>
             <form method="POST" action="/admin/categories/{{ cat.short_id }}/delete" class="inline-form">
               <button type="submit" class="link-button danger">delete</button>
             </form>
