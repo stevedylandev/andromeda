@@ -618,6 +618,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "bookmarks"
+version = "0.1.0"
+dependencies = [
+ "andromeda-auth",
+ "andromeda-darkmatter-css",
+ "andromeda-db",
+ "askama 0.13.1",
+ "axum",
+ "chrono",
+ "dotenvy",
+ "mime_guess",
+ "nanoid",
+ "rand 0.8.5",
+ "rusqlite",
+ "rust-embed",
+ "serde",
+ "serde_json",
+ "subtle",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "built"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
