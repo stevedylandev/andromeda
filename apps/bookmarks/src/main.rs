@@ -220,6 +220,25 @@ async fn admin_delete_category(
     Redirect::to("/admin?success=Category+removed").into_response()
 }
 
+async fn admin_move_category(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Path((short_id, dir)): Path<(String, String)>,
+) -> Response {
+    let direction: i64 = match dir.as_str() {
+        "up" => -1,
+        "down" => 1,
+        _ => return Redirect::to("/admin?error=Invalid+direction").into_response(),
+    };
+    match db::move_category(&state.db, &short_id, direction) {
+        Ok(_) => Redirect::to("/admin?success=Category+reordered").into_response(),
+        Err(e) => {
+            tracing::error!("move category: {e}");
+            Redirect::to("/admin?error=Failed+to+reorder").into_response()
+        }
+    }
+}
+
 #[derive(Deserialize)]
 struct AddLinkForm {
     title: String,
@@ -402,6 +421,7 @@ async fn main() {
     conn.execute_batch(SESSION_SCHEMA).expect("session schema");
     conn.execute_batch(db::SCHEMA).expect("bookmarks schema");
     let db: Db = Arc::new(Mutex::new(conn));
+    db::migrate(&db).expect("bookmarks migrate");
 
     let cookie_secure = std::env::var("COOKIE_SECURE")
         .map(|v| v.eq_ignore_ascii_case("true"))
@@ -429,6 +449,7 @@ async fn main() {
         .route("/admin", get(admin_handler))
         .route("/admin/categories", post(admin_add_category))
         .route("/admin/categories/{short_id}/delete", post(admin_delete_category))
+        .route("/admin/categories/{short_id}/move/{dir}", post(admin_move_category))
         .route("/admin/links", post(admin_add_link))
         .route("/admin/links/{short_id}/delete", post(admin_delete_link))
         .route("/static/{*path}", get(static_handler))
