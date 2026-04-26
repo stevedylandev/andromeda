@@ -77,6 +77,15 @@ services:
       - library_data:/data
     env_file: apps/library/.env
 
+  bookmarks:
+    image: ghcr.io/stevedylandev/andromeda/bookmarks:latest
+    restart: unless-stopped
+    ports:
+      - "3737:3000"
+    volumes:
+      - bookmarks_data:/data
+    env_file: apps/bookmarks/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
@@ -84,6 +93,7 @@ services:
       - sipp_data:/data/sipp:ro
       - cellar_data:/data/cellar:ro
       - library_data:/data/library:ro
+      - bookmarks_data:/data/bookmarks:ro
     env_file: apps/backup/.env
     restart: unless-stopped
 
@@ -109,3 +119,6 @@ volumes:
   library_data:
     external: true
     name: library_library-data
+  bookmarks_data:
+    external: true
+    name: bookmarks_bookmarks-data
