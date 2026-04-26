@@ -28,7 +28,26 @@
     {% endif %}
 
     <section class="admin-form">
-      <h3>Search Books</h3>
+      <h3>Category Labels</h3>
+      <form method="POST" action="/admin/categories/labels" class="labels-form">
+        <label>
+          <span>Reading</span>
+          <input type="text" name="reading" value="{{ labels.reading }}" required />
+        </label>
+        <label>
+          <span>Read</span>
+          <input type="text" name="read" value="{{ labels.read }}" required />
+        </label>
+        <label>
+          <span>Want to Read</span>
+          <input type="text" name="want" value="{{ labels.want }}" required />
+        </label>
+        <button type="submit">Save labels</button>
+      </form>
+    </section>
+
+    <section class="admin-form">
+      <h3>Search Books (Google)</h3>
       <div class="search-row">
         <input type="text" id="book-query" placeholder="title, author, isbn" />
         <button type="button" id="search-btn" onclick="searchBooks()">Search</button>
@@ -36,6 +55,56 @@
       </div>
       <div id="search-status" class="search-status" style="display:none;"></div>
       <div id="search-results" class="search-results"></div>
+    </section>
+
+    <section class="admin-form">
+      <h3>Search Library</h3>
+      <form method="GET" action="/admin" class="search-row">
+        <input type="text" name="q" placeholder="title, author, isbn" value="{{ library_query }}" />
+        <button type="submit">Search</button>
+        {% if library_searched %}
+        <a href="/admin" class="hint">clear</a>
+        {% endif %}
+      </form>
+      {% if library_searched %}
+        {% if library_results.is_empty() %}
+        <p class="hint">No matches.</p>
+        {% else %}
+        <div class="books-list">
+          {% for b in library_results %}
+          <div class="book-card admin">
+            {% if let Some(url) = b.cover_url %}
+            <img class="book-cover" src="{{ url }}" alt="" loading="lazy" />
+            {% else %}
+            <div class="book-cover placeholder"></div>
+            {% endif %}
+            <div class="book-info">
+              <h3 class="book-title">{{ b.title }}</h3>
+              <p class="book-authors">{{ b.authors }}</p>
+              {% if let Some(isbn) = b.isbn %}
+              <p class="book-meta">ISBN: {{ isbn }}</p>
+              {% endif %}
+              <form method="POST" action="/admin/books/{{ b.id }}/status" class="inline">
+                <select name="status" onchange="this.form.submit()">
+                  <option value="read"{% if b.status == "read" %} selected{% endif %}>{{ labels.read }}</option>
+                  <option value="reading"{% if b.status == "reading" %} selected{% endif %}>{{ labels.reading }}</option>
+                  <option value="want"{% if b.status == "want" %} selected{% endif %}>{{ labels.want }}</option>
+                </select>
+                <noscript><button type="submit">Save</button></noscript>
+              </form>
+              <form method="POST" action="/admin/books/{{ b.id }}/notes" class="inline notes-form">
+                <textarea name="notes" rows="5" placeholder="notes">{% if let Some(n) = b.notes %}{{ n }}{% endif %}</textarea>
+                <button type="submit">Save notes</button>
+              </form>
+              <form method="POST" action="/admin/books/{{ b.id }}/delete" class="inline">
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endif %}
     </section>
 
     <div id="scan-modal" class="scan-modal" hidden>
@@ -67,9 +136,9 @@
             {% endif %}
             <form method="POST" action="/admin/books/{{ b.id }}/status" class="inline">
               <select name="status" onchange="this.form.submit()">
-                <option value="read"{% if b.status == "read" %} selected{% endif %}>Read</option>
-                <option value="reading"{% if b.status == "reading" %} selected{% endif %}>Reading</option>
-                <option value="want"{% if b.status == "want" %} selected{% endif %}>Want to Read</option>
+                <option value="read"{% if b.status == "read" %} selected{% endif %}>{{ labels.read }}</option>
+                <option value="reading"{% if b.status == "reading" %} selected{% endif %}>{{ labels.reading }}</option>
+                <option value="want"{% if b.status == "want" %} selected{% endif %}>{{ labels.want }}</option>
               </select>
               <noscript><button type="submit">Save</button></noscript>
             </form>
@@ -87,8 +156,23 @@
       {% endif %}
     </section>
 
+    <div id="category-labels-data"
+         data-want="{{ labels.want }}"
+         data-reading="{{ labels.reading }}"
+         data-read="{{ labels.read }}"
+         hidden></div>
+
     <script src="https://unpkg.com/@zxing/browser@0.1.5/umd/zxing-browser.min.js"></script>
     <script>
+      (function() {
+        const el = document.getElementById('category-labels-data');
+        window.__categoryLabels = {
+          want: el.dataset.want,
+          reading: el.dataset.reading,
+          read: el.dataset.read,
+        };
+      })();
+
       async function searchBooks() {
         const q = document.getElementById('book-query').value.trim();
         if (!q) return;
@@ -169,10 +253,11 @@
 
         const select = document.createElement('select');
         select.name = 'status';
+        const labels = window.__categoryLabels || { want: 'Want to Read', reading: 'Reading', read: 'Read' };
         ['want', 'reading', 'read'].forEach(function(s) {
           const o = document.createElement('option');
           o.value = s;
-          o.textContent = s === 'want' ? 'Want to Read' : s.charAt(0).toUpperCase() + s.slice(1);
+          o.textContent = labels[s];
           select.appendChild(o);
         });
         info.appendChild(select);
