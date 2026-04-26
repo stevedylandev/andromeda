@@ -20,7 +20,22 @@ use rusqlite::Connection;
 use rust_embed::Embed;
 use serde::Deserialize;
 
-use crate::db::{Book, BookStatus, NewBook};
+use crate::db::{Book, BookStatus, CategoryLabels, NewBook};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DisplayMode {
+    Inline,
+    Nav,
+}
+
+impl DisplayMode {
+    fn parse(s: &str) -> Self {
+        match s.to_ascii_lowercase().as_str() {
+            "nav" => DisplayMode::Nav,
+            _ => DisplayMode::Inline,
+        }
+    }
+}
 
 #[derive(Embed)]
 #[folder = "static/"]
@@ -32,6 +47,7 @@ pub struct AppState {
     pub google_books_api_key: Option<String>,
     pub cookie_secure: bool,
     pub base_url: String,
+    pub display_mode: DisplayMode,
 }
 
 // ── Templates ────────────────────────────────────────────────────────────
@@ -44,8 +60,14 @@ struct BookView {
 }
 
 struct SectionView {
-    label: &'static str,
+    label: String,
     books: Vec<BookView>,
+}
+
+struct NavCategory {
+    slug: &'static str,
+    label: String,
+    active: bool,
 }
 
 #[derive(Template)]
@@ -53,6 +75,8 @@ struct SectionView {
 struct IndexTemplate {
     base_url: String,
     sections: Vec<SectionView>,
+    nav_mode: bool,
+    nav_categories: Vec<NavCategory>,
 }
 
 #[derive(Template)]
@@ -77,6 +101,10 @@ struct AdminTemplate {
     success: Option<String>,
     error: Option<String>,
     books: Vec<AdminBookRow>,
+    labels: CategoryLabels,
+    library_query: String,
+    library_results: Vec<AdminBookRow>,
+    library_searched: bool,
 }
 
 fn make_book_view(b: Book) -> BookView {
@@ -88,35 +116,82 @@ fn make_book_view(b: Book) -> BookView {
     }
 }
 
-async fn index_handler(State(state): State<Arc<AppState>>) -> Response {
+#[derive(Deserialize, Default)]
+struct IndexQuery {
+    category: Option<String>,
+}
+
+async fn index_handler(
+    State(state): State<Arc<AppState>>,
+    Query(q): Query<IndexQuery>,
+) -> Response {
     let all_books = db::list_books(&state.db, None).unwrap_or_default();
+    let labels = db::get_category_labels(&state.db).unwrap_or_default();
 
     let section_defs: &[(&'static str, BookStatus)] = &[
-        ("Reading", BookStatus::Reading),
-        ("Read", BookStatus::Read),
-        ("Want to Read", BookStatus::Want),
+        ("reading", BookStatus::Reading),
+        ("read", BookStatus::Read),
+        ("want", BookStatus::Want),
     ];
 
-    let sections = section_defs
-        .iter()
-        .filter_map(|(label, status)| {
-            let books: Vec<BookView> = all_books
-                .iter()
-                .filter(|b| b.status == status.as_str())
-                .map(|b| make_book_view(b.clone()))
-                .collect();
-            if books.is_empty() {
-                None
-            } else {
-                Some(SectionView { label, books })
-            }
-        })
-        .collect();
+    let make_section = |status: BookStatus| -> SectionView {
+        let books = all_books
+            .iter()
+            .filter(|b| b.status == status.as_str())
+            .map(|b| make_book_view(b.clone()))
+            .collect();
+        SectionView {
+            label: labels.label_for(status).to_string(),
+            books,
+        }
+    };
+
+    let nav_mode = matches!(state.display_mode, DisplayMode::Nav);
+
+    let (sections, nav_categories) = if nav_mode {
+        let selected_slug = q
+            .category
+            .as_deref()
+            .and_then(|s| {
+                section_defs
+                    .iter()
+                    .find(|(slug, _)| *slug == s)
+                    .map(|(slug, _)| *slug)
+            })
+            .unwrap_or(section_defs[0].0);
+
+        let nav = section_defs
+            .iter()
+            .map(|(slug, status)| NavCategory {
+                slug,
+                label: labels.label_for(*status).to_string(),
+                active: *slug == selected_slug,
+            })
+            .collect();
+
+        let (_, status) = section_defs
+            .iter()
+            .find(|(slug, _)| *slug == selected_slug)
+            .copied()
+            .unwrap();
+        (vec![make_section(status)], nav)
+    } else {
+        let secs = section_defs
+            .iter()
+            .filter_map(|(_, status)| {
+                let s = make_section(*status);
+                if s.books.is_empty() { None } else { Some(s) }
+            })
+            .collect();
+        (secs, Vec::new())
+    };
 
     Html(
         IndexTemplate {
             base_url: state.base_url.clone(),
             sections,
+            nav_mode,
+            nav_categories,
         }
         .render()
         .unwrap(),
@@ -139,7 +214,6 @@ async fn static_handler(Path(path): Path<String>) -> Response {
 #[derive(Deserialize, Default)]
 struct FlashQuery {
     error: Option<String>,
-    success: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -191,35 +265,91 @@ async fn logout_handler(State(state): State<Arc<AppState>>, headers: HeaderMap) 
     resp
 }
 
+fn book_to_row(b: Book) -> AdminBookRow {
+    AdminBookRow {
+        id: b.id,
+        title: b.title,
+        authors: b.authors,
+        isbn: b.isbn,
+        cover_url: b.cover_url,
+        notes: b.notes,
+        status: b.status,
+    }
+}
+
+#[derive(Deserialize, Default)]
+struct AdminQuery {
+    error: Option<String>,
+    success: Option<String>,
+    q: Option<String>,
+}
+
 async fn admin_handler(
     _session: auth::AuthSession,
     State(state): State<Arc<AppState>>,
-    Query(q): Query<FlashQuery>,
+    Query(q): Query<AdminQuery>,
 ) -> Response {
     let books = db::list_books(&state.db, None)
         .unwrap_or_default()
         .into_iter()
-        .map(|b| AdminBookRow {
-            id: b.id,
-            title: b.title,
-            authors: b.authors,
-            isbn: b.isbn,
-            cover_url: b.cover_url,
-            notes: b.notes,
-            status: b.status,
-        })
+        .map(book_to_row)
         .collect();
+    let labels = db::get_category_labels(&state.db).unwrap_or_default();
+
+    let library_query = q.q.unwrap_or_default();
+    let library_searched = !library_query.trim().is_empty();
+    let library_results = if library_searched {
+        db::search_books(&state.db, &library_query)
+            .unwrap_or_default()
+            .into_iter()
+            .map(book_to_row)
+            .collect()
+    } else {
+        Vec::new()
+    };
 
     Html(
         AdminTemplate {
             success: q.success,
             error: q.error,
             books,
+            labels,
+            library_query,
+            library_results,
+            library_searched,
         }
         .render()
         .unwrap(),
     )
     .into_response()
+}
+
+#[derive(Deserialize)]
+struct CategoryLabelsForm {
+    reading: String,
+    read: String,
+    want: String,
+}
+
+async fn admin_update_labels(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    Form(form): Form<CategoryLabelsForm>,
+) -> Response {
+    let reading = form.reading.trim();
+    let read = form.read.trim();
+    let want = form.want.trim();
+    if reading.is_empty() || read.is_empty() || want.is_empty() {
+        return Redirect::to("/admin?error=Labels+cannot+be+empty").into_response();
+    }
+    if let Err(e) = db::set_setting(&state.db, "category_label.reading", reading)
+        .and_then(|_| db::set_setting(&state.db, "category_label.read", read))
+        .and_then(|_| db::set_setting(&state.db, "category_label.want", want))
+    {
+        tracing::error!("save labels: {e}");
+        return Redirect::to("/admin?error=Failed+to+save+labels").into_response();
+    }
+    Redirect::to("/admin?success=Labels+updated").into_response()
 }
 
 #[derive(Deserialize)]
@@ -399,12 +529,17 @@ async fn main() {
         .ok()
         .filter(|s| !s.is_empty());
 
+    let display_mode = std::env::var("LIBRARY_DISPLAY_MODE")
+        .map(|v| DisplayMode::parse(&v))
+        .unwrap_or(DisplayMode::Inline);
+
     let state = Arc::new(AppState {
         db,
         admin_password: std::env::var("ADMIN_PASSWORD").ok(),
         google_books_api_key,
         cookie_secure,
         base_url,
+        display_mode,
     });
 
     let admin_router = Router::new()
@@ -415,6 +550,7 @@ async fn main() {
         )
         .route("/admin/logout", get(logout_handler))
         .route("/admin/search", get(admin_search_handler))
+        .route("/admin/categories/labels", post(admin_update_labels))
         .route("/admin/add", post(admin_add_book))
         .route("/admin/books/{id}/status", post(admin_update_status))
         .route("/admin/books/{id}/notes", post(admin_update_notes))
