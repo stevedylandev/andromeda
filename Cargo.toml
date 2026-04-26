@@ -9,6 +9,7 @@ members = [
     "apps/cellar",
     "apps/posts",
     "apps/library",
+    "apps/bookmarks",
     "crates/auth",
     "crates/db",
     "crates/darkmatter-css",
