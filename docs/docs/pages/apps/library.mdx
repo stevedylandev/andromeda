@@ -4,8 +4,11 @@ A simple, self-hosted book tracker built with Rust.
 
 - Single binary with embedded assets
 - Password authentication with session cookies
-- Track books across Read, Reading, and Want to Read
+- Track books across Reading, Read, and Want to Read (labels customizable from admin)
 - Google Books search to add titles with cover art and ISBN
+- Barcode scanning for ISBN entry (native `BarcodeDetector` with ZXing fallback)
+- Library search from the admin page (title / author / ISBN)
+- Toggle between inline category sections and a filter-nav layout via `LIBRARY_DISPLAY_MODE`
 - Per-book notes
 - JSON API for listing and fetching books
 - Dark themed UI with Commit Mono font
@@ -24,6 +27,7 @@ A simple, self-hosted book tracker built with Rust.
 | `HOST` | Server bind address | `127.0.0.1` |
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+| `LIBRARY_DISPLAY_MODE` | Public index layout: `inline` (stacked sections) or `nav` (filter buttons in header) | `inline` |
 
 The `GOOGLE_BOOKS_API_KEY` is optional — searches work without it but are rate-limited.
 
@@ -53,13 +57,10 @@ The resulting binary at `./target/release/library` is self-contained with all as
 
 ## Use
 
-Your library is publicly viewable at `/`, which redirects to `/read`. Three tabs split the collection:
+Your library is publicly viewable at `/`. Layout depends on `LIBRARY_DISPLAY_MODE`:
 
-| Page | Description |
-|---|---|
-| `/read` | Books you've finished |
-| `/reading` | Books you're currently reading |
-| `/want` | Books you want to read |
+- `inline` — all non-empty categories rendered as stacked sections on one page.
+- `nav` — header filter buttons switch between categories via `?category=reading|read|want`.
 
 ### Admin
 
@@ -67,10 +68,10 @@ Log in at `/admin/login` with your configured password to access the admin pages
 
 | Page | Description |
 |---|---|
-| `/admin` | Admin dashboard listing every book in your library |
-| `/admin/search?q=...` | Search Google Books to add a title |
+| `/admin` | Admin dashboard listing every book. Supports library search via `?q=...` (title / author / ISBN). |
+| `/admin/search?q=...` | Search Google Books to add a title. ISBN field supports barcode scanning. |
 
-From the admin dashboard you can change a book's status, save notes, or remove a book.
+From the admin dashboard you can change a book's status, save notes, rename category labels, or remove a book.
 
 ### API
 
