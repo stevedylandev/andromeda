@@ -9,8 +9,10 @@ use axum::{
 };
 use serde::Deserialize;
 
+use andromeda_db::Db;
+
 use crate::auth::ApiAuth;
-use crate::feeds::{discover_feeds, fetch_feed, parse_opml};
+use crate::feeds::{discover_feeds, fetch_feed, parse_opml, ParsedEntry};
 use crate::poller::POLL_INTERVAL_KEY;
 use crate::AppState;
 
@@ -122,9 +124,9 @@ pub async fn add_subscription(
             .into_response();
     }
 
-    // Probe once to resolve title + site_url.
+    // Probe once to resolve title + site_url + initial entries.
     let probed = fetch_feed(feed_url, None, None).await;
-    let (title, site_url, etag, last_modified) = match probed {
+    let (title, site_url, etag, last_modified, entries) = match probed {
         Ok(r) => (
             body.title
                 .clone()
@@ -133,6 +135,7 @@ pub async fn add_subscription(
             r.site_url,
             r.etag,
             r.last_modified,
+            r.entries,
         ),
         Err(e) => {
             return err_json(
@@ -159,36 +162,61 @@ pub async fn add_subscription(
         Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
 
-    // Seed items immediately so the UI isn't empty until the next poll.
-    let _ = fdb::update_subscription_meta(
+    seed_subscription(
         &state.db,
         sub.id,
+        &entries,
         etag.as_deref(),
         last_modified.as_deref(),
+        state.item_cap,
+    );
+
+    (StatusCode::CREATED, Json(serde_json::json!({ "subscription": sub }))).into_response()
+}
+
+/// Insert probe entries into the new subscription, prune to the item cap, then
+/// persist etag/last_modified. The order matters: persisting the conditional-fetch
+/// metadata before seeding would let the next poller pass receive a 304 against an
+/// empty subscription, leaving it permanently dry until upstream changes.
+pub(crate) fn seed_subscription(
+    db: &Db,
+    sub_id: i64,
+    entries: &[ParsedEntry],
+    etag: Option<&str>,
+    last_modified: Option<&str>,
+    item_cap: usize,
+) -> usize {
+    let mut inserted = 0usize;
+    for entry in entries {
+        if entry.link.is_empty() {
+            continue;
+        }
+        match fdb::insert_item_ignore_dup(
+            db,
+            &fdb::NewItem {
+                subscription_id: sub_id,
+                guid: &entry.guid,
+                title: &entry.title,
+                link: &entry.link,
+                author: entry.author.as_deref(),
+                published_at: entry.published_at,
+            },
+        ) {
+            Ok(true) => inserted += 1,
+            Ok(false) => {}
+            Err(e) => tracing::warn!("seed insert failed for sub {sub_id}: {e}"),
+        }
+    }
+    let _ = fdb::prune_subscription(db, sub_id, item_cap as i64);
+    let _ = fdb::update_subscription_meta(
+        db,
+        sub_id,
+        etag,
+        last_modified,
         &chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         None,
     );
-    if let Ok(result) = fetch_feed(feed_url, None, None).await {
-        for entry in &result.entries {
-            if entry.link.is_empty() {
-                continue;
-            }
-            let _ = fdb::insert_item_ignore_dup(
-                &state.db,
-                &fdb::NewItem {
-                    subscription_id: sub.id,
-                    guid: &entry.guid,
-                    title: &entry.title,
-                    link: &entry.link,
-                    author: entry.author.as_deref(),
-                    published_at: entry.published_at,
-                },
-            );
-        }
-        let _ = fdb::prune_subscription(&state.db, sub.id, state.item_cap as i64);
-    }
-
-    (StatusCode::CREATED, Json(serde_json::json!({ "subscription": sub }))).into_response()
+    inserted
 }
 
 fn resolve_category(
@@ -462,5 +490,107 @@ pub async fn discover(
     match discover_feeds(&body.base_url).await {
         Ok(feeds) => Json(serde_json::json!({ "feeds": feeds })).into_response(),
         Err(e) => err_json(StatusCode::BAD_REQUEST, e),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use andromeda_db::feeds::{
+        get_subscription, insert_subscription, list_items, ListItemsFilter, FEEDS_SCHEMA,
+    };
+    use rusqlite::Connection;
+    use std::sync::Mutex;
+
+    fn test_db() -> Db {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(FEEDS_SCHEMA).unwrap();
+        Arc::new(Mutex::new(conn))
+    }
+
+    fn entry(guid: &str, link: &str, ts: i64) -> ParsedEntry {
+        ParsedEntry {
+            guid: guid.into(),
+            title: format!("post {guid}"),
+            link: link.into(),
+            author: None,
+            published_at: ts,
+        }
+    }
+
+    #[test]
+    fn seed_subscription_inserts_entries_and_persists_meta() {
+        let db = test_db();
+        let sub = insert_subscription(&db, "https://x.com/feed", "X", None, None).unwrap();
+        let entries = vec![
+            entry("g1", "https://x.com/1", 100),
+            entry("g2", "https://x.com/2", 200),
+        ];
+
+        let inserted =
+            seed_subscription(&db, sub.id, &entries, Some("etag-1"), Some("Sun, 01 Jan"), 50);
+
+        assert_eq!(inserted, 2);
+        let items = list_items(&db, &ListItemsFilter::default()).unwrap();
+        assert_eq!(items.len(), 2);
+        let after = get_subscription(&db, sub.id).unwrap().unwrap();
+        assert_eq!(after.etag.as_deref(), Some("etag-1"));
+        assert_eq!(after.last_modified.as_deref(), Some("Sun, 01 Jan"));
+        assert!(after.last_fetched_at.is_some());
+        assert!(after.last_error.is_none());
+    }
+
+    #[test]
+    fn seed_subscription_skips_empty_links() {
+        let db = test_db();
+        let sub = insert_subscription(&db, "https://x.com/feed", "X", None, None).unwrap();
+        let entries = vec![entry("g1", "", 100), entry("g2", "https://x.com/2", 200)];
+
+        let inserted = seed_subscription(&db, sub.id, &entries, None, None, 50);
+
+        assert_eq!(inserted, 1);
+        let items = list_items(&db, &ListItemsFilter::default()).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].guid, "g2");
+    }
+
+    #[test]
+    fn seed_subscription_dedups_on_repeat() {
+        let db = test_db();
+        let sub = insert_subscription(&db, "https://x.com/feed", "X", None, None).unwrap();
+        let entries = vec![entry("g1", "https://x.com/1", 100)];
+
+        assert_eq!(seed_subscription(&db, sub.id, &entries, None, None, 50), 1);
+        assert_eq!(seed_subscription(&db, sub.id, &entries, None, None, 50), 0);
+        assert_eq!(list_items(&db, &ListItemsFilter::default()).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn seed_subscription_prunes_to_item_cap() {
+        let db = test_db();
+        let sub = insert_subscription(&db, "https://x.com/feed", "X", None, None).unwrap();
+        let entries: Vec<_> = (0..10)
+            .map(|i| entry(&format!("g{i}"), &format!("https://x.com/{i}"), i as i64))
+            .collect();
+
+        seed_subscription(&db, sub.id, &entries, None, None, 3);
+
+        let items = list_items(&db, &ListItemsFilter::default()).unwrap();
+        assert_eq!(items.len(), 3);
+        // newest survive
+        assert_eq!(items[0].published_at, 9);
+        assert_eq!(items[2].published_at, 7);
+    }
+
+    #[test]
+    fn seed_subscription_with_no_entries_still_persists_meta() {
+        let db = test_db();
+        let sub = insert_subscription(&db, "https://x.com/feed", "X", None, None).unwrap();
+
+        let inserted = seed_subscription(&db, sub.id, &[], Some("etag-empty"), None, 50);
+
+        assert_eq!(inserted, 0);
+        let after = get_subscription(&db, sub.id).unwrap().unwrap();
+        assert_eq!(after.etag.as_deref(), Some("etag-empty"));
     }
 }
