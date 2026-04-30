@@ -4,7 +4,9 @@ use axum::{
     http::{HeaderValue, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
 };
+use std::io::{Cursor, Read};
 use std::sync::Arc;
+use zip::ZipArchive;
 
 use super::super::*;
 use crate::{auth, db};
@@ -610,5 +612,289 @@ pub async fn admin_download_uploads(
             tracing::error!("Failed to create uploads zip: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, "Export failed").into_response()
         }
+    }
+}
+
+// --- Import handlers ---
+
+const IMPORT_MAX_BYTES: usize = 50 * 1024 * 1024;
+
+pub async fn admin_import_form(
+    _session: auth::AuthSession,
+    Query(q): Query<FlashQuery>,
+) -> Response {
+    WebTemplate(AdminImportTemplate {
+        error: q.error,
+        imported: q.imported,
+        skipped: q.skipped,
+    })
+    .into_response()
+}
+
+pub async fn admin_import_posts(
+    _session: auth::AuthSession,
+    State(state): State<Arc<AppState>>,
+    mut multipart: Multipart,
+) -> Response {
+    let mut zip_data: Option<Vec<u8>> = None;
+    while let Ok(Some(field)) = multipart.next_field().await {
+        if field.name() == Some("zip") {
+            match field.bytes().await {
+                Ok(bytes) => zip_data = Some(bytes.to_vec()),
+                Err(e) => {
+                    tracing::error!("Failed to read import upload: {}", e);
+                    return Redirect::to("/admin/import?error=Failed+to+read+upload").into_response();
+                }
+            }
+        }
+    }
+
+    let bytes = match zip_data {
+        Some(b) => b,
+        None => return Redirect::to("/admin/import?error=No+zip+provided").into_response(),
+    };
+    if bytes.len() > IMPORT_MAX_BYTES {
+        return Redirect::to("/admin/import?error=Zip+exceeds+50MB+limit").into_response();
+    }
+
+    let db = state.db.clone();
+    let result = tokio::task::spawn_blocking(move || process_import_zip(&db, &bytes)).await;
+
+    match result {
+        Ok(Ok(summary)) => Redirect::to(&format!(
+            "/admin/import?imported={}&skipped={}",
+            summary.imported, summary.skipped
+        ))
+        .into_response(),
+        Ok(Err(e)) => {
+            tracing::error!("Import failed: {}", e);
+            Redirect::to("/admin/import?error=Invalid+zip+archive").into_response()
+        }
+        Err(e) => {
+            tracing::error!("Import join error: {}", e);
+            Redirect::to("/admin/import?error=Server+error").into_response()
+        }
+    }
+}
+
+struct ImportSummary {
+    imported: u32,
+    skipped: u32,
+}
+
+fn process_import_zip(db: &db::Db, bytes: &[u8]) -> Result<ImportSummary, String> {
+    let mut archive = ZipArchive::new(Cursor::new(bytes))
+        .map_err(|e| format!("Bad zip: {}", e))?;
+
+    let mut imported = 0u32;
+    let mut skipped = 0u32;
+
+    for i in 0..archive.len() {
+        let mut file = match archive.by_index(i) {
+            Ok(f) => f,
+            Err(e) => {
+                tracing::warn!("Skipping zip entry {}: {}", i, e);
+                continue;
+            }
+        };
+        if file.is_dir() {
+            continue;
+        }
+        let name = match file.enclosed_name() {
+            Some(p) => p.to_string_lossy().into_owned(),
+            None => continue,
+        };
+        if name.starts_with("__MACOSX/") {
+            continue;
+        }
+        let basename = std::path::Path::new(&name)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("");
+        if basename.is_empty() || basename.starts_with('.') {
+            continue;
+        }
+        let lower = basename.to_lowercase();
+        if !(lower.ends_with(".md") || lower.ends_with(".markdown")) {
+            continue;
+        }
+
+        let mut raw = String::new();
+        if let Err(e) = file.read_to_string(&mut raw) {
+            tracing::warn!("Skipping {}: read error {}", name, e);
+            continue;
+        }
+
+        if !import_one(db, basename, &raw, &mut imported, &mut skipped) {
+            skipped += 1;
+        }
+    }
+
+    Ok(ImportSummary { imported, skipped })
+}
+
+fn import_one(
+    db: &db::Db,
+    basename: &str,
+    raw: &str,
+    imported: &mut u32,
+    skipped: &mut u32,
+) -> bool {
+    let (frontmatter, body) = split_frontmatter(raw);
+    let attrs = parse_attributes(frontmatter.unwrap_or(""));
+
+    let title = if attrs.title.trim().is_empty() {
+        title_from_filename(basename)
+    } else {
+        attrs.title.trim().to_string()
+    };
+    if title.is_empty() {
+        return false;
+    }
+
+    let slug = if attrs.slug.trim().is_empty() {
+        slugify(&title)
+    } else {
+        attrs.slug.trim().to_string()
+    };
+    if slug.is_empty() {
+        return false;
+    }
+
+    match db::get_post_by_slug(db, &slug) {
+        Ok(Some(_)) => {
+            *skipped += 1;
+            return true;
+        }
+        Ok(None) => {}
+        Err(e) => {
+            tracing::warn!("DB error checking slug {}: {}", slug, e);
+            return false;
+        }
+    }
+
+    let status = if attrs.status.trim().eq_ignore_ascii_case("published") {
+        "published"
+    } else {
+        "draft"
+    };
+    let lang = if attrs.lang.trim().is_empty() {
+        "en"
+    } else {
+        attrs.lang.trim()
+    };
+    let published_date = if attrs.published_date.trim().is_empty() {
+        now_datetime()
+    } else {
+        attrs.published_date.trim().to_string()
+    };
+
+    let input = db::PostInput {
+        title: &title,
+        slug: &slug,
+        content: body,
+        status,
+        alias: opt_str(&attrs.alias),
+        canonical_url: None,
+        published_date: Some(&published_date),
+        meta_description: opt_str(&attrs.meta_description),
+        meta_image: opt_str(&attrs.meta_image),
+        lang,
+        tags: opt_str(&attrs.tags),
+    };
+    match db::create_post(db, &input) {
+        Ok(_) => {
+            *imported += 1;
+            true
+        }
+        Err(e) => {
+            tracing::warn!("Failed to insert {}: {}", slug, e);
+            false
+        }
+    }
+}
+
+fn split_frontmatter(content: &str) -> (Option<&str>, &str) {
+    let trimmed = content.trim_start_matches('\u{feff}');
+    let after_open = if let Some(rest) = trimmed.strip_prefix("---\n") {
+        rest
+    } else if let Some(rest) = trimmed.strip_prefix("---\r\n") {
+        rest
+    } else {
+        return (None, content);
+    };
+    for sep in ["\r\n---\r\n", "\r\n---\n", "\n---\r\n", "\n---\n"] {
+        if let Some((fm, rest)) = after_open.split_once(sep) {
+            let body = rest.trim_start_matches(['\r', '\n']);
+            return (Some(fm), body);
+        }
+    }
+    if let Some(fm) = after_open.strip_suffix("\n---").or_else(|| after_open.strip_suffix("\r\n---")) {
+        return (Some(fm), "");
+    }
+    (None, content)
+}
+
+fn title_from_filename(name: &str) -> String {
+    let stem = name.rsplit_once('.').map(|(s, _)| s).unwrap_or(name);
+    let cleaned: String = stem
+        .chars()
+        .map(|c| if c == '-' || c == '_' { ' ' } else { c })
+        .collect();
+    let trimmed = cleaned.trim();
+    let mut chars = trimmed.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+        None => String::new(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn split_frontmatter_basic() {
+        let input = "---\ntitle: Hello\nslug: hello\n---\n# Body\n";
+        let (fm, body) = split_frontmatter(input);
+        assert_eq!(fm, Some("title: Hello\nslug: hello"));
+        assert_eq!(body, "# Body\n");
+    }
+
+    #[test]
+    fn split_frontmatter_crlf() {
+        let input = "---\r\ntitle: Hi\r\n---\r\nbody\r\n";
+        let (fm, body) = split_frontmatter(input);
+        assert_eq!(fm, Some("title: Hi"));
+        assert_eq!(body, "body\r\n");
+    }
+
+    #[test]
+    fn split_frontmatter_no_fence() {
+        let (fm, body) = split_frontmatter("# Just markdown\n\ncontent");
+        assert!(fm.is_none());
+        assert_eq!(body, "# Just markdown\n\ncontent");
+    }
+
+    #[test]
+    fn split_frontmatter_strips_bom() {
+        let input = "\u{feff}---\ntitle: Hi\n---\nbody";
+        let (fm, body) = split_frontmatter(input);
+        assert_eq!(fm, Some("title: Hi"));
+        assert_eq!(body, "body");
+    }
+
+    #[test]
+    fn title_from_filename_replaces_separators() {
+        assert_eq!(title_from_filename("my-cool-post.md"), "My cool post");
+        assert_eq!(title_from_filename("hello_world.markdown"), "Hello world");
+        assert_eq!(title_from_filename("noext"), "Noext");
+    }
+
+    #[test]
+    fn parse_attributes_picks_up_status() {
+        let attrs = parse_attributes("title: T\nstatus: published\n");
+        assert_eq!(attrs.title, "T");
+        assert_eq!(attrs.status, "published");
     }
 }
