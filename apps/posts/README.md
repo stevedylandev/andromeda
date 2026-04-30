@@ -38,6 +38,7 @@ A self-hosted blog CMS built with Rust. Here's a few highlights:
 - RSS feed at `/feed.xml`
 - Dark themed UI with Commit Mono font
 - SQLite for persistent storage
+- Bulk import posts from a zip of markdown files at `/admin/import`
 
 ## Structure
 
@@ -92,6 +93,28 @@ cargo build --release
 ```
 
 The resulting binary at `./target/release/posts` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Importing posts
+
+Visit `/admin/import` and upload a zip containing `.md` or `.markdown` files. Each file may start with YAML-style frontmatter:
+
+```markdown
+---
+title: My Post
+slug: my-post
+status: published
+published_date: 2025-01-15 10:00:00
+tags: rust, sqlite
+description: A short summary
+lang: en
+---
+
+Post body in markdown.
+```
+
+Supported keys: `title`, `slug`, `status` (`draft` or `published`), `published_date`, `tags`, `description`, `meta_image`, `alias`, `lang`. Files without frontmatter are imported with the title derived from the filename and a slug auto-generated from that title. Posts whose slug already exists in the database are skipped, so re-uploading the same archive is safe.
+
+The zip can be up to 50MB. Asset references inside posts (images, etc.) are left untouched — pre-host them or upload them separately at `/admin/files`.
 
 ## Acknowledgements
 
