@@ -29,3 +29,4 @@ askama_web = { version = "0.15", features = ["axum-0.8"] }
 pulldown-cmark = "0.12"
 chrono = "0.4"
 zip = { workspace = true }
+tower-http = { version = "0.6.8", features = ["cors"] }
