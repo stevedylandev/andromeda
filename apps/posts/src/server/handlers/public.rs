@@ -29,7 +29,7 @@ pub async fn public_index(State(state): State<Arc<AppState>>) -> Response {
     let blog_description = get_setting_or_default(&state.db, "blog_description");
     let intro_content = get_setting_or_default(&state.db, "intro_content");
 
-    match db::get_published_posts(&state.db) {
+    match db::get_published_posts(&state.db, None) {
         Ok(posts) => {
             let mut intro_html = render_markdown(&intro_content);
 
@@ -122,7 +122,7 @@ pub async fn public_page(
 pub async fn public_posts_list(State(state): State<Arc<AppState>>) -> Response {
     let ctx = SiteContext::from_state(&state);
 
-    match db::get_published_posts(&state.db) {
+    match db::get_published_posts(&state.db, None) {
         Ok(posts) => WebTemplate(PostsListTemplate {
             blog_title: ctx.blog_title,
             nav_links: ctx.nav_links,
@@ -204,7 +204,7 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
     let blog_description = get_setting_or_default(&state.db, "blog_description");
     let site_url = &state.site_url;
 
-    let posts = match db::get_published_posts(&state.db) {
+    let posts = match db::get_published_posts(&state.db, None) {
         Ok(posts) => posts,
         Err(e) => {
             tracing::error!("Failed to get posts for RSS: {}", e);

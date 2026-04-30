@@ -214,13 +214,14 @@ pub fn get_all_posts(db: &Db) -> Result<Vec<Post>, DbError> {
     Ok(posts)
 }
 
-pub fn get_published_posts(db: &Db) -> Result<Vec<Post>, DbError> {
+pub fn get_published_posts(db: &Db, limit: Option<i64>) -> Result<Vec<Post>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let limit_value = limit.unwrap_or(-1);
     let mut stmt = conn.prepare(
-        &format!("SELECT {} FROM posts WHERE status = 'published' ORDER BY published_date DESC, id DESC", POST_COLS),
+        &format!("SELECT {} FROM posts WHERE status = 'published' ORDER BY published_date DESC, id DESC LIMIT ?1", POST_COLS),
     )?;
     let posts = stmt
-        .query_map([], from_row)?
+        .query_map(params![limit_value], from_row)?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(posts)
 }
@@ -550,7 +551,7 @@ mod tests {
         input.published_date = Some("2024-01-01");
         create_post(&db, &input).unwrap();
 
-        let published = get_published_posts(&db).unwrap();
+        let published = get_published_posts(&db, None).unwrap();
         assert_eq!(published.len(), 1);
         assert_eq!(published[0].title, "Published");
     }
