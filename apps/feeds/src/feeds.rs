@@ -34,6 +34,24 @@ pub struct ParsedEntry {
     pub published_at: i64,
 }
 
+const DERIVED_TITLE_MAX_CHARS: usize = 80;
+
+/// Build a synthetic title from an entry's HTML description when the feed
+/// publishes empty `<title>` tags (common for Micro.blog-style microposts).
+/// Strips tags, collapses whitespace, and truncates to a readable preview.
+fn derive_title_from_html(html: &str) -> String {
+    let fragment = Html::parse_fragment(html);
+    let text: String = fragment.root_element().text().collect();
+    let collapsed = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut chars = collapsed.chars();
+    let truncated: String = chars.by_ref().take(DERIVED_TITLE_MAX_CHARS).collect();
+    if chars.next().is_some() {
+        format!("{}…", truncated.trim_end())
+    } else {
+        truncated
+    }
+}
+
 fn build_client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
@@ -116,6 +134,20 @@ pub async fn fetch_feed(
                 .title
                 .as_ref()
                 .map(|t| t.content.clone())
+                .filter(|t| !t.trim().is_empty())
+                .or_else(|| {
+                    let html = entry
+                        .summary
+                        .as_ref()
+                        .map(|s| s.content.as_str())
+                        .or_else(|| entry.content.as_ref().and_then(|c| c.body.as_deref()))?;
+                    let derived = derive_title_from_html(html);
+                    if derived.is_empty() {
+                        None
+                    } else {
+                        Some(derived)
+                    }
+                })
                 .unwrap_or_default();
             let author = entry.authors.first().map(|a| a.name.clone());
             let guid = if !entry.id.is_empty() {
@@ -349,6 +381,29 @@ pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn derive_title_strips_html_and_collapses_whitespace() {
+        let html = "<p>If they launched   full-time\n\ngoblin mode, I&rsquo;d use it</p>";
+        assert_eq!(
+            derive_title_from_html(html),
+            "If they launched full-time goblin mode, I\u{2019}d use it"
+        );
+    }
+
+    #[test]
+    fn derive_title_truncates_long_text() {
+        let html = format!("<p>{}</p>", "a ".repeat(100));
+        let out = derive_title_from_html(&html);
+        assert!(out.ends_with('…'));
+        assert!(out.chars().count() <= DERIVED_TITLE_MAX_CHARS + 1);
+    }
+
+    #[test]
+    fn derive_title_empty_html_yields_empty() {
+        assert_eq!(derive_title_from_html(""), "");
+        assert_eq!(derive_title_from_html("<p>   </p>"), "");
+    }
 
     #[test]
     fn parse_opml_flat_outlines() {
