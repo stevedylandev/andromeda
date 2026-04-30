@@ -518,8 +518,6 @@ fn zip_response(bytes: Vec<u8>, filename: &str) -> axum::response::Response {
 pub async fn run(host: String, port: u16) {
     use handlers::{admin, api, public};
 
-    dotenvy::dotenv().ok();
-
     let db = db::init_db();
 
     if let Err(e) = db::prune_expired_sessions(&db) {
