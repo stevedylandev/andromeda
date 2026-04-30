@@ -1,12 +1,14 @@
 use askama::Template;
 use axum::{
     extract::DefaultBodyLimit,
+    http::Method,
     routing::{get, post},
     Router,
 };
 use pulldown_cmark::{Options, Parser, html};
 use rust_embed::Embed;
 use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::db::{self, Db, Page, Post, UploadedFile};
 
@@ -501,7 +503,7 @@ fn zip_response(bytes: Vec<u8>, filename: &str) -> axum::response::Response {
 // --- Router ---
 
 pub async fn run(host: String, port: u16) {
-    use handlers::{admin, public};
+    use handlers::{admin, api, public};
 
     dotenvy::dotenv().ok();
 
@@ -538,6 +540,16 @@ pub async fn run(host: String, port: u16) {
         site_url,
     });
 
+    let api_router = Router::new()
+        .route("/api/posts", get(api::list_posts))
+        .route("/api/posts/{slug}", get(api::get_post))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::GET])
+                .allow_headers(Any),
+        );
+
     let app = Router::new()
         // Public routes
         .route("/", get(public::public_index))
@@ -546,6 +558,8 @@ pub async fn run(host: String, port: u16) {
         .route("/custom-styles.css", get(public::serve_custom_css))
         .route("/{slug}", get(public::public_page))
         .route("/feed.xml", get(public::rss_feed))
+        // Public JSON API
+        .merge(api_router)
         // Admin auth
         .route("/admin/login", get(admin::get_login).post(admin::post_login))
         .route("/admin/logout", get(admin::get_logout))
