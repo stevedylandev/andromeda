@@ -1,12 +1,19 @@
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
+
+const DEFAULT_LIST_LIMIT: i64 = 30;
+
+#[derive(Deserialize)]
+pub struct ListPostsQuery {
+    limit: Option<i64>,
+}
 
 use super::super::*;
 use crate::db;
@@ -22,6 +29,7 @@ struct ApiPostSummary {
     canonical_url: Option<String>,
     lang: String,
     tags: Option<String>,
+    content: String,
     created_at: String,
     updated_at: String,
 }
@@ -60,6 +68,7 @@ impl From<Post> for ApiPostSummary {
             canonical_url: p.canonical_url,
             lang: p.lang,
             tags: p.tags,
+            content: p.content,
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
@@ -86,8 +95,12 @@ impl From<Post> for ApiPostDetail {
     }
 }
 
-pub async fn list_posts(State(state): State<Arc<AppState>>) -> Response {
-    match db::get_published_posts(&state.db) {
+pub async fn list_posts(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<ListPostsQuery>,
+) -> Response {
+    let limit = params.limit.unwrap_or(DEFAULT_LIST_LIMIT).max(0);
+    match db::get_published_posts(&state.db, Some(limit)) {
         Ok(posts) => {
             let posts = posts.into_iter().map(ApiPostSummary::from).collect();
             Json(ApiPostsList { posts }).into_response()
