@@ -162,6 +162,14 @@ struct AdminFilesTemplate {
     success: bool,
 }
 
+#[derive(Template)]
+#[template(path = "admin_import.html")]
+struct AdminImportTemplate {
+    error: Option<String>,
+    imported: Option<u32>,
+    skipped: Option<u32>,
+}
+
 // --- Query/Form structs ---
 
 #[derive(serde::Deserialize, Default)]
@@ -169,6 +177,8 @@ pub struct FlashQuery {
     pub error: Option<String>,
     #[serde(default)]
     pub success: bool,
+    pub imported: Option<u32>,
+    pub skipped: Option<u32>,
 }
 
 #[derive(serde::Deserialize)]
@@ -193,6 +203,7 @@ struct ParsedAttributes {
     meta_image: String,
     lang: String,
     tags: String,
+    status: String,
 }
 
 fn parse_attributes(text: &str) -> ParsedAttributes {
@@ -205,6 +216,7 @@ fn parse_attributes(text: &str) -> ParsedAttributes {
         meta_image: String::new(),
         lang: String::new(),
         tags: String::new(),
+        status: String::new(),
     };
     for line in text.lines() {
         if let Some((key, value)) = line.split_once(':') {
@@ -219,6 +231,7 @@ fn parse_attributes(text: &str) -> ParsedAttributes {
                 "meta_image" => attrs.meta_image = value,
                 "lang" => attrs.lang = value,
                 "tags" => attrs.tags = value,
+                "status" => attrs.status = value,
                 _ => {}
             }
         }
@@ -586,6 +599,11 @@ pub async fn run(host: String, port: u16) {
         // Admin downloads
         .route("/admin/downloads/posts", get(admin::admin_download_posts))
         .route("/admin/downloads/uploads", get(admin::admin_download_uploads))
+        // Admin import
+        .route(
+            "/admin/import",
+            get(admin::admin_import_form).post(admin::admin_import_posts),
+        )
         // Admin files
         .route("/admin/files", get(admin::admin_files))
         .route("/admin/files/upload", post(admin::admin_upload_file))
@@ -599,7 +617,7 @@ pub async fn run(host: String, port: u16) {
         // Fallback
         .fallback(get(public::fallback_handler))
         .with_state(state)
-        .layer(DefaultBodyLimit::max(11 * 1024 * 1024));
+        .layer(DefaultBodyLimit::max(51 * 1024 * 1024));
 
     let addr = format!("{}:{}", host, port);
     tracing::info!("Listening on http://{}", addr);
