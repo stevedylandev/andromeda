@@ -16,7 +16,7 @@ fn from_row<T: serde::de::DeserializeOwned>(row: &rusqlite::Row) -> rusqlite::Re
 pub struct Post {
     pub id: i64,
     pub short_id: String,
-    pub title: String,
+    pub title: Option<String>,
     pub slug: String,
     pub alias: Option<String>,
     pub canonical_url: Option<String>,
@@ -31,9 +31,31 @@ pub struct Post {
     pub updated_at: String,
 }
 
+impl Post {
+    pub fn display_title(&self) -> String {
+        if let Some(t) = self.title.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            return t.to_string();
+        }
+        let snippet: String = self
+            .content
+            .chars()
+            .filter(|c| !matches!(c, '\n' | '\r'))
+            .take(60)
+            .collect();
+        let snippet = snippet.trim();
+        if snippet.is_empty() {
+            "Untitled".to_string()
+        } else if self.content.chars().count() > 60 {
+            format!("{}…", snippet)
+        } else {
+            snippet.to_string()
+        }
+    }
+}
+
 #[derive(Serialize)]
 pub struct PostInput<'a> {
-    pub title: &'a str,
+    pub title: Option<&'a str>,
     pub slug: &'a str,
     pub content: &'a str,
     pub status: &'a str,
@@ -74,7 +96,7 @@ const SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS posts (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
         short_id        TEXT NOT NULL UNIQUE,
-        title           TEXT NOT NULL,
+        title           TEXT,
         slug            TEXT NOT NULL UNIQUE,
         alias           TEXT,
         canonical_url   TEXT,
@@ -142,6 +164,7 @@ pub fn init_db() -> Db {
     let conn = Connection::open(&path).expect("Failed to open database");
 
     conn.execute_batch(SCHEMA).expect("Failed to create tables");
+    migrate_post_title_nullable(&conn).expect("Failed to migrate posts.title");
 
     for (key, value) in DEFAULT_SETTINGS {
         conn.execute(
@@ -152,6 +175,44 @@ pub fn init_db() -> Db {
     }
 
     Arc::new(Mutex::new(conn))
+}
+
+fn migrate_post_title_nullable(conn: &Connection) -> rusqlite::Result<()> {
+    let title_notnull: i64 = conn
+        .query_row(
+            "SELECT \"notnull\" FROM pragma_table_info('posts') WHERE name = 'title'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if title_notnull == 0 {
+        return Ok(());
+    }
+    conn.execute_batch(
+        "BEGIN;
+         CREATE TABLE posts_new (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            short_id        TEXT NOT NULL UNIQUE,
+            title           TEXT,
+            slug            TEXT NOT NULL UNIQUE,
+            alias           TEXT,
+            canonical_url   TEXT,
+            published_date  TEXT,
+            meta_description TEXT,
+            meta_image      TEXT,
+            lang            TEXT NOT NULL DEFAULT 'en',
+            tags            TEXT,
+            content         TEXT NOT NULL,
+            status          TEXT NOT NULL DEFAULT 'draft',
+            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+         );
+         INSERT INTO posts_new (id, short_id, title, slug, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, content, status, created_at, updated_at)
+            SELECT id, short_id, title, slug, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, content, status, created_at, updated_at FROM posts;
+         DROP TABLE posts;
+         ALTER TABLE posts_new RENAME TO posts;
+         COMMIT;",
+    )
 }
 
 // --- Post CRUD ---
@@ -484,7 +545,7 @@ mod tests {
 
     fn test_post_input<'a>(title: &'a str, slug: &'a str, content: &'a str, status: &'a str) -> PostInput<'a> {
         PostInput {
-            title,
+            title: Some(title),
             slug,
             content,
             status,
@@ -504,12 +565,33 @@ mod tests {
     fn create_and_get_post() {
         let db = test_db();
         let post = create_post(&db, &test_post_input("Hello World", "hello-world", "# Hello", "draft")).unwrap();
-        assert_eq!(post.title, "Hello World");
+        assert_eq!(post.title.as_deref(), Some("Hello World"));
         assert_eq!(post.slug, "hello-world");
         assert_eq!(post.status, "draft");
 
         let fetched = get_post_by_short_id(&db, &post.short_id).unwrap().unwrap();
-        assert_eq!(fetched.title, "Hello World");
+        assert_eq!(fetched.title.as_deref(), Some("Hello World"));
+    }
+
+    #[test]
+    fn create_post_without_title() {
+        let db = test_db();
+        let input = PostInput {
+            title: None,
+            slug: "no-title",
+            content: "just a quick thought",
+            status: "draft",
+            alias: None,
+            canonical_url: None,
+            published_date: None,
+            meta_description: None,
+            meta_image: None,
+            lang: "en",
+            tags: None,
+        };
+        let post = create_post(&db, &input).unwrap();
+        assert!(post.title.is_none());
+        assert_eq!(post.display_title(), "just a quick thought");
     }
 
     #[test]
@@ -520,7 +602,7 @@ mod tests {
         create_post(&db, &input).unwrap();
 
         let post = get_post_by_slug(&db, "test-slug").unwrap().unwrap();
-        assert_eq!(post.title, "Test");
+        assert_eq!(post.title.as_deref(), Some("Test"));
     }
 
     #[test]
@@ -539,8 +621,8 @@ mod tests {
 
         let all = get_all_posts(&db).unwrap();
         assert_eq!(all.len(), 2);
-        assert_eq!(all[0].title, "Second");
-        assert_eq!(all[1].title, "First");
+        assert_eq!(all[0].title.as_deref(), Some("Second"));
+        assert_eq!(all[1].title.as_deref(), Some("First"));
     }
 
     #[test]
@@ -553,7 +635,7 @@ mod tests {
 
         let published = get_published_posts(&db, None).unwrap();
         assert_eq!(published.len(), 1);
-        assert_eq!(published[0].title, "Published");
+        assert_eq!(published[0].title.as_deref(), Some("Published"));
     }
 
     #[test]

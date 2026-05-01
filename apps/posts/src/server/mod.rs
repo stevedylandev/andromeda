@@ -423,7 +423,7 @@ fn render_latest_posts_embed(posts: &[&Post]) -> String {
         html.push_str(&format!(
             r#"<a href="/posts/{slug}" class="post-item"><div class="post-item-info"><span class="post-title">{title}</span>"#,
             slug = post.slug,
-            title = post.title,
+            title = post.display_title(),
         ));
         if let Some(ref tags) = post.tags {
             if !tags.is_empty() {
@@ -449,7 +449,11 @@ fn render_latest_posts_embed(posts: &[&Post]) -> String {
 
 fn post_to_markdown(post: &Post) -> String {
     use std::fmt::Write;
-    let mut out = format!("---\ntitle: {}\nslug: {}\nstatus: {}", post.title, post.slug, post.status);
+    let mut out = String::from("---");
+    if let Some(t) = &post.title {
+        let _ = write!(out, "\ntitle: {}", t);
+    }
+    let _ = write!(out, "\nslug: {}\nstatus: {}", post.slug, post.status);
     let optional_fields: &[(&str, &Option<String>)] = &[
         ("published_date", &post.published_date),
         ("tags", &post.tags),

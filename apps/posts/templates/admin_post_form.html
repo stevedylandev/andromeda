@@ -8,7 +8,7 @@
   {% match post %}
     {% when Some with (p) %}
       <form method="POST" action="/admin/posts/{{ p.short_id }}" class="form post-form">
-        <textarea name="attributes" class="attributes-textarea">title: {{ p.title }}
+        <textarea name="attributes" class="attributes-textarea">title: {{ p.title.as_deref().unwrap_or("") }}
 slug: {{ p.slug }}
 {%- if p.published_date.is_some() %}
 published_date: {{ p.published_date.as_deref().unwrap_or_default() }}
