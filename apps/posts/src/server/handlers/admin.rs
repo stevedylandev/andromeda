@@ -101,14 +101,7 @@ pub async fn admin_create_post(
 ) -> Response {
     let attrs = parse_attributes(&form.attributes);
     let title = attrs.title.trim();
-    if title.is_empty() {
-        return Redirect::to("/admin/posts/new?error=Title+is+required").into_response();
-    }
-    let slug = if attrs.slug.trim().is_empty() {
-        slugify(title)
-    } else {
-        attrs.slug.trim().to_string()
-    };
+    let slug = derive_slug(title, attrs.slug.trim());
 
     let status = if form.action == "publish" { "published" } else { "draft" };
     let lang = if attrs.lang.trim().is_empty() { "en" } else { attrs.lang.trim() };
@@ -119,7 +112,7 @@ pub async fn admin_create_post(
     };
 
     let input = db::PostInput {
-        title,
+        title: opt_str(title),
         slug: &slug,
         content: &form.content,
         status,
@@ -138,6 +131,17 @@ pub async fn admin_create_post(
             Redirect::to("/admin/posts/new?error=Failed+to+create+post").into_response()
         }
     }
+}
+
+fn derive_slug(title: &str, slug: &str) -> String {
+    if !slug.is_empty() {
+        return slug.to_string();
+    }
+    let from_title = slugify(title);
+    if !from_title.is_empty() {
+        return from_title;
+    }
+    nanoid::nanoid!(10)
 }
 
 pub async fn admin_edit_post(
@@ -168,15 +172,7 @@ pub async fn admin_update_post(
 ) -> Response {
     let attrs = parse_attributes(&form.attributes);
     let title = attrs.title.trim();
-    if title.is_empty() {
-        return Redirect::to(&format!("/admin/posts/{}/edit?error=Title+is+required", short_id))
-            .into_response();
-    }
-    let slug = if attrs.slug.trim().is_empty() {
-        slugify(title)
-    } else {
-        attrs.slug.trim().to_string()
-    };
+    let slug = derive_slug(title, attrs.slug.trim());
 
     let status = if form.action == "publish" { "published" } else { "draft" };
     let lang = if attrs.lang.trim().is_empty() { "en" } else { attrs.lang.trim() };
@@ -187,7 +183,7 @@ pub async fn admin_update_post(
     };
 
     let input = db::PostInput {
-        title,
+        title: opt_str(title),
         slug: &slug,
         content: &form.content,
         status,
@@ -748,15 +744,8 @@ fn import_one(
     } else {
         attrs.title.trim().to_string()
     };
-    if title.is_empty() {
-        return false;
-    }
 
-    let slug = if attrs.slug.trim().is_empty() {
-        slugify(&title)
-    } else {
-        attrs.slug.trim().to_string()
-    };
+    let slug = derive_slug(&title, attrs.slug.trim());
     if slug.is_empty() {
         return false;
     }
@@ -790,7 +779,7 @@ fn import_one(
     };
 
     let input = db::PostInput {
-        title: &title,
+        title: opt_str(&title),
         slug: &slug,
         content: body,
         status,

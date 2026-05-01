@@ -21,7 +21,7 @@ use crate::db;
 #[derive(Serialize)]
 struct ApiPostSummary {
     short_id: String,
-    title: String,
+    title: Option<String>,
     slug: String,
     published_date: Option<String>,
     meta_description: Option<String>,
@@ -37,7 +37,7 @@ struct ApiPostSummary {
 #[derive(Serialize)]
 struct ApiPostDetail {
     short_id: String,
-    title: String,
+    title: Option<String>,
     slug: String,
     alias: Option<String>,
     canonical_url: Option<String>,

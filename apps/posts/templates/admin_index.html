@@ -12,7 +12,7 @@
       {% for post in posts %}
         <div class="admin-list-item">
           <div class="admin-list-info">
-            <a href="/admin/posts/{{ post.short_id }}/edit" class="admin-list-title">{{ post.title }}</a>
+            <a href="/admin/posts/{{ post.short_id }}/edit" class="admin-list-title">{{ post.display_title() }}</a>
             <div class="admin-list-meta">
               <span class="status-badge {% if post.status == "published" %}status-published{% else %}status-draft{% endif %}">{{ post.status }}</span>
               <span class="admin-list-date">{{ post.updated_at }}</span>

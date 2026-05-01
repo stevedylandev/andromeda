@@ -215,7 +215,10 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
     let mut items = String::new();
     for post in &posts {
         let link = format!("{}/posts/{}", site_url, xml_escape(&post.slug));
-        let title = xml_escape(&post.title);
+        let title_elem = match post.title.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            Some(t) => format!("      <title>{}</title>\n", xml_escape(t)),
+            None => String::new(),
+        };
         let description = match &post.meta_description {
             Some(d) if !d.is_empty() => xml_escape(d),
             _ => {
@@ -228,7 +231,7 @@ pub async fn rss_feed(State(state): State<Arc<AppState>>) -> Response {
         let guid = format!("{}/posts/{}", site_url, xml_escape(&post.slug));
 
         items.push_str(&format!(
-            "    <item>\n      <title>{title}</title>\n      <link>{link}</link>\n      <guid>{guid}</guid>\n      <description>{description}</description>\n      <pubDate>{pub_date}</pubDate>\n    </item>\n"
+            "    <item>\n{title_elem}      <link>{link}</link>\n      <guid>{guid}</guid>\n      <description>{description}</description>\n      <pubDate>{pub_date}</pubDate>\n    </item>\n"
         ));
     }
 

@@ -25,7 +25,7 @@
     {% for post in posts %}
       <a href="/posts/{{ post.slug }}" class="post-item">
         <div class="post-item-info">
-          <span class="post-title">{{ post.title }}</span>
+          <span class="post-title">{{ post.display_title() }}</span>
         </div>
         {% if post.published_date.is_some() %}
           <time class="post-date">{{ post.published_date.as_deref().unwrap_or_default() }}</time>
