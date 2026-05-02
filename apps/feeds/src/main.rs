@@ -15,7 +15,7 @@ use andromeda_db::{
 use askama::Template;
 use axum::{
     extract::{Multipart, Path, Query, State},
-    http::{header, HeaderMap, StatusCode},
+    http::{header, HeaderMap, Method, StatusCode},
     response::{Html, IntoResponse, Json, Redirect, Response},
     routing::{delete, get, post},
     Form, Router,
@@ -24,6 +24,7 @@ use chrono::DateTime;
 use rust_embed::Embed;
 use rusqlite::Connection;
 use serde::Deserialize;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::poller::POLL_INTERVAL_KEY;
 
@@ -640,7 +641,13 @@ async fn main() {
             "/api/settings",
             get(api::get_settings).put(api::update_settings),
         )
-        .route("/api/discover", post(api::discover));
+        .route("/api/discover", post(api::discover))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods([Method::GET])
+                .allow_headers(Any),
+        );
 
     let app = Router::new()
         .route("/", get(index_handler))
