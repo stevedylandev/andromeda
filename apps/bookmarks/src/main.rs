@@ -1,5 +1,6 @@
 mod auth;
 mod db;
+mod favicon;
 
 use std::sync::{Arc, Mutex};
 
@@ -75,6 +76,7 @@ struct AdminLinkRow {
     short_id: String,
     title: String,
     url: String,
+    favicon_url: Option<String>,
     category: String,
 }
 
@@ -176,6 +178,7 @@ async fn admin_handler(
                 short_id: l.short_id,
                 title: l.title,
                 url: l.url,
+                favicon_url: l.favicon_url,
                 category: cat,
             }
         })
@@ -264,13 +267,21 @@ async fn admin_add_link(
             return Redirect::to("/admin?error=Server+error").into_response();
         }
     };
-    match db::create_link(&state.db, title, url, cat.id) {
-        Ok(_) => Redirect::to("/admin?success=Link+added").into_response(),
+    let link = match db::create_link(&state.db, title, url, None, cat.id) {
+        Ok(l) => l,
         Err(e) => {
             tracing::error!("create link: {e}");
-            Redirect::to("/admin?error=Failed+to+add+link").into_response()
+            return Redirect::to("/admin?error=Failed+to+add+link").into_response();
         }
-    }
+    };
+    let db = state.db.clone();
+    let url_owned = url.to_string();
+    tokio::spawn(async move {
+        if let Some(fav) = favicon::discover_favicon(&url_owned).await {
+            let _ = db::update_link_favicon(&db, link.id, Some(&fav));
+        }
+    });
+    Redirect::to("/admin?success=Link+added").into_response()
 }
 
 async fn admin_delete_link(
@@ -370,13 +381,18 @@ async fn api_create_link(
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
     };
-    match db::create_link(&state.db, title, url, cat.id) {
-        Ok(link) => (StatusCode::CREATED, Json(link)).into_response(),
+    let mut link = match db::create_link(&state.db, title, url, None, cat.id) {
+        Ok(l) => l,
         Err(e) => {
             tracing::error!("create link: {e}");
-            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
+    };
+    if let Some(fav) = favicon::discover_favicon(url).await {
+        let _ = db::update_link_favicon(&state.db, link.id, Some(&fav));
+        link.favicon_url = Some(fav);
     }
+    (StatusCode::CREATED, Json(link)).into_response()
 }
 
 async fn require_api_key(
@@ -433,6 +449,32 @@ async fn main() {
         api_key: std::env::var("BOOKMARKS_API_KEY").ok().filter(|s| !s.is_empty()),
         cookie_secure,
     });
+
+    {
+        let db = state.db.clone();
+        tokio::spawn(async move {
+            let pending = match db::list_links_missing_favicon(&db) {
+                Ok(rows) => rows,
+                Err(e) => {
+                    tracing::error!("favicon backfill query: {e}");
+                    return;
+                }
+            };
+            if pending.is_empty() {
+                return;
+            }
+            tracing::info!("favicon backfill: {} link(s)", pending.len());
+            for (id, url) in pending {
+                if let Some(fav) = favicon::discover_favicon(&url).await {
+                    if let Err(e) = db::update_link_favicon(&db, id, Some(&fav)) {
+                        tracing::error!("favicon backfill update {id}: {e}");
+                    }
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+            }
+            tracing::info!("favicon backfill: done");
+        });
+    }
 
     let api_authed = Router::new()
         .route("/api/links", post(api_create_link))

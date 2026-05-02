@@ -41,7 +41,12 @@
       <ul class="item-list">
         {% for link in group.links %}
         <li class="item">
-          <a class="item-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
+          <a class="item-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+            {% if let Some(fav) = link.favicon_url %}
+            <img class="favicon" src="{{ fav }}" alt="" width="16" height="16" loading="lazy" />
+            {% endif %}
+            {{ link.title }}
+          </a>
           <div class="item-meta">{{ link.url }}</div>
         </li>
         {% endfor %}
