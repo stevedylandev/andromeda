@@ -110,7 +110,12 @@
         {% for link in links %}
         <li class="admin-list-item">
           <div class="admin-list-info">
-            <a class="admin-list-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">{{ link.title }}</a>
+            <a class="admin-list-title" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+              {% if let Some(fav) = link.favicon_url %}
+              <img class="favicon" src="{{ fav }}" alt="" width="16" height="16" loading="lazy" />
+              {% endif %}
+              {{ link.title }}
+            </a>
             <div class="admin-list-meta">
               <span class="tag">{{ link.category }}</span>
             </div>

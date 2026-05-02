@@ -13,12 +13,13 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 CREATE TABLE IF NOT EXISTS links (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    short_id    TEXT NOT NULL UNIQUE,
-    title       TEXT NOT NULL,
-    url         TEXT NOT NULL,
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-    created_at  INTEGER NOT NULL
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    short_id     TEXT NOT NULL UNIQUE,
+    title        TEXT NOT NULL,
+    url          TEXT NOT NULL,
+    favicon_url  TEXT,
+    category_id  INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    created_at   INTEGER NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_links_category ON links(category_id, created_at DESC);
@@ -38,6 +39,7 @@ pub struct Link {
     pub short_id: String,
     pub title: String,
     pub url: String,
+    pub favicon_url: Option<String>,
     pub category_id: i64,
     pub created_at: i64,
 }
@@ -56,6 +58,12 @@ pub fn migrate(db: &Db) -> Result<(), DbError> {
             "UPDATE categories SET position = id WHERE position = 0",
             [],
         )?;
+    }
+    let has_favicon: bool = conn
+        .prepare("SELECT 1 FROM pragma_table_info('links') WHERE name = 'favicon_url'")?
+        .exists([])?;
+    if !has_favicon {
+        conn.execute("ALTER TABLE links ADD COLUMN favicon_url TEXT", [])?;
     }
     Ok(())
 }
@@ -165,7 +173,7 @@ pub fn get_category_by_name(db: &Db, name: &str) -> Result<Option<Category>, DbE
 pub fn list_links(db: &Db) -> Result<Vec<Link>, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let mut stmt = conn.prepare(
-        "SELECT id, short_id, title, url, category_id, created_at FROM links ORDER BY created_at DESC",
+        "SELECT id, short_id, title, url, favicon_url, category_id, created_at FROM links ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(Link {
@@ -173,29 +181,55 @@ pub fn list_links(db: &Db) -> Result<Vec<Link>, DbError> {
             short_id: row.get(1)?,
             title: row.get(2)?,
             url: row.get(3)?,
-            category_id: row.get(4)?,
-            created_at: row.get(5)?,
+            favicon_url: row.get(4)?,
+            category_id: row.get(5)?,
+            created_at: row.get(6)?,
         })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
-pub fn create_link(db: &Db, title: &str, url: &str, category_id: i64) -> Result<Link, DbError> {
+pub fn create_link(
+    db: &Db,
+    title: &str,
+    url: &str,
+    favicon_url: Option<&str>,
+    category_id: i64,
+) -> Result<Link, DbError> {
     let now = chrono::Utc::now().timestamp();
     let short_id = nanoid!(10);
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     conn.execute(
-        "INSERT INTO links (short_id, title, url, category_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![short_id, title, url, category_id, now],
+        "INSERT INTO links (short_id, title, url, favicon_url, category_id, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![short_id, title, url, favicon_url, category_id, now],
     )?;
     Ok(Link {
         id: conn.last_insert_rowid(),
         short_id,
         title: title.to_string(),
         url: url.to_string(),
+        favicon_url: favicon_url.map(|s| s.to_string()),
         category_id,
         created_at: now,
     })
+}
+
+pub fn list_links_missing_favicon(db: &Db) -> Result<Vec<(i64, String)>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let mut stmt = conn.prepare(
+        "SELECT id, url FROM links WHERE favicon_url IS NULL OR favicon_url = ''",
+    )?;
+    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+pub fn update_link_favicon(db: &Db, id: i64, favicon_url: Option<&str>) -> Result<(), DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    conn.execute(
+        "UPDATE links SET favicon_url = ?1 WHERE id = ?2",
+        params![favicon_url, id],
+    )?;
+    Ok(())
 }
 
 pub fn delete_link_by_short_id(db: &Db, short_id: &str) -> Result<bool, DbError> {

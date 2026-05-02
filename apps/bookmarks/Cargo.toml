@@ -26,3 +26,6 @@ andromeda-db = { workspace = true, features = ["axum", "session"] }
 andromeda-darkmatter-css = { workspace = true }
 askama = "0.13"
 chrono = "0.4"
+reqwest = { version = "0.12" }
+scraper = "0.22"
+url = "2"
