@@ -40,7 +40,7 @@ impl Post {
             .content
             .chars()
             .filter(|c| !matches!(c, '\n' | '\r'))
-            .take(60)
+            .take(25)
             .collect();
         let snippet = snippet.trim();
         if snippet.is_empty() {
