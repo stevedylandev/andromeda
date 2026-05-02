@@ -564,6 +564,7 @@ async fn main() {
     conn.execute_batch(SESSION_SCHEMA).expect("session schema");
     conn.execute_batch(fdb::FEEDS_SCHEMA).expect("feeds schema");
     let db: Db = Arc::new(Mutex::new(conn));
+    fdb::migrate_feeds(&db).expect("feeds migration");
 
     let cookie_secure = std::env::var("COOKIE_SECURE")
         .map(|v| v.eq_ignore_ascii_case("true"))
