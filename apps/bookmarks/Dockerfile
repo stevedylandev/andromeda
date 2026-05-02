@@ -13,6 +13,7 @@ COPY . .
 RUN cargo build --release -p bookmarks
 
 FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/bookmarks /usr/local/bin/bookmarks
 WORKDIR /data
 EXPOSE 3000
