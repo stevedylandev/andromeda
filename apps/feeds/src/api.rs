@@ -79,7 +79,6 @@ pub async fn mark_item_unread(
 // ── Subscriptions ─────────────────────────────────────────────────────
 
 pub async fn list_subscriptions(
-    _auth: ApiAuth,
     State(state): State<Arc<AppState>>,
 ) -> Response {
     match fdb::list_subscriptions(&state.db) {
