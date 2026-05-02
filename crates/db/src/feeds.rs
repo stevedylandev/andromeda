@@ -15,6 +15,7 @@ pub const FEEDS_SCHEMA: &str = "
         feed_url        TEXT NOT NULL UNIQUE,
         title           TEXT NOT NULL,
         site_url        TEXT,
+        favicon_url     TEXT,
         category_id     INTEGER REFERENCES categories(id) ON DELETE SET NULL,
         etag            TEXT,
         last_modified   TEXT,
@@ -59,6 +60,7 @@ pub struct Subscription {
     pub feed_url: String,
     pub title: String,
     pub site_url: Option<String>,
+    pub favicon_url: Option<String>,
     pub category_id: Option<i64>,
     pub etag: Option<String>,
     pub last_modified: Option<String>,
@@ -121,16 +123,47 @@ fn subscription_from_row(row: &Row) -> rusqlite::Result<Subscription> {
         feed_url: row.get(1)?,
         title: row.get(2)?,
         site_url: row.get(3)?,
-        category_id: row.get(4)?,
-        etag: row.get(5)?,
-        last_modified: row.get(6)?,
-        last_fetched_at: row.get(7)?,
-        last_error: row.get(8)?,
-        added_at: row.get(9)?,
+        favicon_url: row.get(4)?,
+        category_id: row.get(5)?,
+        etag: row.get(6)?,
+        last_modified: row.get(7)?,
+        last_fetched_at: row.get(8)?,
+        last_error: row.get(9)?,
+        added_at: row.get(10)?,
     })
 }
 
-const SUB_COLS: &str = "id, feed_url, title, site_url, category_id, etag, last_modified, last_fetched_at, last_error, added_at";
+const SUB_COLS: &str = "id, feed_url, title, site_url, favicon_url, category_id, etag, last_modified, last_fetched_at, last_error, added_at";
+
+/// Add columns introduced after the initial schema. Idempotent.
+pub fn migrate_feeds(db: &Db) -> Result<(), DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let has_favicon: bool = conn
+        .query_row(
+            "SELECT 1 FROM pragma_table_info('subscriptions') WHERE name = 'favicon_url'",
+            [],
+            |_| Ok(true),
+        )
+        .optional()?
+        .unwrap_or(false);
+    if !has_favicon {
+        conn.execute("ALTER TABLE subscriptions ADD COLUMN favicon_url TEXT", [])?;
+    }
+    Ok(())
+}
+
+pub fn update_subscription_favicon(
+    db: &Db,
+    id: i64,
+    favicon_url: Option<&str>,
+) -> Result<(), DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    conn.execute(
+        "UPDATE subscriptions SET favicon_url = ?1 WHERE id = ?2",
+        params![favicon_url, id],
+    )?;
+    Ok(())
+}
 
 // ── Categories ────────────────────────────────────────────────────────
 

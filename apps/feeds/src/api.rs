@@ -12,7 +12,7 @@ use serde::Deserialize;
 use andromeda_db::Db;
 
 use crate::auth::ApiAuth;
-use crate::feeds::{discover_feeds, fetch_feed, parse_opml, ParsedEntry};
+use crate::feeds::{discover_favicon, discover_feeds, fetch_feed, parse_opml, ParsedEntry};
 use crate::poller::POLL_INTERVAL_KEY;
 use crate::AppState;
 
@@ -151,7 +151,7 @@ pub async fn add_subscription(
         Err(resp) => return resp,
     };
 
-    let sub = match fdb::insert_subscription(
+    let mut sub = match fdb::insert_subscription(
         &state.db,
         feed_url,
         &title,
@@ -161,6 +161,13 @@ pub async fn add_subscription(
         Ok(s) => s,
         Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
+
+    if let Some(site) = site_url.as_deref() {
+        if let Some(fav) = discover_favicon(site).await {
+            let _ = fdb::update_subscription_favicon(&state.db, sub.id, Some(&fav));
+            sub.favicon_url = Some(fav);
+        }
+    }
 
     seed_subscription(
         &state.db,
@@ -396,11 +403,21 @@ pub async fn import_opml_str(state: Arc<AppState>, content: &str) -> ImportSumma
                 imported += 1;
                 let state_cloned = Arc::clone(&state);
                 let sem_cloned = Arc::clone(&sem);
+                let site = site_url.clone();
                 seed_handles.push(tokio::spawn(async move {
                     let _permit = match sem_cloned.acquire().await {
                         Ok(p) => p,
                         Err(_) => return None,
                     };
+                    if let Some(site) = site.as_deref() {
+                        if let Some(fav) = discover_favicon(site).await {
+                            let _ = fdb::update_subscription_favicon(
+                                &state_cloned.db,
+                                sub.id,
+                                Some(&fav),
+                            );
+                        }
+                    }
                     crate::poller::poll_one(&state_cloned, &sub)
                         .await
                         .err()

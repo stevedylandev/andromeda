@@ -300,6 +300,34 @@ pub fn parse_opml(content: &str) -> Vec<OpmlEntry> {
     entries
 }
 
+/// Best-effort favicon URL for a site. Parses `<link rel="icon">` from the
+/// page HTML, falls back to `/favicon.ico` at the site root. Returns None if
+/// the URL is invalid.
+pub async fn discover_favicon(site_url: &str) -> Option<String> {
+    let parsed = Url::parse(site_url).ok()?;
+    let client = build_client();
+
+    if let Ok(resp) = client.get(site_url).send().await {
+        if let Ok(body) = resp.text().await {
+            let document = Html::parse_document(&body);
+            let selector = Selector::parse(
+                r#"link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]"#,
+            )
+            .ok()?;
+            if let Some(href) = document
+                .select(&selector)
+                .find_map(|el| el.attr("href"))
+            {
+                if let Ok(resolved) = parsed.join(href) {
+                    return Some(resolved.to_string());
+                }
+            }
+        }
+    }
+
+    parsed.join("/favicon.ico").ok().map(|u| u.to_string())
+}
+
 pub async fn discover_feeds(base_url: &str) -> Result<Vec<String>, String> {
     let parsed = Url::parse(base_url).map_err(|e| format!("Invalid URL: {e}"))?;
     let client = build_client();
