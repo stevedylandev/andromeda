@@ -487,17 +487,35 @@ pub async fn admin_upload_file(
         format!("{}.{}", id, ext)
     };
 
-    let path = std::path::PathBuf::from(&state.uploads_dir).join(&stored_name);
-    if let Err(e) = tokio::fs::write(&path, &bytes).await {
-        tracing::error!("Failed to write file: {}", e);
-        return Redirect::to("/admin/files?error=Failed+to+save+file").into_response();
-    }
+    let backend = if let Some(r2) = &state.r2 {
+        if let Err(e) = r2.put_object(&stored_name, &content_type, bytes.clone()).await {
+            tracing::error!("Failed to upload to R2: {}", e);
+            return Redirect::to("/admin/files?error=Failed+to+save+file").into_response();
+        }
+        "r2"
+    } else {
+        let path = std::path::PathBuf::from(&state.uploads_dir).join(&stored_name);
+        if let Err(e) = tokio::fs::write(&path, &bytes).await {
+            tracing::error!("Failed to write file: {}", e);
+            return Redirect::to("/admin/files?error=Failed+to+save+file").into_response();
+        }
+        "local"
+    };
 
-    match db::create_file(&state.db, &stored_name, &original_name, &content_type, bytes.len() as i64) {
+    match db::create_file(&state.db, &stored_name, &original_name, &content_type, bytes.len() as i64, backend) {
         Ok(_) => Redirect::to("/admin/files?success=true").into_response(),
         Err(e) => {
             tracing::error!("Failed to record file: {}", e);
-            let _ = tokio::fs::remove_file(&path).await;
+            if backend == "r2" {
+                if let Some(r2) = &state.r2 {
+                    if let Err(e) = r2.delete_object(&stored_name).await {
+                        tracing::warn!("Failed to roll back R2 upload: {}", e);
+                    }
+                }
+            } else {
+                let path = std::path::PathBuf::from(&state.uploads_dir).join(&stored_name);
+                let _ = tokio::fs::remove_file(&path).await;
+            }
             Redirect::to("/admin/files?error=Failed+to+record+file").into_response()
         }
     }
@@ -510,9 +528,22 @@ pub async fn admin_delete_file(
 ) -> Response {
     match db::delete_file(&state.db, &short_id) {
         Ok(Some(file)) => {
-            let path = std::path::PathBuf::from(&state.uploads_dir).join(&file.filename);
-            if let Err(e) = tokio::fs::remove_file(&path).await {
-                tracing::warn!("Failed to delete file from disk: {}", e);
+            if file.storage_backend == "r2" {
+                if let Some(r2) = &state.r2 {
+                    if let Err(e) = r2.delete_object(&file.filename).await {
+                        tracing::warn!("Failed to delete file from R2: {}", e);
+                    }
+                } else {
+                    tracing::warn!(
+                        "File {} stored in R2 but R2 not configured; skipping remote delete",
+                        file.filename
+                    );
+                }
+            } else {
+                let path = std::path::PathBuf::from(&state.uploads_dir).join(&file.filename);
+                if let Err(e) = tokio::fs::remove_file(&path).await {
+                    tracing::warn!("Failed to delete file from disk: {}", e);
+                }
             }
             Redirect::to("/admin/files").into_response()
         }

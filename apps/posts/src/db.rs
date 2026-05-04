@@ -90,6 +90,7 @@ pub struct UploadedFile {
     pub content_type: String,
     pub size: i64,
     pub created_at: String,
+    pub storage_backend: String,
 }
 
 const SCHEMA: &str = "
@@ -135,13 +136,14 @@ const SCHEMA: &str = "
     );
 
     CREATE TABLE IF NOT EXISTS files (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        short_id      TEXT NOT NULL UNIQUE,
-        filename      TEXT NOT NULL UNIQUE,
-        original_name TEXT NOT NULL,
-        content_type  TEXT NOT NULL DEFAULT 'application/octet-stream',
-        size          INTEGER NOT NULL,
-        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        short_id        TEXT NOT NULL UNIQUE,
+        filename        TEXT NOT NULL UNIQUE,
+        original_name   TEXT NOT NULL,
+        content_type    TEXT NOT NULL DEFAULT 'application/octet-stream',
+        size            INTEGER NOT NULL,
+        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+        storage_backend TEXT NOT NULL DEFAULT 'local'
     );
 ";
 
@@ -165,6 +167,7 @@ pub fn init_db() -> Db {
 
     conn.execute_batch(SCHEMA).expect("Failed to create tables");
     migrate_post_title_nullable(&conn).expect("Failed to migrate posts.title");
+    migrate_files_storage_backend(&conn).expect("Failed to migrate files.storage_backend");
 
     for (key, value) in DEFAULT_SETTINGS {
         conn.execute(
@@ -213,6 +216,24 @@ fn migrate_post_title_nullable(conn: &Connection) -> rusqlite::Result<()> {
          ALTER TABLE posts_new RENAME TO posts;
          COMMIT;",
     )
+}
+
+fn migrate_files_storage_backend(conn: &Connection) -> rusqlite::Result<()> {
+    let exists: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('files') WHERE name = 'storage_backend'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or(0);
+    if exists > 0 {
+        return Ok(());
+    }
+    conn.execute(
+        "ALTER TABLE files ADD COLUMN storage_backend TEXT NOT NULL DEFAULT 'local'",
+        [],
+    )?;
+    Ok(())
 }
 
 // --- Post CRUD ---
@@ -480,7 +501,7 @@ pub fn set_setting(db: &Db, key: &str, value: &str) -> Result<(), DbError> {
 
 // --- File CRUD ---
 
-const FILE_COLS: &str = "id, short_id, filename, original_name, content_type, size, created_at";
+const FILE_COLS: &str = "id, short_id, filename, original_name, content_type, size, created_at, storage_backend";
 
 pub fn create_file(
     db: &Db,
@@ -488,12 +509,13 @@ pub fn create_file(
     original_name: &str,
     content_type: &str,
     size: i64,
+    storage_backend: &str,
 ) -> Result<UploadedFile, DbError> {
     let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
     let short_id = nanoid!(10);
     conn.execute(
-        "INSERT INTO files (short_id, filename, original_name, content_type, size) VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![short_id, filename, original_name, content_type, size],
+        "INSERT INTO files (short_id, filename, original_name, content_type, size, storage_backend) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        params![short_id, filename, original_name, content_type, size, storage_backend],
     )?;
     let id = conn.last_insert_rowid();
     let file = conn.query_row(
@@ -501,6 +523,18 @@ pub fn create_file(
         params![id],
         from_row,
     )?;
+    Ok(file)
+}
+
+pub fn get_file_by_filename(db: &Db, filename: &str) -> Result<Option<UploadedFile>, DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    let file = conn
+        .query_row(
+            &format!("SELECT {} FROM files WHERE filename = ?1", FILE_COLS),
+            params![filename],
+            from_row,
+        )
+        .optional()?;
     Ok(file)
 }
 
@@ -764,7 +798,7 @@ mod tests {
     #[test]
     fn create_and_get_files() {
         let db = test_db();
-        let file = create_file(&db, "abc123.jpg", "photo.jpg", "image/jpeg", 1024).unwrap();
+        let file = create_file(&db, "abc123.jpg", "photo.jpg", "image/jpeg", 1024, "local").unwrap();
         assert_eq!(file.filename, "abc123.jpg");
         assert_eq!(file.original_name, "photo.jpg");
         assert_eq!(file.size, 1024);
@@ -776,7 +810,7 @@ mod tests {
     #[test]
     fn delete_file_returns_deleted() {
         let db = test_db();
-        let file = create_file(&db, "f.txt", "f.txt", "text/plain", 10).unwrap();
+        let file = create_file(&db, "f.txt", "f.txt", "text/plain", 10, "local").unwrap();
         let deleted = delete_file(&db, &file.short_id).unwrap();
         assert!(deleted.is_some());
         assert_eq!(deleted.unwrap().filename, "f.txt");

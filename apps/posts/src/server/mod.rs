@@ -11,6 +11,7 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
 use crate::db::{self, Db, Page, Post, UploadedFile};
+use crate::storage::R2Config;
 
 mod handlers;
 
@@ -27,6 +28,7 @@ pub struct AppState {
     pub cookie_secure: bool,
     pub uploads_dir: String,
     pub site_url: String,
+    pub r2: Option<R2Config>,
 }
 
 #[derive(Embed)]
@@ -547,12 +549,20 @@ pub async fn run(host: String, port: u16) {
         .trim_end_matches('/')
         .to_string();
 
+    let r2 = R2Config::from_env();
+    if r2.is_some() {
+        tracing::info!("Cloudflare R2 storage enabled for new uploads");
+    } else {
+        tracing::info!("R2 not configured, using local filesystem for uploads");
+    }
+
     let state = Arc::new(AppState {
         db,
         app_password,
         cookie_secure,
         uploads_dir,
         site_url,
+        r2,
     });
 
     let api_router = Router::new()
