@@ -170,6 +170,19 @@ pub async fn serve_uploaded_file(
         return StatusCode::NOT_FOUND.into_response();
     }
 
+    if let Ok(Some(file)) = db::get_file_by_filename(&state.db, &filename) {
+        if file.storage_backend == "r2" {
+            if let Some(r2) = &state.r2 {
+                return Redirect::temporary(&r2.public_url_for(&filename)).into_response();
+            }
+            tracing::warn!(
+                "File {} stored in R2 but R2 not configured; cannot serve",
+                filename
+            );
+            return StatusCode::NOT_FOUND.into_response();
+        }
+    }
+
     let path = std::path::PathBuf::from(&state.uploads_dir).join(&filename);
     match tokio::fs::read(&path).await {
         Ok(bytes) => {
