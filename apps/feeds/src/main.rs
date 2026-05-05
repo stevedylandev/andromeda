@@ -280,6 +280,89 @@ fn escape_xml(s: &str) -> String {
         .replace('\'', "&apos;")
 }
 
+async fn atom_feed_handler(State(state): State<Arc<AppState>>) -> Response {
+    let items = match fdb::list_items(
+        &state.db,
+        &fdb::ListItemsFilter {
+            limit: Some(100),
+            ..Default::default()
+        },
+    ) {
+        Ok(items) => items,
+        Err(e) => {
+            tracing::error!("atom feed query failed: {e}");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+
+    let updated = items
+        .iter()
+        .map(|i| i.published_at)
+        .max()
+        .and_then(|ts| DateTime::from_timestamp(ts, 0))
+        .unwrap_or_else(chrono::Utc::now)
+        .to_rfc3339();
+
+    let base = state.base_url.trim_end_matches('/');
+    let self_url = format!("{base}/feed.xml");
+
+    let mut xml = String::with_capacity(4096);
+    xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    xml.push_str("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
+    xml.push_str("  <title>Feeds</title>\n");
+    xml.push_str(&format!(
+        "  <link href=\"{}\" rel=\"self\" type=\"application/atom+xml\" />\n",
+        escape_xml(&self_url)
+    ));
+    xml.push_str(&format!("  <link href=\"{}\" />\n", escape_xml(base)));
+    xml.push_str(&format!("  <id>{}</id>\n", escape_xml(&self_url)));
+    xml.push_str(&format!("  <updated>{updated}</updated>\n"));
+
+    for item in &items {
+        let published = DateTime::from_timestamp(item.published_at, 0)
+            .unwrap_or_else(chrono::Utc::now)
+            .to_rfc3339();
+        let author_name = match item.author.as_deref() {
+            Some(a) if !a.is_empty() => a,
+            _ => item.feed_title.as_str(),
+        };
+        let entry_id = if item.guid.is_empty() {
+            &item.link
+        } else {
+            &item.guid
+        };
+
+        xml.push_str("  <entry>\n");
+        xml.push_str(&format!("    <title>{}</title>\n", escape_xml(&item.title)));
+        xml.push_str(&format!(
+            "    <link href=\"{}\" />\n",
+            escape_xml(&item.link)
+        ));
+        xml.push_str(&format!("    <id>{}</id>\n", escape_xml(entry_id)));
+        xml.push_str(&format!("    <updated>{published}</updated>\n"));
+        xml.push_str(&format!("    <published>{published}</published>\n"));
+        xml.push_str("    <author>\n");
+        xml.push_str(&format!(
+            "      <name>{}</name>\n",
+            escape_xml(author_name)
+        ));
+        xml.push_str("    </author>\n");
+        xml.push_str(&format!(
+            "    <source><title>{}</title></source>\n",
+            escape_xml(&item.feed_title)
+        ));
+        xml.push_str("  </entry>\n");
+    }
+
+    xml.push_str("</feed>\n");
+
+    (
+        [(header::CONTENT_TYPE, "application/atom+xml; charset=utf-8")],
+        xml,
+    )
+        .into_response()
+}
+
 async fn static_handler(axum::extract::Path(path): axum::extract::Path<String>) -> Response {
     match Static::get(&path) {
         Some(file) => {
@@ -652,6 +735,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index_handler))
         .route("/feeds", get(feeds_handler))
+        .route("/feed.xml", get(atom_feed_handler))
         .route("/static/{*path}", get(static_handler))
         .merge(admin_router)
         .merge(api_router)
