@@ -36,7 +36,6 @@ pub struct ListItemsQuery {
 }
 
 pub async fn list_items(
-    _auth: ApiAuth,
     State(state): State<Arc<AppState>>,
     Query(q): Query<ListItemsQuery>,
 ) -> Response {
@@ -287,7 +286,6 @@ pub async fn delete_subscription(
 // ── Categories ────────────────────────────────────────────────────────
 
 pub async fn list_categories(
-    _auth: ApiAuth,
     State(state): State<Arc<AppState>>,
 ) -> Response {
     match fdb::list_categories(&state.db) {
@@ -451,7 +449,6 @@ struct SettingsView {
 }
 
 pub async fn get_settings(
-    _auth: ApiAuth,
     State(state): State<Arc<AppState>>,
 ) -> Response {
     let poll = fdb::get_setting(&state.db, POLL_INTERVAL_KEY)
