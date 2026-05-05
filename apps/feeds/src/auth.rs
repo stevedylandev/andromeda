@@ -6,7 +6,7 @@ use axum::{
 use chrono::{Duration, Utc};
 use std::sync::Arc;
 
-use crate::AppState;
+use crate::server::AppState;
 use andromeda_db::session;
 
 pub use andromeda_auth::{

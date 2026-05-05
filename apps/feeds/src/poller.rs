@@ -5,7 +5,7 @@ use andromeda_db::feeds as fdb;
 use chrono::Utc;
 
 use crate::feeds::{fetch_feed, FetchResult};
-use crate::AppState;
+use crate::server::AppState;
 
 pub const POLL_INTERVAL_KEY: &str = "poll_interval_minutes";
 

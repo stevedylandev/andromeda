@@ -23,7 +23,7 @@ andromeda-auth = { workspace = true }
 andromeda-db = { workspace = true, features = ["axum", "session", "feeds"] }
 andromeda-darkmatter-css = { workspace = true }
 askama = "0.13"
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "blocking"] }
 feed-rs = "2"
 chrono = "0.4"
 quick-xml = "0.37"
@@ -32,3 +32,17 @@ url = "2"
 mime_guess = "2"
 urlencoding = "2"
 tower-http = { version = "0.6.8", features = ["cors"] }
+clap = { version = "4", features = ["derive", "env"] }
+ratatui = "0.30"
+crossterm = "0.29"
+toml = "1.0"
+rpassword = "7"
+open = "5"
+
+[[bin]]
+name = "feeds"
+path = "src/main.rs"
+
+[lib]
+name = "feeds"
+path = "src/lib.rs"

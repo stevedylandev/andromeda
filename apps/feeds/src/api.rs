@@ -14,7 +14,7 @@ use andromeda_db::Db;
 use crate::auth::ApiAuth;
 use crate::feeds::{discover_favicon, discover_feeds, fetch_feed, parse_opml, ParsedEntry};
 use crate::poller::POLL_INTERVAL_KEY;
-use crate::AppState;
+use crate::server::AppState;
 
 fn err_json(status: StatusCode, msg: impl Into<String>) -> Response {
     (
@@ -36,7 +36,6 @@ pub struct ListItemsQuery {
 }
 
 pub async fn list_items(
-    _auth: ApiAuth,
     State(state): State<Arc<AppState>>,
     Query(q): Query<ListItemsQuery>,
 ) -> Response {
@@ -490,6 +489,31 @@ pub async fn update_settings(
         }
     }
     Json(serde_json::json!({ "ok": true })).into_response()
+}
+
+// ── Preview ───────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct PreviewQuery {
+    url: Option<String>,
+    urls: Option<String>,
+}
+
+pub async fn preview(Query(q): Query<PreviewQuery>) -> Response {
+    let raw = match q.url.or(q.urls) {
+        Some(s) => s,
+        None => return err_json(StatusCode::BAD_REQUEST, "url required"),
+    };
+    let urls: Vec<String> = raw
+        .split(',')
+        .map(|u| u.trim().to_string())
+        .filter(|u| !u.is_empty())
+        .collect();
+    if urls.is_empty() {
+        return err_json(StatusCode::BAD_REQUEST, "no URLs provided");
+    }
+    let items = crate::feeds::preview_urls(&urls).await;
+    Json(serde_json::json!({ "items": items })).into_response()
 }
 
 // ── Discover ──────────────────────────────────────────────────────────
