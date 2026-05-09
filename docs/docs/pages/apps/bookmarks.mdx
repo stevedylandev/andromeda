@@ -1,5 +1,7 @@
 # Bookmarks
 
+![demo of bookmarks](https://assets.andromeda.build/bookmarks-demo.png)
+
 Bookmarks is a single-user link saver. Add links via the admin panel or JSON API, organize them into categories, and view them on a public index page grouped by category.
 
 - Single Rust binary with embedded assets
@@ -24,6 +26,12 @@ Bookmarks is a single-user link saver. Add links via the admin panel or JSON API
 `BOOKMARKS_PASSWORD` is required to access the admin panel. `BOOKMARKS_API_KEY` is only needed if you want to create links from outside the browser.
 
 ## Deploy
+
+### Railway
+
+The easiest way to deploy Bookmarks is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Bookmarks requires `BOOKMARKS_PASSWORD` during the configure step.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DZfr5P?referralCode=JGcIp6)
 
 ### Docker
 

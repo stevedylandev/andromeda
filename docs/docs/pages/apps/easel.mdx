@@ -1,0 +1,88 @@
+# Easel
+
+![demo of easel](https://assets.andromeda.build/easel-demo.jpg)
+
+A self-hosted daily painting viewer built with Rust. One public-domain artwork from the [Art Institute of Chicago](https://api.artic.edu/docs/) per calendar day, persisted to SQLite.
+
+- Single Rust binary with embedded assets
+- One artwork per day, picked from AIC's public-domain collection
+- Past days browsable via archive; future days unavailable until populated
+- Atom feed at `/feed.xml`
+- JSON API for today, any day, and the full archive
+- Optional backfill of missing past days on startup
+- Dark themed UI with Commit Mono font
+- SQLite for persistent storage
+
+## Configure
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `HOST` | Server bind address | `127.0.0.1` |
+| `PORT` | Server port | `4242` |
+| `EASEL_DB_PATH` | SQLite database file path | `easel.sqlite` |
+| `EASEL_TIMEZONE` | IANA timezone for day boundary | `UTC` |
+| `EASEL_CLASSIFICATIONS` | Comma-separated `classification_title` filter | `painting` |
+| `EASEL_EXCLUDE_TERMS` | Comma-separated phrases excluded across title/description/term/subject/category/classification | `erotic,erotica,shunga` |
+| `EASEL_BACKFILL_DAYS` | On boot, fill missing past N days (0 disables) | `0` |
+| `EASEL_MAX_DEDUP_RETRIES` | Retries when picking a non-duplicate artwork | `10` |
+| `EASEL_BASE_URL` | Public base URL for absolute links in `/feed.xml` | `http://localhost:4242` |
+
+## Deploy
+
+### Railway
+
+The easiest way to deploy Easel is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/0DpuRE?referralCode=JGcIp6)
+
+### Docker
+
+```bash
+cd apps/easel
+cp .env.example .env
+docker compose up -d
+```
+
+### Binary
+
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/easel
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=easel&expanded=true).
+
+You can also build from source:
+
+```bash
+cargo build --release -p easel
+```
+
+The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Visit `/` for today's artwork. Browse past days at `/day/{YYYY-MM-DD}` or the full collection at `/archive`. Subscribe to `/feed.xml` for an Atom feed of new daily paintings.
+
+### Routes
+
+| Route | Description |
+|---|---|
+| `GET /` | Today's artwork |
+| `GET /day/{YYYY-MM-DD}` | Specific past day |
+| `GET /archive` | Full archive |
+| `GET /feed.xml` | Atom feed |
+| `GET /api/today` | JSON of today |
+| `GET /api/day/{YYYY-MM-DD}` | JSON of specific day |
+| `GET /api/archive` | JSON list |
+
+## Image source
+
+Images served from AIC's IIIF endpoint:
+
+```
+https://www.artic.edu/iiif/2/{image_id}/full/843,/0/default.jpg
+```
