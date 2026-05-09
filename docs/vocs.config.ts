@@ -49,6 +49,10 @@ export default defineConfig({
           link: '/apps/cellar',
         },
         {
+          text: 'Easel',
+          link: '/apps/easel',
+        },
+        {
           text: 'Feeds',
           link: '/apps/feeds',
         },

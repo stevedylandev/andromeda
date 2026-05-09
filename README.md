@@ -16,6 +16,9 @@ A Rust workspace of minimal, self-hosted web apps. Each app compiles to a single
 | [**Shrink**](apps/shrink) | Image compression and resizing | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/enYUFb?referralCode=JGcIp6) |
 | [**Cellar**](apps/cellar) | Minimal wine collection tracker | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/MNprVh?referralCode=JGcIp6) |
 | [**Posts**](apps/posts) | Minimal CMS blog with admin interface | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tYtJYp?referralCode=JGcIp6) |
+| [**Bookmarks**](apps/bookmarks) | Minimal link saver with categories and JSON API | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DZfr5P?referralCode=JGcIp6) |
+| [**Library**](apps/library) | Minimal book tracker with Google Books search | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tepdeI?referralCode=JGcIp6) |
+| [**Easel**](apps/easel) | Daily public-domain painting from the Art Institute of Chicago | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/0DpuRE?referralCode=JGcIp6) |
 
 ## Shared Crates
 
