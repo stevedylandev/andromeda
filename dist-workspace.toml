@@ -10,6 +10,7 @@ members = [
     "cargo:apps/posts",
     "cargo:apps/library",
     "cargo:apps/bookmarks",
+    "cargo:apps/easel",
 ]
 
 # Config for 'dist'
