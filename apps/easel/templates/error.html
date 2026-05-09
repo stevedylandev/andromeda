@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Easel — {{ title }}{% endblock %}
+{% block content %}
+  <div class="error-page">
+    <h2>{{ title }}</h2>
+    <p>{{ message }}</p>
+    <p><a href="/">← back to today</a></p>
+  </div>
+{% endblock %}

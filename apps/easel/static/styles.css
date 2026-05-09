@@ -1,0 +1,116 @@
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.artwork-figure {
+  margin: 16px 0 24px;
+  border: 1px solid #333;
+}
+
+.artwork-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.artwork-meta {
+  margin-bottom: 16px;
+}
+
+.artwork-date {
+  opacity: 0.5;
+  font-size: 12px;
+  margin: 0 0 4px;
+}
+
+.artwork-title {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.artwork-artist {
+  margin: 0;
+  opacity: 0.7;
+}
+
+.artwork-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+
+.artwork-details dt {
+  opacity: 0.5;
+}
+
+.artwork-details dd {
+  margin: 0;
+}
+
+.artwork-description {
+  margin: 16px 0;
+  opacity: 0.85;
+}
+
+.artwork-source {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.archive-list {
+  margin-top: 48px;
+  border-top: 1px solid #333;
+  padding-top: 16px;
+}
+
+.archive-list h3 {
+  font-size: 14px;
+  opacity: 0.5;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  border-bottom: 1px solid #333;
+}
+
+.item a {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 12px;
+  padding: 8px 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.item-meta {
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.item-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  opacity: 0.5;
+  padding: 32px 0;
+  text-align: center;
+}
+
+.error-page {
+  padding: 32px 0;
+}

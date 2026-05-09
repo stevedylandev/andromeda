@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Easel — {{ date }}{% endblock %}
+{% block content %}
+  {% include "_artwork.html" %}
+
+  {% if !archive.is_empty() %}
+  <section class="archive-list">
+    <h3>Other days</h3>
+    <ul class="item-list">
+      {% for row in archive %}
+      <li class="item">
+        <a href="/day/{{ row.date }}">
+          <span class="item-meta">{{ row.date }}</span>
+          <span class="item-title"><em>{{ row.title }}</em></span>
+          {% if !row.artist.is_empty() %}<span class="item-meta">{{ row.artist }}</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+{% endblock %}

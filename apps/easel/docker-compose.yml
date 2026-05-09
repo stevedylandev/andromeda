@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/easel/Dockerfile
+    ports:
+      - "${PORT:-4242}:3000"
+    environment:
+      - EASEL_DB_PATH=/data/easel.sqlite
+      - EASEL_TIMEZONE=${EASEL_TIMEZONE:-UTC}
+      - EASEL_CLASSIFICATIONS=${EASEL_CLASSIFICATIONS:-painting}
+      - EASEL_BACKFILL_DAYS=${EASEL_BACKFILL_DAYS:-0}
+      - EASEL_MAX_DEDUP_RETRIES=${EASEL_MAX_DEDUP_RETRIES:-10}
+      - HOST=0.0.0.0
+      - PORT=3000
+    volumes:
+      - easel-data:/data
+    restart: unless-stopped
+
+volumes:
+  easel-data:

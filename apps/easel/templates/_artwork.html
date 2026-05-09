@@ -1,0 +1,39 @@
+<article class="artwork">
+  <figure class="artwork-figure">
+    <a href="{{ artwork.source_url }}" target="_blank" rel="noopener noreferrer">
+      <img src="{{ artwork.image_url }}" alt="{{ artwork.title }}" loading="lazy" />
+    </a>
+  </figure>
+  <header class="artwork-meta">
+    <p class="artwork-date">{{ artwork.date }}</p>
+    <h2 class="artwork-title"><em>{{ artwork.title }}</em></h2>
+    {% if !artwork.artist_display.is_empty() %}
+    <p class="artwork-artist">{{ artwork.artist_display }}</p>
+    {% endif %}
+  </header>
+  <dl class="artwork-details">
+    {% if !artwork.date_display.is_empty() %}
+    <dt>Date</dt><dd>{{ artwork.date_display }}</dd>
+    {% endif %}
+    {% if !artwork.place_of_origin.is_empty() %}
+    <dt>Origin</dt><dd>{{ artwork.place_of_origin }}</dd>
+    {% endif %}
+    {% if !artwork.medium_display.is_empty() %}
+    <dt>Medium</dt><dd>{{ artwork.medium_display }}</dd>
+    {% endif %}
+    {% if !artwork.dimensions.is_empty() %}
+    <dt>Dimensions</dt><dd>{{ artwork.dimensions }}</dd>
+    {% endif %}
+    {% if !artwork.credit_line.is_empty() %}
+    <dt>Credit</dt><dd>{{ artwork.credit_line }}</dd>
+    {% endif %}
+  </dl>
+  {% if !artwork.short_description.is_empty() %}
+  <p class="artwork-description">{{ artwork.short_description }}</p>
+  {% endif %}
+  <p class="artwork-source">
+    <a href="{{ artwork.source_url }}" target="_blank" rel="noopener noreferrer">
+      view on artic.edu →
+    </a>
+  </p>
+</article>
