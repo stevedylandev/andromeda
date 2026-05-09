@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Easel — {{ today_date }}{% endblock %}
+{% block content %}
+  {% if let Some(artwork) = artwork %}
+    {% include "_artwork.html" %}
+  {% else %}
+    <div class="empty">
+      <p>Today's artwork ({{ today_date }}) is not yet available. Check back shortly.</p>
+    </div>
+  {% endif %}
+{% endblock %}
