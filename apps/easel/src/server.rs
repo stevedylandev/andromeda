@@ -24,6 +24,7 @@ pub struct AppState {
     pub http: reqwest::Client,
     pub tz: chrono_tz::Tz,
     pub classifications: Vec<String>,
+    pub exclude_terms: Vec<String>,
     pub backfill_days: u32,
     pub max_dedup_retries: u32,
 }
@@ -33,7 +34,6 @@ pub struct AppState {
 struct IndexTemplate {
     today_date: String,
     artwork: Option<ArtworkView>,
-    archive: Vec<ArchiveRow>,
 }
 
 #[derive(Template)]
@@ -41,7 +41,6 @@ struct IndexTemplate {
 struct DayTemplate {
     date: String,
     artwork: ArtworkView,
-    archive: Vec<ArchiveRow>,
 }
 
 #[derive(Template)]
@@ -66,6 +65,7 @@ struct ArtworkView {
     dimensions: String,
     place_of_origin: String,
     credit_line: String,
+    description: String,
     short_description: String,
     image_url: String,
     source_url: String,
@@ -95,6 +95,7 @@ fn to_view(a: DailyArtwork) -> ArtworkView {
         dimensions: a.dimensions.unwrap_or_default(),
         place_of_origin: a.place_of_origin.unwrap_or_default(),
         credit_line: a.credit_line.unwrap_or_default(),
+        description: a.description.unwrap_or_default(),
         short_description: a.short_description.unwrap_or_default(),
         image_url: iiif_url(&a.image_id),
         source_url: source_url(a.artwork_id),
@@ -136,15 +137,9 @@ async fn index_handler(State(state): State<Arc<AppState>>) -> Response {
             });
         }
     };
-    let archive = db::list_daily(&state.db, 30)
-        .unwrap_or_default()
-        .iter()
-        .map(to_archive_row)
-        .collect();
     render(IndexTemplate {
         today_date: today,
         artwork,
-        archive,
     })
 }
 
@@ -203,15 +198,9 @@ async fn day_handler(
                 .into_response();
         }
     };
-    let archive = db::list_daily(&state.db, 30)
-        .unwrap_or_default()
-        .iter()
-        .map(to_archive_row)
-        .collect();
     render(DayTemplate {
         date,
         artwork,
-        archive,
     })
 }
 
@@ -351,6 +340,12 @@ pub async fn run() {
     if classifications.is_empty() {
         panic!("EASEL_CLASSIFICATIONS resolved to empty list");
     }
+    let exclude_terms: Vec<String> = std::env::var("EASEL_EXCLUDE_TERMS")
+        .unwrap_or_else(|_| "erotic,erotica,shunga".to_string())
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
     let backfill_days: u32 = std::env::var("EASEL_BACKFILL_DAYS")
         .ok()
         .and_then(|v| v.parse().ok())
@@ -368,14 +363,16 @@ pub async fn run() {
         http,
         tz,
         classifications: classifications.clone(),
+        exclude_terms: exclude_terms.clone(),
         backfill_days,
         max_dedup_retries,
     });
 
     tracing::info!(
-        "easel starting: tz={} classifications={:?} backfill_days={} retries={}",
+        "easel starting: tz={} classifications={:?} exclude_terms={:?} backfill_days={} retries={}",
         state.tz.name(),
         classifications,
+        exclude_terms,
         backfill_days,
         max_dedup_retries
     );

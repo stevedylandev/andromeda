@@ -48,10 +48,32 @@ struct IdOnly {
     id: i64,
 }
 
-fn build_params(classifications: &[String]) -> String {
+const EXCLUDE_FIELDS: &[&str] = &[
+    "title",
+    "description",
+    "short_description",
+    "term_titles",
+    "subject_titles",
+    "category_titles",
+    "classification_titles",
+];
+
+fn build_params(classifications: &[String], exclude_terms: &[String]) -> String {
     let terms: Vec<serde_json::Value> = classifications
         .iter()
         .map(|c| serde_json::Value::String(c.to_lowercase()))
+        .collect();
+    let must_not: Vec<serde_json::Value> = exclude_terms
+        .iter()
+        .map(|t| {
+            serde_json::json!({
+                "multi_match": {
+                    "query": t,
+                    "fields": EXCLUDE_FIELDS,
+                    "type": "phrase"
+                }
+            })
+        })
         .collect();
     let body = serde_json::json!({
         "query": {
@@ -60,7 +82,8 @@ fn build_params(classifications: &[String]) -> String {
                     { "term": { "is_public_domain": true } },
                     { "terms": { "classification_title.keyword": terms } },
                     { "exists": { "field": "image_id" } }
-                ]
+                ],
+                "must_not": must_not
             }
         }
     });
@@ -70,8 +93,9 @@ fn build_params(classifications: &[String]) -> String {
 pub async fn total_matching(
     client: &reqwest::Client,
     classifications: &[String],
+    exclude_terms: &[String],
 ) -> Result<u64, String> {
-    let params = build_params(classifications);
+    let params = build_params(classifications, exclude_terms);
     let url = format!(
         "{SEARCH_URL}?params={}&limit=1&fields=id",
         urlencoding::encode(&params)
@@ -94,9 +118,10 @@ pub async fn total_matching(
 pub async fn fetch_artwork_at(
     client: &reqwest::Client,
     classifications: &[String],
+    exclude_terms: &[String],
     page: u64,
 ) -> Result<Option<RawArtwork>, String> {
-    let params = build_params(classifications);
+    let params = build_params(classifications, exclude_terms);
     let url = format!(
         "{SEARCH_URL}?params={}&limit=1&page={page}&fields={FIELDS}",
         urlencoding::encode(&params)
@@ -120,9 +145,10 @@ pub async fn pick_unique(
     client: &reqwest::Client,
     db: &Db,
     classifications: &[String],
+    exclude_terms: &[String],
     max_retries: u32,
 ) -> Result<RawArtwork, String> {
-    let total = total_matching(client, classifications).await?;
+    let total = total_matching(client, classifications, exclude_terms).await?;
     if total == 0 {
         return Err("AIC search returned zero matches for given classifications".to_string());
     }
@@ -132,7 +158,7 @@ pub async fn pick_unique(
             let mut rng = rand::thread_rng();
             rng.gen_range(1..=total)
         };
-        let art = match fetch_artwork_at(client, classifications, page).await? {
+        let art = match fetch_artwork_at(client, classifications, exclude_terms, page).await? {
             Some(a) => a,
             None => continue,
         };
@@ -188,7 +214,7 @@ mod tests {
 
     #[test]
     fn build_params_lowercases_classifications() {
-        let p = build_params(&["Painting".to_string(), "DRAWING".to_string()]);
+        let p = build_params(&["Painting".to_string(), "DRAWING".to_string()], &[]);
         assert!(p.contains("\"painting\""));
         assert!(p.contains("\"drawing\""));
         assert!(p.contains("is_public_domain"));
