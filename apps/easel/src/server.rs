@@ -3,7 +3,7 @@ use std::sync::Arc;
 use askama::Template;
 use axum::{
     extract::{Path, State},
-    http::{header, StatusCode},
+    http::{header, Method, StatusCode},
     response::{Html, IntoResponse, Json, Response},
     routing::get,
     Router,
@@ -11,6 +11,7 @@ use axum::{
 use chrono::Utc;
 use rust_embed::Embed;
 use serde::Serialize;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::db::{self, DailyArtwork, Db};
 use crate::scheduler;
@@ -27,6 +28,7 @@ pub struct AppState {
     pub exclude_terms: Vec<String>,
     pub backfill_days: u32,
     pub max_dedup_retries: u32,
+    pub base_url: String,
 }
 
 #[derive(Template)]
@@ -310,6 +312,112 @@ async fn api_archive(State(state): State<Arc<AppState>>) -> Response {
     }
 }
 
+fn escape_xml(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+}
+
+fn entry_published(date: &str) -> String {
+    chrono::NaiveDate::parse_from_str(date, "%Y-%m-%d")
+        .ok()
+        .and_then(|d| d.and_hms_opt(12, 0, 0))
+        .map(|dt| dt.and_utc().to_rfc3339())
+        .unwrap_or_else(|| Utc::now().to_rfc3339())
+}
+
+async fn atom_feed_handler(State(state): State<Arc<AppState>>) -> Response {
+    let items = match db::list_daily(&state.db, 100) {
+        Ok(items) => items,
+        Err(e) => {
+            tracing::error!("atom feed query failed: {e}");
+            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
+        }
+    };
+
+    let updated = items
+        .first()
+        .map(|i| entry_published(&i.date))
+        .unwrap_or_else(|| Utc::now().to_rfc3339());
+
+    let base = state.base_url.trim_end_matches('/');
+    let self_url = format!("{base}/feed.xml");
+
+    let mut xml = String::with_capacity(8192);
+    xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    xml.push_str("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
+    xml.push_str("  <title>Easel — Daily Artwork</title>\n");
+    xml.push_str("  <subtitle>A daily painting from the Art Institute of Chicago</subtitle>\n");
+    xml.push_str(&format!(
+        "  <link href=\"{}\" rel=\"self\" type=\"application/atom+xml\" />\n",
+        escape_xml(&self_url)
+    ));
+    xml.push_str(&format!("  <link href=\"{}\" />\n", escape_xml(base)));
+    xml.push_str(&format!("  <id>{}</id>\n", escape_xml(&self_url)));
+    xml.push_str(&format!("  <updated>{updated}</updated>\n"));
+
+    for item in &items {
+        let published = entry_published(&item.date);
+        let entry_url = format!("{base}/day/{}", item.date);
+        let author_name = item
+            .artist_title
+            .as_deref()
+            .or(item.artist_display.as_deref())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("Unknown");
+        let summary = item
+            .short_description
+            .as_deref()
+            .or(item.description.as_deref())
+            .unwrap_or("");
+        let image = iiif_url(&item.image_id);
+        let content = format!(
+            "<p><img src=\"{}\" alt=\"{}\" /></p><p>{}</p>",
+            escape_xml(&image),
+            escape_xml(&item.title),
+            escape_xml(summary)
+        );
+
+        xml.push_str("  <entry>\n");
+        xml.push_str(&format!(
+            "    <title>{} — {}</title>\n",
+            escape_xml(&item.date),
+            escape_xml(&item.title)
+        ));
+        xml.push_str(&format!(
+            "    <link href=\"{}\" />\n",
+            escape_xml(&entry_url)
+        ));
+        xml.push_str(&format!("    <id>{}</id>\n", escape_xml(&entry_url)));
+        xml.push_str(&format!("    <updated>{published}</updated>\n"));
+        xml.push_str(&format!("    <published>{published}</published>\n"));
+        xml.push_str("    <author>\n");
+        xml.push_str(&format!("      <name>{}</name>\n", escape_xml(author_name)));
+        xml.push_str("    </author>\n");
+        if !summary.is_empty() {
+            xml.push_str(&format!(
+                "    <summary>{}</summary>\n",
+                escape_xml(summary)
+            ));
+        }
+        xml.push_str(&format!(
+            "    <content type=\"html\">{}</content>\n",
+            escape_xml(&content)
+        ));
+        xml.push_str("  </entry>\n");
+    }
+
+    xml.push_str("</feed>\n");
+
+    (
+        [(header::CONTENT_TYPE, "application/atom+xml; charset=utf-8")],
+        xml,
+    )
+        .into_response()
+}
+
 async fn static_handler(Path(path): Path<String>) -> Response {
     match Static::get(&path) {
         Some(file) => {
@@ -354,6 +462,10 @@ pub async fn run() {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(10);
+    let base_url = std::env::var("EASEL_BASE_URL")
+        .unwrap_or_else(|_| "http://localhost:4242".to_string())
+        .trim_end_matches('/')
+        .to_string();
 
     let db = db::init_db(&db_path);
     let http = crate::aic::build_client();
@@ -366,6 +478,7 @@ pub async fn run() {
         exclude_terms: exclude_terms.clone(),
         backfill_days,
         max_dedup_retries,
+        base_url,
     });
 
     tracing::info!(
@@ -380,14 +493,24 @@ pub async fn run() {
 
     tokio::spawn(scheduler::run(state.clone()));
 
+    let public_cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET])
+        .allow_headers(Any);
+
+    let api_router = Router::new()
+        .route("/api/today", get(api_today))
+        .route("/api/day/{date}", get(api_day))
+        .route("/api/archive", get(api_archive))
+        .route("/feed.xml", get(atom_feed_handler))
+        .layer(public_cors);
+
     let app = Router::new()
         .route("/", get(index_handler))
         .route("/day/{date}", get(day_handler))
         .route("/archive", get(archive_handler))
-        .route("/api/today", get(api_today))
-        .route("/api/day/{date}", get(api_day))
-        .route("/api/archive", get(api_archive))
         .route("/static/{*path}", get(static_handler))
+        .merge(api_router)
         .merge(andromeda_darkmatter_css::router::<Arc<AppState>>())
         .with_state(state);
 
