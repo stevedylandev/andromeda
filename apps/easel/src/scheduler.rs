@@ -58,6 +58,7 @@ pub async fn ensure_day(state: &AppState, date: &str) -> Result<(), String> {
         &state.http,
         &state.db,
         &state.classifications,
+        &state.exclude_terms,
         state.max_dedup_retries,
     )
     .await?;

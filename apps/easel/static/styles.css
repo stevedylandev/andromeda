@@ -1,11 +1,5 @@
-.container {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 16px 64px;
-}
-
 .artwork-figure {
-  margin: 16px 0 24px;
+  margin: 0 0 1rem;
   border: 1px solid #333;
 }
 
@@ -16,30 +10,28 @@
 }
 
 .artwork-meta {
-  margin-bottom: 16px;
+  margin-bottom: 0.5rem;
 }
 
 .artwork-date {
   opacity: 0.5;
   font-size: 12px;
-  margin: 0 0 4px;
 }
 
 .artwork-title {
-  font-size: 18px;
-  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .artwork-artist {
-  margin: 0;
   opacity: 0.7;
 }
 
 .artwork-details {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 4px 16px;
-  margin: 16px 0;
+  gap: 0.25rem 1rem;
+  margin: 1rem 0;
   font-size: 13px;
 }
 
@@ -47,70 +39,40 @@
   opacity: 0.5;
 }
 
-.artwork-details dd {
-  margin: 0;
-}
-
 .artwork-description {
-  margin: 16px 0;
   opacity: 0.85;
+  font-size: 13px;
 }
 
-.artwork-source {
-  font-size: 12px;
-  opacity: 0.7;
+.artwork-description p + p {
+  margin-top: 0.75rem;
 }
 
 .archive-list {
-  margin-top: 48px;
+  margin-top: 2rem;
   border-top: 1px solid #333;
-  padding-top: 16px;
+  padding-top: 1rem;
+  width: 100%;
 }
 
 .archive-list h3 {
-  font-size: 14px;
+  font-size: 12px;
   opacity: 0.5;
-  margin: 0 0 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-.item-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.item {
-  border-bottom: 1px solid #333;
+  margin-bottom: 0.5rem;
 }
 
 .item a {
   display: grid;
   grid-template-columns: 90px 1fr auto;
-  gap: 12px;
-  padding: 8px 0;
+  gap: 0.75rem;
   text-decoration: none;
   color: inherit;
-}
-
-.item-meta {
-  opacity: 0.5;
-  font-size: 12px;
 }
 
 .item-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.empty {
-  opacity: 0.5;
-  padding: 32px 0;
-  text-align: center;
-}
-
-.error-page {
-  padding: 32px 0;
 }
