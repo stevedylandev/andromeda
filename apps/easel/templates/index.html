@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Easel — {{ today_date }}{% endblock %}
+{% block content %}
+  {% if let Some(artwork) = artwork %}
+    {% include "_artwork.html" %}
+  {% else %}
+    <div class="empty">
+      <p>Today's artwork ({{ today_date }}) is not yet available. Check back shortly.</p>
+    </div>
+  {% endif %}
+
+  {% if !archive.is_empty() %}
+  <section class="archive-list">
+    <h3>Recent days</h3>
+    <ul class="item-list">
+      {% for row in archive %}
+      <li class="item">
+        <a href="/day/{{ row.date }}">
+          <span class="item-meta">{{ row.date }}</span>
+          <span class="item-title"><em>{{ row.title }}</em></span>
+          {% if !row.artist.is_empty() %}<span class="item-meta">{{ row.artist }}</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+{% endblock %}

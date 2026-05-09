@@ -10,6 +10,7 @@ members = [
     "apps/posts",
     "apps/library",
     "apps/bookmarks",
+    "apps/easel",
     "crates/auth",
     "crates/db",
     "crates/darkmatter-css",
