@@ -25,3 +25,4 @@ chrono = "0.4"
 chrono-tz = "0.10"
 urlencoding = "2"
 mime_guess = "2"
+tower-http = { workspace = true, features = ["cors"] }
