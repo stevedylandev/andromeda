@@ -179,6 +179,90 @@ pub async fn add_subscription(
     (StatusCode::CREATED, Json(serde_json::json!({ "subscription": sub }))).into_response()
 }
 
+/// Same as `add_subscription` but inserts the row immediately and spawns a
+/// background task to fetch the feed, discover the favicon, and seed items.
+/// Returns instantly so the caller is not blocked on the HTTP round-trip.
+pub async fn add_subscription_background(
+    state: Arc<AppState>,
+    body: CreateSubscriptionBody,
+) -> Response {
+    let feed_url = body.feed_url.trim().to_string();
+    if feed_url.is_empty() {
+        return err_json(StatusCode::BAD_REQUEST, "feed_url required");
+    }
+
+    if let Ok(Some(existing)) = fdb::get_subscription_by_url(&state.db, &feed_url) {
+        return (
+            StatusCode::CONFLICT,
+            Json(serde_json::json!({
+                "error": "already subscribed",
+                "subscription": existing
+            })),
+        )
+            .into_response();
+    }
+
+    let category_id =
+        match resolve_category(&state, body.category_id, body.category_name.as_deref()) {
+            Ok(id) => id,
+            Err(resp) => return resp,
+        };
+
+    let title = body.title.clone().unwrap_or_else(|| feed_url.clone());
+
+    let sub = match fdb::insert_subscription(&state.db, &feed_url, &title, None, category_id) {
+        Ok(s) => s,
+        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
+    };
+
+    let state = Arc::clone(&state);
+    let user_title = body.title;
+    let sub_id = sub.id;
+    let sub_title = sub.title.clone();
+
+    tokio::spawn(async move {
+        match fetch_feed(&feed_url, None, None).await {
+            Ok(result) => {
+                let resolved_title = user_title.unwrap_or_else(|| {
+                    result.title.unwrap_or_else(|| feed_url.clone())
+                });
+                if resolved_title != sub_title {
+                    let _ = fdb::update_subscription_title(&state.db, sub_id, &resolved_title);
+                }
+
+                if let Some(site) = result.site_url.as_deref() {
+                    let _ = fdb::update_subscription_site_url(&state.db, sub_id, Some(site));
+                    if let Some(fav) = discover_favicon(site).await {
+                        let _ = fdb::update_subscription_favicon(&state.db, sub_id, Some(&fav));
+                    }
+                }
+
+                seed_subscription(
+                    &state.db,
+                    sub_id,
+                    &result.entries,
+                    result.etag.as_deref(),
+                    result.last_modified.as_deref(),
+                    state.item_cap,
+                );
+            }
+            Err(e) => {
+                let now = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+                let _ = fdb::update_subscription_meta(
+                    &state.db,
+                    sub_id,
+                    None,
+                    None,
+                    &now,
+                    Some(&e),
+                );
+            }
+        }
+    });
+
+    (StatusCode::CREATED, Json(serde_json::json!({ "subscription": sub }))).into_response()
+}
+
 /// Insert probe entries into the new subscription, prune to the item cap, then
 /// persist etag/last_modified. The order matters: persisting the conditional-fetch
 /// metadata before seeding would let the next poller pass receive a 304 against an

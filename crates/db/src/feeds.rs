@@ -165,6 +165,19 @@ pub fn update_subscription_favicon(
     Ok(())
 }
 
+pub fn update_subscription_site_url(
+    db: &Db,
+    id: i64,
+    site_url: Option<&str>,
+) -> Result<(), DbError> {
+    let conn = db.lock().map_err(|_| DbError::LockPoisoned)?;
+    conn.execute(
+        "UPDATE subscriptions SET site_url = ?1 WHERE id = ?2",
+        params![site_url, id],
+    )?;
+    Ok(())
+}
+
 // ── Categories ────────────────────────────────────────────────────────
 
 pub fn list_categories(db: &Db) -> Result<Vec<Category>, DbError> {
