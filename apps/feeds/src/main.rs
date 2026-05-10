@@ -526,10 +526,11 @@ async fn add_feed_handler(
         category_id: None,
         category_name: form.category_name.filter(|s| !s.trim().is_empty()),
     };
-    let resp = api::add_subscription(&state, &body).await;
+    let resp = api::add_subscription_background(state, body).await;
     let status = resp.status();
     if status.is_success() {
-        Redirect::to("/admin?success=Feed+added").into_response()
+        Redirect::to("/admin?success=Feed+added+and+will+be+fetched+in+the+background")
+            .into_response()
     } else if status == StatusCode::CONFLICT {
         Redirect::to("/admin?error=Already+subscribed").into_response()
     } else {

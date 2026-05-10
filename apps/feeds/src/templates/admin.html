@@ -38,7 +38,7 @@
       <div id="discover-results" class="discover-results" style="display:none;"></div>
     </section>
 
-    <form class="admin-form" method="POST" action="/admin/add-feed">
+    <form class="admin-form" id="add-feed-form" method="POST" action="/admin/add-feed">
       <h3>Add Feed</h3>
       <label for="feed_url">Feed URL</label>
       <input type="url" id="feed_url" name="feed_url" placeholder="https://example.com/feed.xml" required />
@@ -49,7 +49,7 @@
         <option value="{{ c.name }}"></option>
         {% endfor %}
       </datalist>
-      <button type="submit">Add Feed</button>
+      <button type="submit" id="add-feed-submit"><span id="add-feed-label">Add Feed</span></button>
     </form>
 
     <form class="admin-form" id="opml-form" method="POST" action="/admin/import-opml" enctype="multipart/form-data">
@@ -111,6 +111,18 @@
     </section>
 
     <script>
+      (function() {
+        const form = document.getElementById('add-feed-form');
+        if (!form) return;
+        form.addEventListener('submit', function() {
+          const btn = document.getElementById('add-feed-submit');
+          const label = document.getElementById('add-feed-label');
+          btn.disabled = true;
+          btn.classList.add('loading');
+          label.innerHTML = 'Adding <span class="spinner"></span>';
+        });
+      })();
+
       (function() {
         const form = document.getElementById('opml-form');
         if (!form) return;
