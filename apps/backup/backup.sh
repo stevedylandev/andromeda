@@ -5,7 +5,7 @@ TIMESTAMP=$(date -u +%Y-%m-%dT%H%M%SZ)
 BUCKET="${R2_BUCKET:-andromeda-backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 
-DBS="jotts:/data/jotts/jotts.sqlite sipp:/data/sipp/sipp.sqlite cellar:/data/cellar/cellar.sqlite posts:/data/posts/posts.sqlite feeds:/data/feeds/feeds.sqlite library:/data/library/library.sqlite"
+DBS="jotts:/data/jotts/jotts.sqlite sipp:/data/sipp/sipp.sqlite cellar:/data/cellar/cellar.sqlite posts:/data/posts/posts.sqlite feeds:/data/feeds/feeds.sqlite library:/data/library/library.sqlite bookmarks:/data/bookmarks/bookmarks.sqlite parcels:/data/parcels/parcels.db easel:/data/easel/easel.sqlite"
 
 for entry in $DBS; do
   name="${entry%%:*}"
@@ -28,7 +28,7 @@ done
 
 # Prune old backups
 cutoff=$(date -u -d "-${RETENTION_DAYS} days" +%Y-%m-%d 2>/dev/null || date -u -v-${RETENTION_DAYS}d +%Y-%m-%d)
-for name in jotts sipp cellar posts feeds library; do
+for name in jotts sipp cellar posts feeds library bookmarks parcels easel; do
   aws s3 ls "s3://${BUCKET}/${name}/" --endpoint-url "${R2_ENDPOINT}" 2>/dev/null | while read -r line; do
     filedate=$(echo "$line" | awk '{print $1}')
     filename=$(echo "$line" | awk '{print $4}')
