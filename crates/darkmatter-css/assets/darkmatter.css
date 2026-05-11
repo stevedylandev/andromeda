@@ -423,6 +423,7 @@ button.loading {
   gap: 0.25rem;
   padding: 0.75rem 0;
   border-bottom: 1px solid #333;
+  min-width: 0;
 }
 
 .item:hover {
@@ -430,12 +431,21 @@ button.loading {
 }
 
 .item-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: 100%;
   font-size: 16px;
+  overflow-wrap: anywhere;
 }
 
 .item-meta {
+  max-width: 100%;
   font-size: 12px;
   opacity: 0.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ── Admin list (horizontal row w/ actions) ──────────────────────── */
@@ -453,20 +463,28 @@ button.loading {
   padding: 8px 0;
   border-bottom: 1px solid #333;
   gap: 1rem;
+  min-width: 0;
 }
 
 .admin-list-info {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
 }
 
 .admin-list-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: 100%;
   font-size: 15px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
 }
 
 .admin-list-meta {
@@ -485,6 +503,7 @@ button.loading {
   gap: 1rem;
   font-size: 12px;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .admin-toolbar {
