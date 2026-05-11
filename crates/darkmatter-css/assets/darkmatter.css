@@ -431,7 +431,8 @@ button.loading {
 }
 
 .item-title {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
@@ -446,6 +447,10 @@ button.loading {
   opacity: 0.5;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.favicon {
+  flex-shrink: 0;
 }
 
 /* ── Admin list (horizontal row w/ actions) ──────────────────────── */
@@ -475,7 +480,8 @@ button.loading {
 }
 
 .admin-list-title {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.4rem;
   min-width: 0;
