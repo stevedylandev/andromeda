@@ -1,6 +1,6 @@
 # Backup
 
-Automated SQLite backups for Jotts, Sipp, Cellar, Posts, and Feeds to Cloudflare R2. Runs every 6 hours via cron inside a Docker container and prunes backups older than 30 days.
+Automated SQLite backups for Jotts, Sipp, Cellar, Posts, Feeds, Library, Bookmarks, Parcels, and Easel to Cloudflare R2. Runs every 6 hours via cron inside a Docker container and prunes backups older than 30 days.
 
 ## Setup
 
@@ -46,6 +46,10 @@ SIPP_VOLUME=sipp_sipp-data
 CELLAR_VOLUME=cellar_cellar-data
 POSTS_VOLUME=posts_posts-data
 FEEDS_VOLUME=feeds_feeds-data
+LIBRARY_VOLUME=library_library-data
+BOOKMARKS_VOLUME=bookmarks_bookmarks-data
+PARCELS_VOLUME=parcels_parcels_data
+EASEL_VOLUME=easel_easel-data
 ```
 
 Run `docker volume ls` to check the actual names on your host.
@@ -85,6 +89,10 @@ docker run -d --restart unless-stopped \
   -v cellar_cellar-data:/data/cellar:ro \
   -v posts_posts-data:/data/posts:ro \
   -v feeds_feeds-data:/data/feeds:ro \
+  -v library_library-data:/data/library:ro \
+  -v bookmarks_bookmarks-data:/data/bookmarks:ro \
+  -v parcels_parcels_data:/data/parcels:ro \
+  -v easel_easel-data:/data/easel:ro \
   ghcr.io/stevedylandev/andromeda-backup:latest
 ```
 
@@ -154,3 +162,7 @@ docker compose -f /path/to/jotts/docker-compose.yml up -d
 | `CELLAR_VOLUME` | `cellar_cellar-data` | Docker volume name for Cellar data |
 | `POSTS_VOLUME` | `posts_posts-data` | Docker volume name for Posts data |
 | `FEEDS_VOLUME` | `feeds_feeds-data` | Docker volume name for Feeds data |
+| `LIBRARY_VOLUME` | `library_library-data` | Docker volume name for Library data |
+| `BOOKMARKS_VOLUME` | `bookmarks_bookmarks-data` | Docker volume name for Bookmarks data |
+| `PARCELS_VOLUME` | `parcels_parcels_data` | Docker volume name for Parcels data |
+| `EASEL_VOLUME` | `easel_easel-data` | Docker volume name for Easel data |

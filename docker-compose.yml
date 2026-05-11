@@ -101,8 +101,11 @@ services:
       - jotts_data:/data/jotts:ro
       - sipp_data:/data/sipp:ro
       - cellar_data:/data/cellar:ro
+      - posts_data:/data/posts:ro
+      - feeds_data:/data/feeds:ro
       - library_data:/data/library:ro
       - bookmarks_data:/data/bookmarks:ro
+      - parcels_data:/data/parcels:ro
       - easel_data:/data/easel:ro
     env_file: apps/backup/.env
     restart: unless-stopped
@@ -132,6 +135,9 @@ volumes:
   bookmarks_data:
     external: true
     name: bookmarks_bookmarks-data
+  parcels_data:
+    external: true
+    name: parcels_parcels_data
   easel_data:
     external: true
     name: easel_easel-data
