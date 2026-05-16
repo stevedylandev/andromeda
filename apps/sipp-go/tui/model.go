@@ -34,6 +34,7 @@ type Model struct {
 	focus         Focus
 	showHelp      bool
 	confirmDelete bool
+	wrapContent   bool
 
 	nameInput   textinput.Model
 	contentArea textarea.Model
