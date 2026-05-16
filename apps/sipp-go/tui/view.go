@@ -134,6 +134,9 @@ func (m Model) renderContent(w, h int) string {
 		style = borderActive
 	}
 	header := "preview"
+	if m.wrapContent {
+		header += " (wrap)"
+	}
 	s := m.current()
 	if s != nil {
 		header = s.Name
@@ -150,6 +153,9 @@ func (m Model) renderForm(w, h int) string {
 	header := "new snippet"
 	if m.editShortID != "" {
 		header = "edit"
+	}
+	if m.wrapContent {
+		header += " (wrap)"
 	}
 	name := m.nameInput.View()
 	if m.focus == FocusCreateName || m.focus == FocusEditName {
