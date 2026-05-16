@@ -55,3 +55,39 @@ jobs:
 
       - name: cargo test
         run: cargo test --workspace
+
+  go:
+    name: Go checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.x'
+          cache-dependency-path: |
+            apps/*-go/go.sum
+            crates-go/*/go.sum
+
+      - name: go test all modules
+        run: |
+          set -euo pipefail
+          for mod in crates-go/* apps/*-go; do
+            if [ -f "$mod/go.mod" ]; then
+              echo "::group::$mod"
+              (cd "$mod" && go test ./...)
+              echo "::endgroup::"
+            fi
+          done
+
+      - name: go vet all modules
+        run: |
+          set -euo pipefail
+          for mod in crates-go/* apps/*-go; do
+            if [ -f "$mod/go.mod" ]; then
+              echo "::group::$mod"
+              (cd "$mod" && go vet ./...)
+              echo "::endgroup::"
+            fi
+          done

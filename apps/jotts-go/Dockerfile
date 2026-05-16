@@ -1,6 +1,9 @@
-FROM golang:1.24-bookworm AS builder
+# Build from repo root: docker build -t jotts-go -f apps/jotts-go/Dockerfile .
+FROM golang:1.25-bookworm AS builder
 WORKDIR /app
-COPY apps/jotts-go/go.mod apps/jotts-go/go.sum ./
+COPY crates-go/ ./crates-go/
+COPY apps/jotts-go/go.mod apps/jotts-go/go.sum ./apps/jotts-go/
+WORKDIR /app/apps/jotts-go
 RUN go mod download
 COPY apps/jotts-go/ ./
 RUN CGO_ENABLED=0 go build -o /jotts-go .
