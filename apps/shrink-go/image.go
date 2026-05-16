@@ -13,6 +13,7 @@ import (
 )
 
 func compressImage(data []byte, quality int, width int) ([]byte, error) {
+	exif := stripGPS(extractExif(data))
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to decode image: %w", err)
@@ -36,7 +37,7 @@ func compressImage(data []byte, quality int, width int) ([]byte, error) {
 	if err := jpeg.Encode(&out, img, &jpeg.Options{Quality: quality}); err != nil {
 		return nil, fmt.Errorf("JPEG encoding failed: %w", err)
 	}
-	return out.Bytes(), nil
+	return injectExif(out.Bytes(), exif), nil
 }
 
 func buildDownloadFilename(original, newExt string) string {

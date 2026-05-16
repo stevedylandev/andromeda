@@ -17,6 +17,7 @@ type keyMap struct {
 	OpenBrowser key.Binding
 	Search      key.Binding
 	Refresh     key.Binding
+	WrapToggle  key.Binding
 	Help        key.Binding
 	Save        key.Binding
 	SwitchField key.Binding
@@ -39,6 +40,7 @@ func defaultKeys() keyMap {
 		OpenBrowser: key.NewBinding(key.WithKeys("o"), key.WithHelp("o", "browser")),
 		Search:      key.NewBinding(key.WithKeys("/"), key.WithHelp("/", "search")),
 		Refresh:     key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "refresh")),
+		WrapToggle:  key.NewBinding(key.WithKeys("ctrl+w"), key.WithHelp("⌃w", "wrap")),
 		Help:        key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 		Save:        key.NewBinding(key.WithKeys("ctrl+s"), key.WithHelp("⌃s", "save")),
 		SwitchField: key.NewBinding(key.WithKeys("tab"), key.WithHelp("⇥", "switch field")),
@@ -55,7 +57,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 		{k.Up, k.Down, k.Open, k.Back},
 		{k.Create, k.Edit, k.ExtEdit, k.Delete},
 		{k.Copy, k.CopyLink, k.OpenBrowser, k.Search},
-		{k.Refresh, k.Help, k.Save, k.SwitchField},
+		{k.Refresh, k.WrapToggle, k.Help, k.Save, k.SwitchField},
 		{k.Cancel, k.Quit},
 	}
 }

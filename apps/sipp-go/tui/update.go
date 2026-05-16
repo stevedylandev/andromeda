@@ -6,6 +6,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func loadSnippetsCmd(b Backend) tea.Cmd {
@@ -133,7 +134,11 @@ func (m *Model) resizePanes() {
 	m.contentVP.Height = bodyH - 2
 
 	m.nameInput.Width = contentW - 4
-	m.contentArea.SetWidth(contentW - 2)
+	if m.wrapContent {
+		m.contentArea.SetWidth(contentW - 2)
+	} else {
+		m.contentArea.SetWidth(10000)
+	}
 	m.contentArea.SetHeight(bodyH - 5)
 
 	m.searchInput.Width = listW - 4
@@ -150,6 +155,9 @@ func (m *Model) refreshPreview() {
 	body := s.Content
 	if m.highlighter != nil {
 		body = m.highlighter.render(s.ShortID, s.Name, s.Content)
+	}
+	if m.wrapContent && m.contentVP.Width > 0 {
+		body = lipgloss.NewStyle().Width(m.contentVP.Width).Render(body)
 	}
 	m.contentVP.SetContent(body)
 }
@@ -282,6 +290,14 @@ func (m Model) keyList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) keyContent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
+	case key.Matches(msg, m.keys.WrapToggle):
+		m.wrapContent = !m.wrapContent
+		m.contentVP.GotoTop()
+		m.refreshPreview()
+		if m.wrapContent {
+			return m, m.setStatus("wrap on", true)
+		}
+		return m, m.setStatus("wrap off", true)
 	case key.Matches(msg, m.keys.Quit), key.Matches(msg, m.keys.Back):
 		m.focus = FocusList
 		return m, nil
@@ -330,6 +346,14 @@ func (m Model) keyContent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) keyForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
+	case key.Matches(msg, m.keys.WrapToggle):
+		m.wrapContent = !m.wrapContent
+		if m.wrapContent {
+			m.contentArea.SetWidth(m.contentVP.Width)
+			return m, m.setStatus("wrap on", true)
+		}
+		m.contentArea.SetWidth(10000)
+		return m, m.setStatus("wrap off", true)
 	case key.Matches(msg, m.keys.Cancel):
 		m.focus = FocusList
 		m.nameInput.Blur()

@@ -26,5 +26,5 @@ go run .
 
 ## Notes vs Rust version
 
-EXIF reinjection is dropped; standard JPEG encoder is used. Output is a fresh
-JPEG without metadata. The 20 MB upload limit is preserved.
+JPEG EXIF metadata is preserved after recompression, with GPS data stripped to
+match the Rust implementation. The 20 MB upload limit is preserved.
