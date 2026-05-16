@@ -1,13 +1,15 @@
 // Sipp CLI: minimal command dispatcher.
 //
-//	sipp server              start the web server
-//	sipp [-r URL] [-k KEY] <file>   upload a file to a remote sipp server
+//	sipp                              launch the interactive TUI
+//	sipp tui [-r URL] [-k KEY]        launch the interactive TUI
+//	sipp auth                         save remote URL + API key to config
+//	sipp server [--host H] [--port P] start the web server
+//	sipp [-r URL] [-k KEY] <file>     upload a file to a remote sipp server
 //	sipp --help
-//
-// The interactive TUI from the Rust version is not ported.
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -19,12 +21,16 @@ import (
 	"strings"
 
 	"github.com/stevedylandev/andromeda/apps/sipp-go/server"
+	"github.com/stevedylandev/andromeda/apps/sipp-go/tui"
 	"github.com/stevedylandev/andromeda/crates-go/config"
 )
 
 const usage = `sipp — minimal code sharing CLI
 
 usage:
+  sipp                              launch interactive TUI
+  sipp tui [-r URL] [-k KEY]        launch interactive TUI
+  sipp auth                         save remote URL + API key to ~/.config/sipp/config.toml
   sipp server [--host HOST] [--port PORT]
   sipp [-r URL] [-k KEY] <file>     create a snippet from FILE on the remote server
   sipp --help
@@ -32,18 +38,25 @@ usage:
 env:
   SIPP_REMOTE_URL  default remote URL
   SIPP_API_KEY     API key used for authenticated requests
+  SIPP_DB_PATH     local sqlite path for TUI in local mode
 `
 
 func main() {
 	config.LoadDotEnv(".env")
 	args := os.Args[1:]
-	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" {
-		fmt.Print(usage)
+	if len(args) == 0 {
+		runTUI(nil)
 		return
 	}
 	switch args[0] {
+	case "-h", "--help":
+		fmt.Print(usage)
 	case "server":
 		runServer(args[1:])
+	case "tui":
+		runTUI(args[1:])
+	case "auth":
+		runAuth()
 	default:
 		runUpload(args)
 	}
@@ -74,6 +87,43 @@ func runServer(args []string) {
 	}
 }
 
+func runTUI(args []string) {
+	if err := tui.Run(tui.ParseArgs(args)); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func runAuth() {
+	cfg, _ := tui.LoadConfig()
+	in := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("Remote URL [%s]: ", cfg.RemoteURL)
+	url, _ := in.ReadString('\n')
+	url = strings.TrimSpace(url)
+	if url != "" {
+		cfg.RemoteURL = url
+	}
+
+	masked := ""
+	if cfg.APIKey != "" {
+		masked = "********"
+	}
+	fmt.Printf("API key [%s]: ", masked)
+	key, _ := in.ReadString('\n')
+	key = strings.TrimSpace(key)
+	if key != "" {
+		cfg.APIKey = key
+	}
+
+	if err := tui.SaveConfig(cfg); err != nil {
+		fmt.Fprintln(os.Stderr, "save config:", err)
+		os.Exit(1)
+	}
+	path, _ := tui.ConfigPath()
+	fmt.Println("saved", path)
+}
+
 func runUpload(args []string) {
 	remote := os.Getenv("SIPP_REMOTE_URL")
 	apiKey := os.Getenv("SIPP_API_KEY")
@@ -102,7 +152,16 @@ func runUpload(args []string) {
 		os.Exit(2)
 	}
 	if remote == "" {
-		fmt.Fprintln(os.Stderr, "remote URL not set (use -r or SIPP_REMOTE_URL)")
+		cfg, _ := tui.LoadConfig()
+		if cfg.RemoteURL != "" {
+			remote = cfg.RemoteURL
+		}
+		if apiKey == "" {
+			apiKey = cfg.APIKey
+		}
+	}
+	if remote == "" {
+		fmt.Fprintln(os.Stderr, "remote URL not set (use -r, SIPP_REMOTE_URL, or `sipp auth`)")
 		os.Exit(2)
 	}
 
