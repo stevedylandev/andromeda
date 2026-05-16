@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 
+	"github.com/stevedylandev/andromeda/apps/jotts-go/internal/store"
 	"github.com/stevedylandev/andromeda/crates-go/auth"
 )
 
@@ -22,19 +23,8 @@ type App struct {
 	CookieSecure bool
 }
 
-type Note struct {
-	ID        int64  `json:"id"`
-	ShortID   string `json:"short_id"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-type NoteInput struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-}
+type Note = store.Note
+type NoteInput = store.NoteInput
 
 type indexPageData struct {
 	Notes []Note
