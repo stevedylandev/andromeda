@@ -1,0 +1,83 @@
+/* sipp — app-specific styles.
+ * Shared reset / tokens / components come from /assets/darkmatter.css.
+ */
+
+/* Logo wraps an h1 in sipp markup. */
+
+.logo h1 {
+  font-size: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Snippet icon links */
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #878787;
+  width: 24px;
+  height: 24px;
+}
+
+.icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.icon svg path {
+  fill: #878787;
+}
+
+.icon:hover svg path {
+  fill: #ffffff;
+}
+
+/* Create-snippet form */
+
+#snippetForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+#snippetName {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Highlighted snippet viewer */
+
+.code-container {
+  border: 1px solid #ffffff;
+  height: 400px;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.code-container pre {
+  background-color: #121113 !important;
+  padding: 6px;
+  margin: 0;
+  min-height: 100%;
+  font-size: 13px;
+  line-height: 1.4;
+  border: none;
+}
+
+/* Viewer action row */
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Snippet page header variant (plain <a class="header">) */
+
+.nav {
+  width: 100%;
+  margin-top: 2rem;
+}

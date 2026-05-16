@@ -1,0 +1,86 @@
+{{define "results.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Results — {{.URL}}{{end}}
+{{define "content"}}
+<div class="results-container">
+    <div class="results-header">
+        <div class="results-url">
+            <span class="label">URL</span>
+            <a href="{{.URL}}" target="_blank" rel="noopener">{{.URL}}</a>
+        </div>
+    </div>
+
+    {{if .Error}}
+    <div class="error">
+        <h2>Error</h2>
+        <p>{{.Error}}</p>
+    </div>
+    {{else}}
+
+    {{if .OGImage}}
+    <div class="preview-section">
+        <h2>Image Preview</h2>
+        <div class="image-preview">
+            <img src="{{.OGImage}}" alt="OG Image preview" loading="lazy">
+        </div>
+    </div>
+    {{end}}
+
+    {{if .Favicon}}
+    <div class="preview-section">
+        <h2>Favicon</h2>
+        <img src="{{.Favicon}}" alt="Favicon" width="32" height="32">
+    </div>
+    {{end}}
+
+    <div class="tag-section">
+        <h2>Found Tags</h2>
+        {{if not .FoundTags}}
+        <p class="empty-state">No OpenGraph tags found.</p>
+        {{else}}
+        {{range .FoundTags}}
+        <div class="tag-item found">
+            <span class="tag-key">{{.Key}}</span>
+            <span class="tag-value">{{.Value}}</span>
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+
+    <div class="tag-section">
+        <h2>Missing Tags</h2>
+        {{if not .MissingTags}}
+        <p class="empty-state">All common tags present.</p>
+        {{else}}
+        {{range .MissingTags}}
+        <div class="tag-item missing">
+            <span class="tag-key">{{.}}</span>
+            <span class="tag-value">not found</span>
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+
+    {{if .LinkTags}}
+    <div class="tag-section">
+        <h2>Link Tags</h2>
+        {{range .LinkTags}}
+        <div class="tag-item found">
+            <span class="tag-key">{{if .Rel}}{{.Rel}}{{else}}link{{end}}</span>
+            <span class="tag-value">
+                {{if .Href}}
+                <a href="{{.Href}}" target="_blank" rel="noopener">{{.Href}}</a>
+                {{else}}
+                <span class="tag-extra">no href</span>
+                {{end}}
+                {{if .Extra}}
+                <span class="tag-extra">{{.Extra}}</span>
+                {{end}}
+            </span>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+
+    {{end}}
+</div>
+{{end}}

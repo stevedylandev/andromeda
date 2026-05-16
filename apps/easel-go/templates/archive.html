@@ -1,0 +1,20 @@
+{{define "archive.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Easel — Archive{{end}}
+{{define "content"}}
+  <h2>Archive</h2>
+  {{if not .Archive}}
+    <p class="empty">No artworks stored yet.</p>
+  {{else}}
+    <ul class="item-list">
+      {{range .Archive}}
+      <li class="item">
+        <a href="/day/{{.Date}}">
+          <span class="item-meta">{{.Date}}</span>
+          <span class="item-title"><em>{{.Title}}</em></span>
+          {{if .Artist}}<span class="item-meta">{{.Artist}}</span>{{end}}
+        </a>
+      </li>
+      {{end}}
+    </ul>
+  {{end}}
+{{end}}

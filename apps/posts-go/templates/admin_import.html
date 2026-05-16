@@ -1,0 +1,35 @@
+{{define "admin_import.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Import{{end}}
+{{define "content"}}
+  <div class="admin-toolbar">
+    <h2>Import posts</h2>
+  </div>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{if .Imported}}
+    <p class="success">Imported {{.Imported}} posts, skipped {{if .Skipped}}{{.Skipped}}{{else}}0{{end}}.</p>
+  {{end}}
+  <form method="POST" action="/admin/import" enctype="multipart/form-data" class="form">
+    <label for="zip">upload zip of markdown files (max 50MB)</label>
+    <input type="file" id="zip" name="zip" accept=".zip" required>
+    <button type="submit">import</button>
+  </form>
+  <section>
+    <h3>Format</h3>
+    <p>The zip can contain any number of <code>.md</code> or <code>.markdown</code> files. Each file may begin with YAML-style frontmatter:</p>
+    <pre><code>---
+title: My Post
+slug: my-post
+status: published
+published_date: 2025-01-15 10:00:00
+tags: rust, sqlite
+description: A short summary
+lang: en
+---
+
+# Hello
+
+Post body in markdown.
+</code></pre>
+    <p>Supported keys: <code>title</code>, <code>slug</code>, <code>status</code> (<code>draft</code> or <code>published</code>), <code>published_date</code>, <code>tags</code>, <code>description</code>, <code>meta_image</code>, <code>alias</code>, <code>lang</code>. Files without frontmatter are imported with the title derived from the filename. Posts whose slug already exists are skipped.</p>
+  </section>
+{{end}}

@@ -1,0 +1,17 @@
+package main
+
+import (
+	"net/http"
+
+	"github.com/stevedylandev/andromeda/crates-go/darkmatter"
+	"github.com/stevedylandev/andromeda/crates-go/web"
+)
+
+func (a *App) routes() *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /", a.indexHandler)
+	mux.HandleFunc("POST /compress", a.compressHandler)
+	mux.HandleFunc("GET /static/", web.EmbeddedHandler(appFS, "static"))
+	darkmatter.Mount(mux, "/assets")
+	return mux
+}
