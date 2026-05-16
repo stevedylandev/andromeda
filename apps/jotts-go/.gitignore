@@ -1,0 +1,7 @@
+.env
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+jotts-go
+/jotts-go
