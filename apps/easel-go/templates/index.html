@@ -1,0 +1,11 @@
+{{define "index.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Easel — {{.TodayDate}}{{end}}
+{{define "content"}}
+  {{if .Artwork}}
+    {{template "artwork" .Artwork}}
+  {{else}}
+    <div class="empty">
+      <p>Today's artwork ({{.TodayDate}}) is not yet available. Check back shortly.</p>
+    </div>
+  {{end}}
+{{end}}

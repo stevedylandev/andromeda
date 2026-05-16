@@ -1,0 +1,25 @@
+{{define "login.html"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="icon" href="/static/favicon.ico">
+  <meta name="theme-color" content="#121113" />
+  <link rel="stylesheet" href="/assets/darkmatter.css">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="header">
+    <span class="logo">POSTS</span>
+  </header>
+  <main>
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+    <form method="POST" action="/admin/login" class="form">
+      <label for="password">password</label>
+      <input type="password" id="password" name="password" autofocus required>
+      <button type="submit">login</button>
+    </form>
+  </main>
+</body>
+</html>{{end}}

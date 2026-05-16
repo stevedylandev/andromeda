@@ -1,0 +1,49 @@
+{{define "admin_files.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Files{{end}}
+{{define "content"}}
+  <div class="admin-toolbar">
+    <h2>Files</h2>
+  </div>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{if .Success}}<p class="success">File uploaded.</p>{{end}}
+  <form method="POST" action="/admin/files/upload" enctype="multipart/form-data" class="form">
+    <label for="file">upload file (max 10MB)</label>
+    <input type="file" id="file" name="file" required>
+    <button type="submit">upload</button>
+  </form>
+  {{if not .Files}}
+    <p class="empty">no files yet</p>
+  {{else}}
+    {{$site := .SiteURL}}
+    <div class="admin-list">
+      {{range .Files}}
+        <div class="admin-list-item">
+          {{if .IsImage}}
+            <img src="/files/{{.Filename}}" class="file-thumbnail" alt="{{.OriginalName}}">
+          {{end}}
+          <div class="admin-list-info">
+            <span class="admin-list-title">{{.OriginalName}}</span>
+            <div class="admin-list-meta">
+              <span class="admin-list-date">{{.ContentType}}</span>
+              <span class="admin-list-date">{{.SizeHuman}}</span>
+              <span class="admin-list-date">{{.CreatedAt}}</span>
+            </div>
+          </div>
+          <div class="admin-list-actions">
+            <button type="button" class="link-button"
+              onclick="navigator.clipboard.writeText('{{$site}}/files/{{.Filename}}');this.textContent='copied!'">
+              copy url
+            </button>
+            <button type="button" class="link-button"
+              onclick="navigator.clipboard.writeText('![{{.OriginalName}}]({{$site}}/files/{{.Filename}})');this.textContent='copied!'">
+              copy md
+            </button>
+            <form method="POST" action="/admin/files/{{.ShortID}}/delete" class="inline-form">
+              <button type="submit" class="link-button danger" onclick="return confirm('Delete this file?')">delete</button>
+            </form>
+          </div>
+        </div>
+      {{end}}
+    </div>
+  {{end}}
+{{end}}

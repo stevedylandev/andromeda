@@ -1,0 +1,36 @@
+{{define "index.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.BlogTitle}}{{end}}
+{{define "meta"}}
+  <meta name="description" content="{{.BlogDescription}}">
+  <meta property="og:title" content="{{.BlogTitle}}">
+  <meta property="og:description" content="{{.BlogDescription}}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{.SiteURL}}">
+  {{if .OGImageURL}}
+    <meta property="og:image" content="{{.OGImageURL}}">
+  {{else}}
+    <meta property="og:image" content="{{.SiteURL}}/static/og.png">
+  {{end}}
+{{end}}
+{{define "content"}}
+  {{if .IntroHTML}}
+    <article class="intro markdown-body">
+      {{.IntroHTML}}
+    </article>
+  {{end}}
+  {{if not .Posts}}
+    <p class="empty">no posts yet</p>
+  {{end}}
+  <div class="post-list">
+    {{range .Posts}}
+      <a href="/posts/{{.Slug}}" class="post-item">
+        <div class="post-item-info">
+          <span class="post-title">{{.DisplayTitle}}</span>
+        </div>
+        {{if .PublishedDate}}
+          <time class="post-date">{{.PublishedDateStr}}</time>
+        {{end}}
+      </a>
+    {{end}}
+  </div>
+{{end}}

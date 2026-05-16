@@ -1,0 +1,26 @@
+{{define "index.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Cellar{{end}}
+{{define "nav"}}
+<nav class="links">
+  <a href="/admin/new">new</a>
+  <a href="/wishlist">wishlist</a>
+</nav>
+{{end}}
+{{define "content"}}
+  {{if not .Wines}}
+    <p class="empty">no wines yet</p>
+  {{end}}
+  <div class="wine-list">
+    {{range .Wines}}
+    <a href="/wines/{{.Wine.ShortID}}" class="wine-card">
+      <div class="wine-pentagon">
+        {{.PentagonSVG}}
+      </div>
+      <div class="wine-info">
+        <span class="wine-name">{{.Wine.Name}}</span>
+        <span class="wine-meta">{{.Wine.Origin}}{{if .Wine.Grape}} &middot; {{.Wine.Grape}}{{end}}</span>
+      </div>
+    </a>
+    {{end}}
+  </div>
+{{end}}
