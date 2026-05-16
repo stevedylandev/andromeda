@@ -10,6 +10,7 @@ import (
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
 	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/crates-go/sqlite"
 )
 
 func main() {
@@ -17,11 +18,12 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	dbPath := config.Getenv("POSTS_DB_PATH", "posts.sqlite")
-	db, err := openDB(dbPath)
+	db, err := sqlite.Open(dbPath, postsSchema)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	seedDefaultSettings(db)
 
 	uploadsDir := config.Getenv("UPLOADS_DIR", "uploads")
 	if err := ensureDir(uploadsDir); err != nil {

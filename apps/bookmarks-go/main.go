@@ -11,6 +11,7 @@ import (
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
 	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/crates-go/sqlite"
 )
 
 func main() {
@@ -18,7 +19,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	dbPath := config.Getenv("BOOKMARKS_DB_PATH", "bookmarks.sqlite")
-	db, err := openDB(dbPath)
+	db, err := sqlite.Open(dbPath, schema)
 	if err != nil {
 		log.Fatal(err)
 	}

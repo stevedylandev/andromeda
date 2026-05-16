@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
-	_ "modernc.org/sqlite"
+	"github.com/stevedylandev/andromeda/crates-go/sqlite"
 )
 
 type Snippet struct {
@@ -30,16 +30,7 @@ CREATE TABLE IF NOT EXISTS snippets (
 `
 
 func Open(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec(schema); err != nil {
-		return nil, err
-	}
-	return db, nil
+	return sqlite.Open(path, schema)
 }
 
 func scanSnippet(s interface{ Scan(...any) error }) (*Snippet, error) {

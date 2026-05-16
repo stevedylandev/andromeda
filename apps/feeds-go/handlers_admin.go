@@ -61,12 +61,12 @@ func (a *App) adminHandler(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) discoverFeedsHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "bad request"})
+		web.WriteError(w, http.StatusBadRequest, "bad request")
 		return
 	}
 	feeds, err := discoverFeeds(r.Context(), r.FormValue("base_url"))
 	if err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, feeds)
@@ -90,7 +90,7 @@ func (a *App) addFeedHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) deleteFeedHandler(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathInt64(r, "id")
+	id, ok := web.PathInt64(r, "id")
 	if !ok {
 		web.RedirectWithError(w, r, "/admin", "Invalid feed ID")
 		return
@@ -104,7 +104,7 @@ func (a *App) deleteFeedHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) updateSubCategoryHandler(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathInt64(r, "id")
+	id, ok := web.PathInt64(r, "id")
 	if !ok {
 		web.RedirectWithError(w, r, "/admin", "Invalid feed ID")
 		return
@@ -143,7 +143,7 @@ func (a *App) addCategoryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) deleteCategoryHandler(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathInt64(r, "id")
+	id, ok := web.PathInt64(r, "id")
 	if !ok {
 		web.RedirectWithError(w, r, "/admin", "Invalid category ID")
 		return

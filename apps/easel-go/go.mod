@@ -5,8 +5,8 @@ go 1.24.4
 require (
 	github.com/stevedylandev/andromeda/crates-go/config v0.0.0
 	github.com/stevedylandev/andromeda/crates-go/darkmatter v0.0.0
+	github.com/stevedylandev/andromeda/crates-go/sqlite v0.0.0
 	github.com/stevedylandev/andromeda/crates-go/web v0.0.0
-	modernc.org/sqlite v1.37.1
 )
 
 require (
@@ -20,10 +20,12 @@ require (
 	modernc.org/libc v1.65.7 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
+	modernc.org/sqlite v1.37.1 // indirect
 )
 
 replace (
 	github.com/stevedylandev/andromeda/crates-go/config => ../../crates-go/config
 	github.com/stevedylandev/andromeda/crates-go/darkmatter => ../../crates-go/darkmatter
+	github.com/stevedylandev/andromeda/crates-go/sqlite => ../../crates-go/sqlite
 	github.com/stevedylandev/andromeda/crates-go/web => ../../crates-go/web
 )

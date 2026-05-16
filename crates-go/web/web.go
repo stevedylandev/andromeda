@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -55,10 +56,26 @@ func WriteJSON(w http.ResponseWriter, status int, data any) {
 func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 	defer r.Body.Close()
 	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
-		WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid JSON"})
+		WriteError(w, http.StatusBadRequest, "invalid JSON")
 		return false
 	}
 	return true
+}
+
+// WriteError writes a JSON error response of the form {"error": msg} with the
+// given status code.
+func WriteError(w http.ResponseWriter, status int, msg string) {
+	WriteJSON(w, status, map[string]any{"error": msg})
+}
+
+// PathInt64 parses a positive int64 path value from r. Returns (0, false) if
+// missing, unparseable, or non-positive.
+func PathInt64(r *http.Request, name string) (int64, bool) {
+	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
+	if err != nil || id <= 0 {
+		return 0, false
+	}
+	return id, true
 }
 
 // RedirectWithError issues a 303 redirect to target with ?error=msg appended.

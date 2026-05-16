@@ -70,7 +70,7 @@ func (a *App) apiToday(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if d == nil {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "today not yet populated"})
+		web.WriteError(w, http.StatusNotFound, "today not yet populated")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, toAPI(*d))
@@ -79,11 +79,11 @@ func (a *App) apiToday(w http.ResponseWriter, r *http.Request) {
 func (a *App) apiDay(w http.ResponseWriter, r *http.Request) {
 	date := r.PathValue("date")
 	if _, ok := parseDate(date); !ok {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid date format"})
+		web.WriteError(w, http.StatusBadRequest, "invalid date format")
 		return
 	}
 	if date > a.todayInTZ() {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "future date"})
+		web.WriteError(w, http.StatusNotFound, "future date")
 		return
 	}
 	d, err := getDaily(a.DB, date)
@@ -93,7 +93,7 @@ func (a *App) apiDay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if d == nil {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "no record for date"})
+		web.WriteError(w, http.StatusNotFound, "no record for date")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, toAPI(*d))

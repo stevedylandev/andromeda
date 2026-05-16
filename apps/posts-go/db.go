@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
-	_ "modernc.org/sqlite"
 )
 
 const postsSchema = `
@@ -72,20 +71,10 @@ var defaultSettings = [][2]string{
 </div>`},
 }
 
-func openDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec(postsSchema); err != nil {
-		return nil, err
-	}
+func seedDefaultSettings(db *sql.DB) {
 	for _, kv := range defaultSettings {
 		_, _ = db.Exec(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, kv[0], kv[1])
 	}
-	return db, nil
 }
 
 const postCols = `id, short_id, title, slug, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, content, status, created_at, updated_at`

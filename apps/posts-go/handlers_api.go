@@ -69,7 +69,7 @@ func (a *App) apiListPosts(w http.ResponseWriter, r *http.Request) {
 	}
 	posts, err := getPublishedPosts(a.DB, limit)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	out := make([]apiPostSummary, 0, len(posts))
@@ -82,11 +82,11 @@ func (a *App) apiListPosts(w http.ResponseWriter, r *http.Request) {
 func (a *App) apiGetPost(w http.ResponseWriter, r *http.Request) {
 	post, err := getPostBySlug(a.DB, r.PathValue("slug"))
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 	if post == nil || post.Status != "published" {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "not found"})
+		web.WriteError(w, http.StatusNotFound, "not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, toDetail(*post))

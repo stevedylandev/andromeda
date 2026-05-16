@@ -5,8 +5,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-
-	_ "modernc.org/sqlite"
 )
 
 const booksSchema = `
@@ -61,22 +59,6 @@ type CategoryLabels struct {
 
 func defaultLabels() CategoryLabels {
 	return CategoryLabels{Reading: "Reading", Read: "Read", Want: "Want to Read"}
-}
-
-func openDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		return nil, err
-	}
-	if _, err := db.Exec(booksSchema); err != nil {
-		return nil, err
-	}
-	return db, nil
 }
 
 const selectCols = `id, google_id, title, authors, isbn, cover_url, notes, status, added_at, updated_at`

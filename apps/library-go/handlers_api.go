@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/stevedylandev/andromeda/crates-go/web"
 )
@@ -14,7 +13,7 @@ func (a *App) apiListBooks(w http.ResponseWriter, r *http.Request) {
 		status = ""
 	default:
 		if !validStatus(status) {
-			web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid status"})
+			web.WriteError(w, http.StatusBadRequest, "invalid status")
 			return
 		}
 	}
@@ -31,9 +30,9 @@ func (a *App) apiListBooks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) apiGetBook(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid id"})
+	id, ok := web.PathInt64(r, "id")
+	if !ok {
+		web.WriteError(w, http.StatusBadRequest, "invalid id")
 		return
 	}
 	b, err := getBook(a.DB, id)
@@ -43,7 +42,7 @@ func (a *App) apiGetBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if b == nil {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "not found"})
+		web.WriteError(w, http.StatusNotFound, "not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, b)

@@ -9,14 +9,6 @@ import (
 	"time"
 )
 
-func pathInt64(r *http.Request, name string) (int64, bool) {
-	id, err := strconv.ParseInt(r.PathValue(name), 10, 64)
-	if err != nil || id <= 0 {
-		return 0, false
-	}
-	return id, true
-}
-
 func formatDate(ts int64) string {
 	if ts <= 0 {
 		return ""
