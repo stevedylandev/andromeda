@@ -336,18 +336,19 @@ func (a *App) adminUploadFile(w http.ResponseWriter, r *http.Request) {
 	if ext != "" {
 		stored = id + "." + ext
 	}
-	if err := ensureDir(a.UploadsDir); err != nil {
+	backend := a.Storage
+	if backend == nil {
+		http.Redirect(w, r, "/admin/files?error=Storage+not+configured", http.StatusSeeOther)
+		return
+	}
+	if err := backend.Put(r.Context(), stored, contentType, data); err != nil {
+		a.Log.Error("save file", "backend", backend.Name(), "err", err)
 		http.Redirect(w, r, "/admin/files?error=Failed+to+save+file", http.StatusSeeOther)
 		return
 	}
-	if err := writeFile(joinPath(a.UploadsDir, stored), data); err != nil {
-		a.Log.Error("write file", "err", err)
-		http.Redirect(w, r, "/admin/files?error=Failed+to+save+file", http.StatusSeeOther)
-		return
-	}
-	if _, err := createFile(a.DB, stored, originalName, contentType, int64(len(data))); err != nil {
+	if _, err := createFile(a.DB, stored, originalName, contentType, int64(len(data)), backend.Name()); err != nil {
 		a.Log.Error("record file", "err", err)
-		_ = removeFile(joinPath(a.UploadsDir, stored))
+		_ = backend.Delete(r.Context(), stored)
 		http.Redirect(w, r, "/admin/files?error=Failed+to+record+file", http.StatusSeeOther)
 		return
 	}
@@ -360,7 +361,11 @@ func (a *App) adminDeleteFile(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/files", http.StatusSeeOther)
 		return
 	}
-	_ = removeFile(joinPath(a.UploadsDir, file.Filename))
+	if file.StorageBackend == "r2" && a.Storage != nil && a.Storage.Name() == "r2" {
+		_ = a.Storage.Delete(r.Context(), file.Filename)
+	} else {
+		_ = removeFile(joinPath(a.UploadsDir, file.Filename))
+	}
 	http.Redirect(w, r, "/admin/files", http.StatusSeeOther)
 }
 

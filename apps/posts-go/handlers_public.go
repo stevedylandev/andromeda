@@ -159,6 +159,17 @@ func (a *App) serveUploadedFile(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	f, _ := getFileByFilename(a.DB, filename)
+	if f != nil && f.StorageBackend == "r2" {
+		if a.Storage != nil && a.Storage.Name() == "r2" {
+			if u := a.Storage.PublicURL(filename); u != "" {
+				http.Redirect(w, r, u, http.StatusTemporaryRedirect)
+				return
+			}
+		}
+		http.NotFound(w, r)
+		return
+	}
 	path := a.UploadsDir + "/" + filename
 	data, err := readFile(path)
 	if err != nil {
@@ -166,7 +177,7 @@ func (a *App) serveUploadedFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ct := mimeFromPath(filename)
-	if f, _ := getFileByFilename(a.DB, filename); f != nil && f.ContentType != "" {
+	if f != nil && f.ContentType != "" {
 		ct = f.ContentType
 	}
 	w.Header().Set("Content-Type", ct)

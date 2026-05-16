@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 
+	poststorage "github.com/stevedylandev/andromeda/apps/posts-go/storage"
 	"github.com/stevedylandev/andromeda/crates-go/auth"
 )
 
@@ -21,6 +22,7 @@ type App struct {
 	AppPassword  string
 	CookieSecure bool
 	UploadsDir   string
+	Storage      poststorage.Backend
 	SiteURL      string
 }
 
@@ -213,13 +215,13 @@ type NavLink struct {
 }
 
 type siteContext struct {
-	BlogTitle   string
-	NavLinks    []NavLink
-	FaviconURL  string
-	OGImageURL  string
-	SiteURL     string
-	HeaderHTML  template.HTML
-	FooterHTML  template.HTML
+	BlogTitle  string
+	NavLinks   []NavLink
+	FaviconURL string
+	OGImageURL string
+	SiteURL    string
+	HeaderHTML template.HTML
+	FooterHTML template.HTML
 }
 
 type loginPageData struct {

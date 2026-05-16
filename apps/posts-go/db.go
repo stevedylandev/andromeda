@@ -386,14 +386,17 @@ func scanFile(s interface{ Scan(...any) error }) (*UploadedFile, error) {
 	return &f, nil
 }
 
-func createFile(db *sql.DB, filename, originalName, contentType string, size int64) (*UploadedFile, error) {
+func createFile(db *sql.DB, filename, originalName, contentType string, size int64, backend string) (*UploadedFile, error) {
 	shortID, err := auth.GenerateShortID(10)
 	if err != nil {
 		return nil, err
 	}
+	if backend == "" {
+		backend = "local"
+	}
 	res, err := db.Exec(
-		`INSERT INTO files (short_id, filename, original_name, content_type, size, storage_backend) VALUES (?, ?, ?, ?, ?, 'local')`,
-		shortID, filename, originalName, contentType, size)
+		`INSERT INTO files (short_id, filename, original_name, content_type, size, storage_backend) VALUES (?, ?, ?, ?, ?, ?)`,
+		shortID, filename, originalName, contentType, size, backend)
 	if err != nil {
 		return nil, err
 	}

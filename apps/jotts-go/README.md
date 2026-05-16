@@ -7,8 +7,8 @@ Go port of [jotts](../jotts): minimal markdown notes app.
 - Go stdlib `net/http` + `html/template`
 - `modernc.org/sqlite` (pure-Go SQLite, no CGO)
 - `github.com/yuin/goldmark` (markdown rendering w/ strikethrough, tables, tasklists)
-
-No other dependencies.
+- Bubble Tea/Lip Gloss/Glamour for the TUI editor
+- `github.com/pkg/browser` and `github.com/atotto/clipboard` for TUI browser/copy actions
 
 ## Quickstart
 
