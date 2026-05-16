@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/json"
-	"errors"
 	"html/template"
 	"io"
 	"log"
@@ -21,22 +20,17 @@ import (
 	"github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
+	"github.com/stevedylandev/andromeda/apps/sipp-go/internal/store"
 	"github.com/stevedylandev/andromeda/crates-go/auth"
 	"github.com/stevedylandev/andromeda/crates-go/config"
 	"github.com/stevedylandev/andromeda/crates-go/darkmatter"
 	"github.com/stevedylandev/andromeda/crates-go/web"
-	_ "modernc.org/sqlite"
 )
 
 //go:embed templates/*.html static/*
 var appFS embed.FS
 
-type Snippet struct {
-	ID      int64  `json:"id"`
-	ShortID string `json:"short_id"`
-	Content string `json:"content"`
-	Name    string `json:"name"`
-}
+type Snippet = store.Snippet
 
 type App struct {
 	DB              *sql.DB
@@ -50,93 +44,13 @@ type App struct {
 	MaxContentSize  int
 }
 
-const schema = `
-CREATE TABLE IF NOT EXISTS snippets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    short_id TEXT NOT NULL UNIQUE,
-    content TEXT NOT NULL,
-    name TEXT NOT NULL
-);
-`
-
-func openDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec(schema); err != nil {
-		return nil, err
-	}
-	return db, nil
-}
-
-func scanSnippet(s interface{ Scan(...any) error }) (*Snippet, error) {
-	var sn Snippet
-	err := s.Scan(&sn.ID, &sn.ShortID, &sn.Content, &sn.Name)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &sn, nil
-}
-
-func createSnippet(db *sql.DB, name, content string) (*Snippet, error) {
-	shortID, err := auth.GenerateShortID(10)
-	if err != nil {
-		return nil, err
-	}
-	res, err := db.Exec(`INSERT INTO snippets (short_id, content, name) VALUES (?, ?, ?)`, shortID, content, name)
-	if err != nil {
-		return nil, err
-	}
-	id, _ := res.LastInsertId()
-	return &Snippet{ID: id, ShortID: shortID, Content: content, Name: name}, nil
-}
-
-func getSnippetByShortID(db *sql.DB, shortID string) (*Snippet, error) {
-	return scanSnippet(db.QueryRow(`SELECT id, short_id, content, name FROM snippets WHERE short_id = ?`, shortID))
-}
-
-func getAllSnippets(db *sql.DB) ([]Snippet, error) {
-	rows, err := db.Query(`SELECT id, short_id, content, name FROM snippets ORDER BY id DESC`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	out := []Snippet{}
-	for rows.Next() {
-		s, err := scanSnippet(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, *s)
-	}
-	return out, rows.Err()
-}
-
-func deleteSnippetByShortID(db *sql.DB, shortID string) (bool, error) {
-	res, err := db.Exec(`DELETE FROM snippets WHERE short_id = ?`, shortID)
-	if err != nil {
-		return false, err
-	}
-	n, _ := res.RowsAffected()
-	return n > 0, nil
-}
-
-func updateSnippetByShortID(db *sql.DB, shortID, name, content string) (*Snippet, error) {
-	res, err := db.Exec(`UPDATE snippets SET name = ?, content = ? WHERE short_id = ?`, name, content, shortID)
-	if err != nil {
-		return nil, err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return nil, nil
-	}
-	return getSnippetByShortID(db, shortID)
-}
+var (
+	createSnippet         = store.Create
+	getSnippetByShortID   = store.GetByShortID
+	getAllSnippets        = store.List
+	deleteSnippetByShortID = store.DeleteByShortID
+	updateSnippetByShortID = store.UpdateByShortID
+)
 
 func highlight(name, content string) string {
 	ext := ""
@@ -434,7 +348,7 @@ func Run(host string, port int) error {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	dbPath := config.Getenv("SIPP_DB_PATH", "sipp.sqlite")
-	db, err := openDB(dbPath)
+	db, err := store.Open(dbPath)
 	if err != nil {
 		return err
 	}
