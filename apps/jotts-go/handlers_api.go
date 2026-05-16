@@ -3,37 +3,39 @@ package main
 import (
 	"net/http"
 	"strings"
+
+	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 func (a *App) apiListNotes(w http.ResponseWriter, r *http.Request) {
 	notes, err := listNotes(a.DB)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 		return
 	}
 	if notes == nil {
 		notes = []Note{}
 	}
-	writeJSON(w, http.StatusOK, notes)
+	web.WriteJSON(w, http.StatusOK, notes)
 }
 
 func (a *App) apiGetNote(w http.ResponseWriter, r *http.Request) {
 	shortID := r.PathValue("short_id")
 	note, err := getNoteByShortID(a.DB, shortID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 		return
 	}
 	if note == nil {
 		http.NotFound(w, r)
 		return
 	}
-	writeJSON(w, http.StatusOK, note)
+	web.WriteJSON(w, http.StatusOK, note)
 }
 
 func (a *App) apiCreateNote(w http.ResponseWriter, r *http.Request) {
 	var body NoteInput
-	if !decodeJSON(w, r, &body) {
+	if !web.DecodeJSON(w, r, &body) {
 		return
 	}
 	title := strings.TrimSpace(body.Title)
@@ -43,16 +45,16 @@ func (a *App) apiCreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 	note, err := createNote(a.DB, title, body.Content)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusCreated, note)
+	web.WriteJSON(w, http.StatusCreated, note)
 }
 
 func (a *App) apiUpdateNote(w http.ResponseWriter, r *http.Request) {
 	shortID := r.PathValue("short_id")
 	var body NoteInput
-	if !decodeJSON(w, r, &body) {
+	if !web.DecodeJSON(w, r, &body) {
 		return
 	}
 	title := strings.TrimSpace(body.Title)
@@ -62,21 +64,21 @@ func (a *App) apiUpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 	note, err := updateNoteByShortID(a.DB, shortID, title, body.Content)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 		return
 	}
 	if note == nil {
 		http.NotFound(w, r)
 		return
 	}
-	writeJSON(w, http.StatusOK, note)
+	web.WriteJSON(w, http.StatusOK, note)
 }
 
 func (a *App) apiDeleteNote(w http.ResponseWriter, r *http.Request) {
 	shortID := r.PathValue("short_id")
 	ok, err := deleteNoteByShortID(a.DB, shortID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 		return
 	}
 	if !ok {

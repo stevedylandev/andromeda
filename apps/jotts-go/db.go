@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"time"
 
+	"github.com/stevedylandev/andromeda/crates-go/auth"
 	_ "modernc.org/sqlite"
 )
 
@@ -18,12 +18,6 @@ CREATE TABLE IF NOT EXISTS notes (
     content    TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-
-CREATE TABLE IF NOT EXISTS sessions (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    token      TEXT NOT NULL UNIQUE,
-    expires_at TEXT NOT NULL
 );
 `
 
@@ -56,7 +50,7 @@ func scanNote(scanner interface{ Scan(dest ...any) error }) (*Note, error) {
 }
 
 func createNote(db *sql.DB, title, content string) (*Note, error) {
-	shortID, err := generateShortID(10)
+	shortID, err := auth.GenerateShortID(10)
 	if err != nil {
 		return nil, err
 	}
@@ -113,25 +107,3 @@ func deleteNoteByShortID(db *sql.DB, shortID string) (bool, error) {
 	return n > 0, nil
 }
 
-func createSession(db *sql.DB, token string, expiresAt time.Time) error {
-	_, err := db.Exec(`INSERT INTO sessions (token, expires_at) VALUES (?, ?)`, token, expiresAt.UTC().Format("2006-01-02 15:04:05"))
-	return err
-}
-
-func isValidSession(db *sql.DB, token string) bool {
-	var expires string
-	err := db.QueryRow(`SELECT expires_at FROM sessions WHERE token = ?`, token).Scan(&expires)
-	if err != nil {
-		return false
-	}
-	t, err := time.ParseInLocation("2006-01-02 15:04:05", expires, time.UTC)
-	return err == nil && t.After(time.Now().UTC())
-}
-
-func deleteSession(db *sql.DB, token string) {
-	_, _ = db.Exec(`DELETE FROM sessions WHERE token = ?`, token)
-}
-
-func pruneExpiredSessions(db *sql.DB) {
-	_, _ = db.Exec(`DELETE FROM sessions WHERE expires_at < datetime('now')`)
-}

@@ -1,0 +1,23 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/easel-go/Dockerfile
+    ports:
+      - "${PORT:-4242}:${PORT:-4242}"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=${PORT:-4242}
+      - EASEL_DB_PATH=/data/easel-go.sqlite
+      - EASEL_TIMEZONE=${EASEL_TIMEZONE:-UTC}
+      - EASEL_CLASSIFICATIONS=${EASEL_CLASSIFICATIONS:-painting}
+      - EASEL_EXCLUDE_TERMS=${EASEL_EXCLUDE_TERMS:-erotic,erotica,shunga}
+      - EASEL_BACKFILL_DAYS=${EASEL_BACKFILL_DAYS:-0}
+      - EASEL_MAX_DEDUP_RETRIES=${EASEL_MAX_DEDUP_RETRIES:-10}
+      - EASEL_BASE_URL=${EASEL_BASE_URL:-http://localhost:4242}
+    volumes:
+      - easel-go-data:/data
+    restart: unless-stopped
+
+volumes:
+  easel-go-data:

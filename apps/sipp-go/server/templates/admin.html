@@ -1,0 +1,46 @@
+{{define "admin.html"}}<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <title>Sipp - Admin</title>
+    <meta property="og:url" content="{{.BaseURL}}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sipps">
+    <meta property="og:image" content="{{.BaseURL}}/static/og.png">
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>SIPP</h1></a>
+    </div>
+    {{if not .Snippets}}
+      <p class="empty">no snippets yet</p>
+    {{else}}
+      <div class="admin-list">
+        {{range .Snippets}}
+          <div class="admin-list-item">
+            <div class="admin-list-info">
+              <a href="/s/{{.ShortID}}" class="admin-list-title">{{.Name}}</a>
+              <div class="admin-list-meta">
+                <span class="admin-list-date">/s/{{.ShortID}}</span>
+              </div>
+            </div>
+            <div class="admin-list-actions">
+              <a href="/s/{{.ShortID}}">view</a>
+              <form method="POST" action="/admin/snippets/{{.ShortID}}/delete" class="inline-form" onsubmit="return confirm('delete this snippet?')">
+                <button type="submit" class="link-button danger">delete</button>
+              </form>
+            </div>
+          </div>
+        {{end}}
+      </div>
+    {{end}}
+  </body>
+</html>{{end}}

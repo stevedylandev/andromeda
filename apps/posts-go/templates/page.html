@@ -1,0 +1,18 @@
+{{define "page.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.Page.Title}} — {{.BlogTitle}}{{end}}
+{{define "meta"}}
+  {{if .OGImageURL}}
+    <meta property="og:image" content="{{.OGImageURL}}">
+  {{else}}
+    <meta property="og:image" content="{{.SiteURL}}/static/og.png">
+  {{end}}
+  <meta property="og:url" content="{{.SiteURL}}/{{.Page.Slug}}">
+{{end}}
+{{define "content"}}
+  <div class="page-header">
+    <h1>{{.Page.Title}}</h1>
+  </div>
+  <article class="markdown-body">
+    {{.RenderedContent}}
+  </article>
+{{end}}

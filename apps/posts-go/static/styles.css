@@ -1,0 +1,271 @@
+/* posts — app-specific styles.
+ * Shared reset / tokens / components come from /assets/darkmatter.css.
+ */
+
+/* Textarea variants */
+
+textarea.post-content {
+  min-height: 500px;
+}
+
+textarea.attributes-textarea {
+  min-height: 80px;
+}
+
+.nav-links-input {
+  min-height: 40px;
+  height: 40px;
+}
+
+.available-fields {
+  margin-top: 0.5rem;
+}
+
+.available-fields > summary {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.fields-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+/* Post list (public) */
+
+.post-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.post-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  text-decoration: none;
+}
+
+.post-item:hover {
+  opacity: 0.7;
+}
+
+.post-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.post-item-enhanced .post-item-info {
+  gap: 0.25rem;
+}
+
+.post-title {
+  font-size: 16px;
+}
+
+.post-description {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.post-date {
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.post-excerpt {
+  font-size: 12px;
+  opacity: 0.6;
+  line-height: 1.4;
+}
+
+.post-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Post header (public single) */
+
+.post-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.post-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.intro {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+}
+
+/* Markdown rendered content */
+
+.markdown-body {
+  width: 100%;
+  line-height: 1.6;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.markdown-body h1 { font-size: 18px; }
+.markdown-body h2 { font-size: 16px; }
+.markdown-body h3 { font-size: 15px; }
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 { font-size: 14px; }
+
+.markdown-body p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.25rem;
+}
+
+.markdown-body pre {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body blockquote {
+  border-left: 2px solid #555;
+  padding-left: 12px;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body table {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid #333;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 1rem 0;
+}
+
+.markdown-body a {
+  text-decoration: underline;
+}
+
+.markdown-body img {
+  max-width: 100%;
+}
+
+.markdown-body li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -1.5rem;
+}
+
+.markdown-body input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+.markdown-body input[type="checkbox"]:checked::after {
+  font-size: 12px;
+}
+
+/* Footnotes */
+
+.markdown-body .footnote-definition {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.markdown-body .footnote-definition-label {
+  font-size: 11px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.markdown-body .footnote-definition p {
+  margin-bottom: 0;
+}
+
+.markdown-body sup.footnote-reference a {
+  font-size: 11px;
+  text-decoration: none;
+  opacity: 0.6;
+}
+
+.markdown-body sup.footnote-reference a:hover {
+  opacity: 1;
+}
+
+/* File thumbnails */
+
+.file-thumbnail {
+  max-width: 60px;
+  max-height: 60px;
+  object-fit: cover;
+  border: 1px solid #333;
+  flex-shrink: 0;
+}
+
+/* RSS link in footer */
+
+.rss-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.rss-link:hover {
+  opacity: 0.8;
+}

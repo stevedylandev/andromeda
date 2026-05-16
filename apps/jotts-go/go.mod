@@ -3,8 +3,19 @@ module github.com/stevedylandev/andromeda/apps/jotts-go
 go 1.24.4
 
 require (
+	github.com/stevedylandev/andromeda/crates-go/auth v0.0.0
+	github.com/stevedylandev/andromeda/crates-go/config v0.0.0
+	github.com/stevedylandev/andromeda/crates-go/darkmatter v0.0.0
+	github.com/stevedylandev/andromeda/crates-go/web v0.0.0
 	github.com/yuin/goldmark v1.7.8
 	modernc.org/sqlite v1.37.1
+)
+
+replace (
+	github.com/stevedylandev/andromeda/crates-go/auth => ../../crates-go/auth
+	github.com/stevedylandev/andromeda/crates-go/config => ../../crates-go/config
+	github.com/stevedylandev/andromeda/crates-go/darkmatter => ../../crates-go/darkmatter
+	github.com/stevedylandev/andromeda/crates-go/web => ../../crates-go/web
 )
 
 require (
@@ -13,6 +24,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	modernc.org/libc v1.65.7 // indirect

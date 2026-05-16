@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Library</title>
+    <meta name="description" content="Personal book tracker" />
+    <meta property="og:url" content="{{.BaseURL}}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Library" />
+    <meta property="og:description" content="Personal book tracker" />
+    <meta property="og:image" content="{{.BaseURL}}/static/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="{{.BaseURL}}" />
+    <meta name="twitter:title" content="Library" />
+    <meta name="twitter:description" content="Personal book tracker" />
+    <meta name="twitter:image" content="{{.BaseURL}}/static/og.png" />
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>LIBRARY</h1></a>
+      <nav class="links">
+        {{if .NavMode}}
+        {{range .NavCategories}}
+        <a href="/?category={{.Slug}}"{{if .Active}} class="active"{{end}}>{{.Label}}</a>
+        {{end}}
+        {{end}}
+        <a href="/admin">add</a>
+      </nav>
+    </div>
+
+    {{if not .Sections}}
+    <p class="no-books">No books yet.</p>
+    {{else}}
+    {{range .Sections}}
+    <div class="section">
+      {{if not $.NavMode}}
+      <h2 class="section-label">{{.Label}}</h2>
+      {{end}}
+      {{if not .Books}}
+      <p class="no-books">No books in {{.Label}}.</p>
+      {{else}}
+      <div class="books-list">
+        {{range .Books}}
+        <article class="book-card">
+          {{if .CoverURL}}
+          <img class="book-cover" src="{{.CoverURL}}" alt="" loading="lazy" />
+          {{else}}
+          <div class="book-cover placeholder"></div>
+          {{end}}
+          <div class="book-info">
+            <h3 class="book-title">{{.Title}}</h3>
+            <p class="book-authors">{{.Authors}}</p>
+            {{if .Notes}}
+            <p class="book-notes">{{.Notes}}</p>
+            {{end}}
+          </div>
+        </article>
+        {{end}}
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+    {{end}}
+  </body>
+</html>
