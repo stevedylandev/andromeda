@@ -70,7 +70,7 @@ func (a *App) feedsExportHandler(w http.ResponseWriter, r *http.Request) {
 	case "opml":
 		a.writeOPMLExport(w, subs)
 	default:
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid format. Use ?format=json or ?format=opml"})
+		web.WriteError(w, http.StatusBadRequest, "Invalid format. Use ?format=json or ?format=opml")
 	}
 }
 

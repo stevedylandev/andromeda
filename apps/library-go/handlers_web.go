@@ -179,7 +179,7 @@ func (a *App) adminSearch(w http.ResponseWriter, r *http.Request) {
 	hits, err := googleBooksSearch(r.Context(), r.URL.Query().Get("q"), a.GoogleBooksKey)
 	if err != nil {
 		a.Log.Warn("google books search failed", "err", err)
-		web.WriteJSON(w, http.StatusBadGateway, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusBadGateway, err.Error())
 		return
 	}
 	if hits == nil {

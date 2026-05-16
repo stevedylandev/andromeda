@@ -10,6 +10,7 @@ import (
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
 	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/crates-go/sqlite"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	dbPath := config.Getenv("CELLAR_DB_PATH", "cellar.sqlite")
-	db, err := openDB(dbPath)
+	db, err := sqlite.Open(dbPath, cellarSchema)
 	if err != nil {
 		log.Fatal(err)
 	}

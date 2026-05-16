@@ -3,32 +3,34 @@ module github.com/stevedylandev/andromeda/apps/jotts-go
 go 1.25.0
 
 require (
+	github.com/BurntSushi/toml v1.6.0
+	github.com/atotto/clipboard v0.1.4
+	github.com/charmbracelet/bubbles v1.0.0
+	github.com/charmbracelet/bubbletea v1.3.10
+	github.com/charmbracelet/glamour v1.0.0
+	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/stevedylandev/andromeda/crates-go/auth v0.0.0
 	github.com/stevedylandev/andromeda/crates-go/config v0.0.0
 	github.com/stevedylandev/andromeda/crates-go/darkmatter v0.0.0
+	github.com/stevedylandev/andromeda/crates-go/sqlite v0.0.0
 	github.com/stevedylandev/andromeda/crates-go/web v0.0.0
 	github.com/yuin/goldmark v1.7.13
-	modernc.org/sqlite v1.37.1
+	golang.org/x/term v0.43.0
 )
 
 replace (
 	github.com/stevedylandev/andromeda/crates-go/auth => ../../crates-go/auth
 	github.com/stevedylandev/andromeda/crates-go/config => ../../crates-go/config
 	github.com/stevedylandev/andromeda/crates-go/darkmatter => ../../crates-go/darkmatter
+	github.com/stevedylandev/andromeda/crates-go/sqlite => ../../crates-go/sqlite
 	github.com/stevedylandev/andromeda/crates-go/web => ../../crates-go/web
 )
 
 require (
-	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/alecthomas/chroma/v2 v2.20.0 // indirect
-	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/charmbracelet/bubbles v1.0.0 // indirect
-	github.com/charmbracelet/bubbletea v1.3.10 // indirect
 	github.com/charmbracelet/colorprofile v0.4.1 // indirect
-	github.com/charmbracelet/glamour v1.0.0 // indirect
-	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834 // indirect
 	github.com/charmbracelet/x/ansi v0.11.6 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.15 // indirect
 	github.com/charmbracelet/x/exp/slice v0.0.0-20250327172914-2fdc97757edf // indirect
@@ -59,9 +61,9 @@ require (
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sys v0.44.0 // indirect
-	golang.org/x/term v0.43.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	modernc.org/libc v1.65.7 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
+	modernc.org/sqlite v1.37.1 // indirect
 )

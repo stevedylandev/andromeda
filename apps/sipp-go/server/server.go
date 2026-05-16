@@ -219,7 +219,7 @@ func (a *App) createSnippetForm(w http.ResponseWriter, r *http.Request) {
 func (a *App) requireAPIKey(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if a.APIKey == "" {
-			web.WriteJSON(w, http.StatusForbidden, map[string]any{"error": "No API key configured on server"})
+			web.WriteError(w, http.StatusForbidden, "No API key configured on server")
 			return
 		}
 		if auth.SecureEqual(r.Header.Get("x-api-key"), a.APIKey) {
@@ -230,14 +230,14 @@ func (a *App) requireAPIKey(next http.HandlerFunc) http.HandlerFunc {
 			next(w, r)
 			return
 		}
-		web.WriteJSON(w, http.StatusUnauthorized, map[string]any{"error": "Invalid or missing API key"})
+		web.WriteError(w, http.StatusUnauthorized, "Invalid or missing API key")
 	}
 }
 
 func (a *App) apiList(w http.ResponseWriter, r *http.Request) {
 	snippets, err := getAllSnippets(a.DB)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "Internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, snippets)
@@ -246,11 +246,11 @@ func (a *App) apiList(w http.ResponseWriter, r *http.Request) {
 func (a *App) apiGet(w http.ResponseWriter, r *http.Request) {
 	s, err := getSnippetByShortID(a.DB, r.PathValue("short_id"))
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "Internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	if s == nil {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "Snippet not found"})
+		web.WriteError(w, http.StatusNotFound, "Snippet not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, s)
@@ -267,12 +267,12 @@ func (a *App) apiCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body.Content) > a.MaxContentSize {
-		web.WriteJSON(w, http.StatusRequestEntityTooLarge, map[string]any{"error": "Content too large. Maximum size is " + strconv.Itoa(a.MaxContentSize) + " bytes"})
+		web.WriteError(w, http.StatusRequestEntityTooLarge, "Content too large. Maximum size is "+strconv.Itoa(a.MaxContentSize)+" bytes")
 		return
 	}
 	s, err := createSnippet(a.DB, body.Name, body.Content)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "Internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	web.WriteJSON(w, http.StatusCreated, s)
@@ -284,16 +284,16 @@ func (a *App) apiUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(body.Content) > a.MaxContentSize {
-		web.WriteJSON(w, http.StatusRequestEntityTooLarge, map[string]any{"error": "Content too large"})
+		web.WriteError(w, http.StatusRequestEntityTooLarge, "Content too large")
 		return
 	}
 	s, err := updateSnippetByShortID(a.DB, r.PathValue("short_id"), body.Name, body.Content)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "Internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	if s == nil {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "Snippet not found"})
+		web.WriteError(w, http.StatusNotFound, "Snippet not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, s)
@@ -302,11 +302,11 @@ func (a *App) apiUpdate(w http.ResponseWriter, r *http.Request) {
 func (a *App) apiDelete(w http.ResponseWriter, r *http.Request) {
 	ok, err := deleteSnippetByShortID(a.DB, r.PathValue("short_id"))
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": "Internal server error"})
+		web.WriteError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 	if !ok {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "Snippet not found"})
+		web.WriteError(w, http.StatusNotFound, "Snippet not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"deleted": true})

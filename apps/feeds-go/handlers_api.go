@@ -9,7 +9,7 @@ import (
 func (a *App) listItemsAPI(w http.ResponseWriter, r *http.Request) {
 	items, err := listItems(a.DB, itemFilterFromRequest(r))
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"items": items})
@@ -17,18 +17,18 @@ func (a *App) listItemsAPI(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) markItemReadAPI(isRead bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, ok := pathInt64(r, "id")
+		id, ok := web.PathInt64(r, "id")
 		if !ok {
-			web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid item id"})
+			web.WriteError(w, http.StatusBadRequest, "invalid item id")
 			return
 		}
 		updated, err := markItemRead(a.DB, id, isRead)
 		if err != nil {
-			web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+			web.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 		if !updated {
-			web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "item not found"})
+			web.WriteError(w, http.StatusNotFound, "item not found")
 			return
 		}
 		web.WriteJSON(w, http.StatusOK, map[string]any{"ok": true, "is_read": isRead})
@@ -38,7 +38,7 @@ func (a *App) markItemReadAPI(isRead bool) http.HandlerFunc {
 func (a *App) listSubscriptionsAPI(w http.ResponseWriter, r *http.Request) {
 	subs, err := listSubscriptions(a.DB)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	views := make([]subscriptionView, 0, len(subs))
@@ -59,16 +59,16 @@ func (a *App) createSubscriptionAPI(w http.ResponseWriter, r *http.Request) {
 		if isAlreadySubscribedError(err) {
 			status = http.StatusConflict
 		}
-		web.WriteJSON(w, status, map[string]any{"error": err.Error()})
+		web.WriteError(w, status, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusCreated, map[string]any{"subscription": toSubscriptionView(*sub)})
 }
 
 func (a *App) updateSubscriptionAPI(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathInt64(r, "id")
+	id, ok := web.PathInt64(r, "id")
 	if !ok {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid subscription id"})
+		web.WriteError(w, http.StatusBadRequest, "invalid subscription id")
 		return
 	}
 	var body updateSubscriptionBody
@@ -77,29 +77,29 @@ func (a *App) updateSubscriptionAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	categoryID, err := a.resolveSubscriptionCategory(body)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if err := updateSubscriptionCategory(a.DB, id, categoryID); err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (a *App) deleteSubscriptionAPI(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathInt64(r, "id")
+	id, ok := web.PathInt64(r, "id")
 	if !ok {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid subscription id"})
+		web.WriteError(w, http.StatusBadRequest, "invalid subscription id")
 		return
 	}
 	deleted, err := deleteSubscription(a.DB, id)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if !deleted {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "subscription not found"})
+		web.WriteError(w, http.StatusNotFound, "subscription not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
@@ -108,7 +108,7 @@ func (a *App) deleteSubscriptionAPI(w http.ResponseWriter, r *http.Request) {
 func (a *App) listCategoriesAPI(w http.ResponseWriter, r *http.Request) {
 	cats, err := listCategories(a.DB)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"categories": cats})
@@ -121,25 +121,25 @@ func (a *App) createCategoryAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	cat, err := getOrCreateCategory(a.DB, body.Name)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusCreated, map[string]any{"category": cat})
 }
 
 func (a *App) deleteCategoryAPI(w http.ResponseWriter, r *http.Request) {
-	id, ok := pathInt64(r, "id")
+	id, ok := web.PathInt64(r, "id")
 	if !ok {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "invalid category id"})
+		web.WriteError(w, http.StatusBadRequest, "invalid category id")
 		return
 	}
 	deleted, err := deleteCategory(a.DB, id)
 	if err != nil {
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if !deleted {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "category not found"})
+		web.WriteError(w, http.StatusNotFound, "category not found")
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
@@ -148,7 +148,7 @@ func (a *App) deleteCategoryAPI(w http.ResponseWriter, r *http.Request) {
 func (a *App) importOPMLAPI(w http.ResponseWriter, r *http.Request) {
 	summary, err := a.readAndImportOPML(r)
 	if err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, summary)
@@ -165,11 +165,11 @@ func (a *App) updateSettingsAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.PollIntervalMinutes != nil {
 		if !validPollMinutes(*body.PollIntervalMinutes) {
-			web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "poll_interval_minutes must be between 1 and 1440"})
+			web.WriteError(w, http.StatusBadRequest, "poll_interval_minutes must be between 1 and 1440")
 			return
 		}
 		if err := setSetting(a.DB, "poll_interval_minutes", itoa(*body.PollIntervalMinutes)); err != nil {
-			web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+			web.WriteError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
@@ -183,7 +183,7 @@ func (a *App) discoverAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	feeds, err := discoverFeeds(r.Context(), body.BaseURL)
 	if err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, map[string]any{"feeds": feeds})

@@ -40,7 +40,7 @@ func (a *App) apiListLinks(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if found == nil {
-			web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "unknown category"})
+			web.WriteError(w, http.StatusNotFound, "unknown category")
 			return
 		}
 		out := []Link{}
@@ -73,7 +73,7 @@ func (a *App) apiCreateLink(w http.ResponseWriter, r *http.Request) {
 	title := strings.TrimSpace(body.Title)
 	url := strings.TrimSpace(body.URL)
 	if title == "" || url == "" {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "title and url required"})
+		web.WriteError(w, http.StatusBadRequest, "title and url required")
 		return
 	}
 	cat, err := getCategoryByName(a.DB, body.Category)
@@ -83,7 +83,7 @@ func (a *App) apiCreateLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if cat == nil {
-		web.WriteJSON(w, http.StatusNotFound, map[string]any{"error": "unknown category"})
+		web.WriteError(w, http.StatusNotFound, "unknown category")
 		return
 	}
 	link, err := createLink(a.DB, title, url, nil, cat.ID)

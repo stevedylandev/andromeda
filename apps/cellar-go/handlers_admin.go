@@ -207,23 +207,23 @@ func (a *App) promoteWinePost(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) analyzeImage(w http.ResponseWriter, r *http.Request) {
 	if a.AnthropicAPIKey == "" {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "No API key configured"})
+		web.WriteError(w, http.StatusBadRequest, "No API key configured")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 	if err := r.ParseMultipartForm(maxUploadBytes); err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	file, header, err := r.FormFile("image")
 	if err != nil {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "No image provided"})
+		web.WriteError(w, http.StatusBadRequest, "No image provided")
 		return
 	}
 	defer file.Close()
 	raw, err := io.ReadAll(file)
 	if err != nil || len(raw) == 0 {
-		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "No image provided"})
+		web.WriteError(w, http.StatusBadRequest, "No image provided")
 		return
 	}
 	mediaType := "image/jpeg"
@@ -233,7 +233,7 @@ func (a *App) analyzeImage(w http.ResponseWriter, r *http.Request) {
 	result, err := analyzeWineImage(r.Context(), a.AnthropicAPIKey, raw, mediaType)
 	if err != nil {
 		a.Log.Error("Claude analysis failed", "err", err)
-		web.WriteJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
+		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, result)

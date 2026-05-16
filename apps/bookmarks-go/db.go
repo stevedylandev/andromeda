@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
-	_ "modernc.org/sqlite"
 )
 
 const schema = `
@@ -31,22 +30,6 @@ CREATE TABLE IF NOT EXISTS links (
 
 CREATE INDEX IF NOT EXISTS idx_links_category ON links(category_id, created_at DESC);
 `
-
-func openDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		return nil, err
-	}
-	if _, err := db.Exec(schema); err != nil {
-		return nil, err
-	}
-	return db, nil
-}
 
 func listCategories(db *sql.DB) ([]Category, error) {
 	rows, err := db.Query(`SELECT id, short_id, name, position FROM categories ORDER BY position ASC, name COLLATE NOCASE`)

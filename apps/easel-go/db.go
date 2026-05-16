@@ -3,8 +3,6 @@ package main
 import (
 	"database/sql"
 	"errors"
-
-	_ "modernc.org/sqlite"
 )
 
 const easelSchema = `
@@ -45,19 +43,6 @@ type DailyArtwork struct {
 }
 
 const dailyCols = `date, artwork_id, title, artist_display, artist_title, date_display, medium_display, dimensions, place_of_origin, credit_line, description, short_description, image_id, fetched_at`
-
-func openDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec(easelSchema); err != nil {
-		return nil, err
-	}
-	return db, nil
-}
 
 func scanDaily(s interface{ Scan(...any) error }) (*DailyArtwork, error) {
 	var d DailyArtwork

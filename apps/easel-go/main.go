@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/crates-go/sqlite"
 )
 
 func splitCommaTrim(s string) []string {
@@ -28,7 +29,7 @@ func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	dbPath := config.Getenv("EASEL_DB_PATH", "easel.sqlite")
-	db, err := openDB(dbPath)
+	db, err := sqlite.Open(dbPath, easelSchema)
 	if err != nil {
 		log.Fatal(err)
 	}

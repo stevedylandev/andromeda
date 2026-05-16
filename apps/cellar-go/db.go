@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
-	_ "modernc.org/sqlite"
 )
 
 const cellarSchema = `
@@ -34,19 +33,6 @@ CREATE TABLE IF NOT EXISTS wines (
 `
 
 const wineCols = `id, short_id, name, origin, grape, notes, (image IS NOT NULL) AS has_image, COALESCE(image_mime, ''), sweetness, acidity, tannin, alcohol, body, clarity, color_intensity, aroma_intensity, nose_complexity, background, created_at, wishlist`
-
-func openDB(path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", path)
-	if err != nil {
-		return nil, err
-	}
-	db.SetMaxOpenConns(1)
-	db.SetMaxIdleConns(1)
-	if _, err := db.Exec(cellarSchema); err != nil {
-		return nil, err
-	}
-	return db, nil
-}
 
 func scanWine(s interface{ Scan(...any) error }) (*Wine, error) {
 	var w Wine
