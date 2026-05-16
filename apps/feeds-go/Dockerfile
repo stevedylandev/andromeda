@@ -1,6 +1,9 @@
+# Build from repo root: docker build -t feeds-go -f apps/feeds-go/Dockerfile .
 FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-COPY apps/feeds-go/go.mod apps/feeds-go/go.sum ./
+COPY crates-go/ ./crates-go/
+COPY apps/feeds-go/go.mod apps/feeds-go/go.sum ./apps/feeds-go/
+WORKDIR /app/apps/feeds-go
 RUN go mod download
 COPY apps/feeds-go/ ./
 RUN CGO_ENABLED=0 go build -o /feeds-go .
