@@ -1,0 +1,34 @@
+{{define "admin_pages.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Pages{{end}}
+{{define "content"}}
+  <div class="admin-toolbar">
+    <h2>Pages</h2>
+    <a href="/admin/pages/new" class="btn">new page</a>
+  </div>
+  {{if not .Pages}}
+    <p class="empty">no pages yet</p>
+  {{else}}
+    <div class="admin-list">
+      {{range .Pages}}
+        <div class="admin-list-item">
+          <div class="admin-list-info">
+            <a href="/admin/pages/{{.ShortID}}/edit" class="admin-list-title">{{.Title}}</a>
+            <div class="admin-list-meta">
+              <span class="status-badge {{if .IsPublished}}status-published{{else}}status-draft{{end}}">
+                {{if .IsPublished}}published{{else}}draft{{end}}
+              </span>
+              <span class="admin-list-date">/{{.Slug}}</span>
+              <span class="admin-list-date">order: {{.NavOrder}}</span>
+            </div>
+          </div>
+          <div class="admin-list-actions">
+            <a href="/admin/pages/{{.ShortID}}/edit">edit</a>
+            <form method="POST" action="/admin/pages/{{.ShortID}}/delete" class="inline-form">
+              <button type="submit" class="link-button danger" onclick="return confirm('Delete this page?')">delete</button>
+            </form>
+          </div>
+        </div>
+      {{end}}
+    </div>
+  {{end}}
+{{end}}

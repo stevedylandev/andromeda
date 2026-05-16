@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,13 +21,13 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 		data.FeedURLs = urls
 		if len(urls) == 0 {
 			data.Error = "No URLs provided"
-			a.render(w, "index.html", data)
+			web.Render(a.Templates, w, "index.html", data, a.Log)
 			return
 		}
 		for _, item := range previewURLs(r.Context(), urls, a.Log) {
 			data.Items = append(data.Items, templateItem{Title: item.Title, Link: item.Link, Author: item.Author, FormattedDate: formatDate(item.Published)})
 		}
-		a.render(w, "index.html", data)
+		web.Render(a.Templates, w, "index.html", data, a.Log)
 		return
 	}
 
@@ -33,7 +35,7 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.Log.Error("index query failed", "err", err)
 		data.Error = "Error loading feeds. Please try again later."
-		a.render(w, "index.html", data)
+		web.Render(a.Templates, w, "index.html", data, a.Log)
 		return
 	}
 	for _, item := range items {
@@ -43,7 +45,7 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Items = append(data.Items, templateItem{Title: item.Title, Link: item.Link, Author: author, FormattedDate: formatDate(item.PublishedAt)})
 	}
-	a.render(w, "index.html", data)
+	web.Render(a.Templates, w, "index.html", data, a.Log)
 }
 
 func (a *App) feedsExportHandler(w http.ResponseWriter, r *http.Request) {
@@ -64,11 +66,11 @@ func (a *App) feedsExportHandler(w http.ResponseWriter, r *http.Request) {
 				"htmlUrl": nullStringValue(s.SiteURL),
 			})
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"subscriptions": rows})
+		web.WriteJSON(w, http.StatusOK, map[string]any{"subscriptions": rows})
 	case "opml":
 		a.writeOPMLExport(w, subs)
 	default:
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid format. Use ?format=json or ?format=opml"})
+		web.WriteJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid format. Use ?format=json or ?format=opml"})
 	}
 }
 

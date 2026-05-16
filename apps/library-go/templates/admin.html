@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Library | Admin</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>LIBRARY</h1></a>
+      <nav class="links">
+        <a href="/admin/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    <section class="admin-form">
+      <h3>Category Labels</h3>
+      <form method="POST" action="/admin/categories/labels" class="labels-form">
+        <label>
+          <span>Reading</span>
+          <input type="text" name="reading" value="{{.Labels.Reading}}" required />
+        </label>
+        <label>
+          <span>Read</span>
+          <input type="text" name="read" value="{{.Labels.Read}}" required />
+        </label>
+        <label>
+          <span>Want to Read</span>
+          <input type="text" name="want" value="{{.Labels.Want}}" required />
+        </label>
+        <button type="submit">Save labels</button>
+      </form>
+    </section>
+
+    <section class="admin-form">
+      <h3>Search Books (Google)</h3>
+      <div class="search-row">
+        <input type="text" id="book-query" placeholder="title, author, isbn" />
+        <button type="button" id="search-btn" onclick="searchBooks()">Search</button>
+        <button type="button" id="scan-btn" onclick="openScanner()" hidden>Scan</button>
+      </div>
+      <div id="search-status" class="search-status" style="display:none;"></div>
+      <div id="search-results" class="search-results"></div>
+    </section>
+
+    <section class="admin-form">
+      <h3>Search Library</h3>
+      <form method="GET" action="/admin" class="search-row">
+        <input type="text" name="q" placeholder="title, author, isbn" value="{{.LibraryQuery}}" />
+        <button type="submit">Search</button>
+        {{if .LibrarySearched}}
+        <a href="/admin" class="hint">clear</a>
+        {{end}}
+      </form>
+      {{if .LibrarySearched}}
+        {{if not .LibraryResults}}
+        <p class="hint">No matches.</p>
+        {{else}}
+        <div class="books-list">
+          {{$labels := .Labels}}
+          {{range .LibraryResults}}
+          <div class="book-card admin">
+            {{if .CoverURL}}
+            <img class="book-cover" src="{{.CoverURL}}" alt="" loading="lazy" />
+            {{else}}
+            <div class="book-cover placeholder"></div>
+            {{end}}
+            <div class="book-info">
+              <h3 class="book-title">{{.Title}}</h3>
+              <p class="book-authors">{{.Authors}}</p>
+              {{if .ISBN}}<p class="book-meta">ISBN: {{.ISBN}}</p>{{end}}
+              <form method="POST" action="/admin/books/{{.ID}}/status" class="inline">
+                <select name="status" onchange="this.form.submit()">
+                  <option value="read"{{if eq .Status "read"}} selected{{end}}>{{$labels.Read}}</option>
+                  <option value="reading"{{if eq .Status "reading"}} selected{{end}}>{{$labels.Reading}}</option>
+                  <option value="want"{{if eq .Status "want"}} selected{{end}}>{{$labels.Want}}</option>
+                </select>
+                <noscript><button type="submit">Save</button></noscript>
+              </form>
+              <form method="POST" action="/admin/books/{{.ID}}/notes" class="inline notes-form">
+                <textarea name="notes" rows="5" placeholder="notes">{{.Notes}}</textarea>
+                <button type="submit">Save notes</button>
+              </form>
+              <form method="POST" action="/admin/books/{{.ID}}/delete" class="inline">
+                <button type="submit" class="danger">Delete</button>
+              </form>
+            </div>
+          </div>
+          {{end}}
+        </div>
+        {{end}}
+      {{end}}
+    </section>
+
+    <div id="scan-modal" class="scan-modal" hidden>
+      <div class="scan-inner">
+        <video id="scan-video" playsinline muted></video>
+        <p id="scan-status" class="scan-status">Point camera at barcode</p>
+        <button type="button" onclick="closeScanner()">Cancel</button>
+      </div>
+    </div>
+
+    <section class="admin-subs">
+      <h3>Library ({{len .Books}})</h3>
+      {{if not .Books}}
+      <p class="hint">No books yet. Search above to add one.</p>
+      {{else}}
+      <div class="books-list">
+        {{$labels := .Labels}}
+        {{range .Books}}
+        <div class="book-card admin">
+          {{if .CoverURL}}
+          <img class="book-cover" src="{{.CoverURL}}" alt="" loading="lazy" />
+          {{else}}
+          <div class="book-cover placeholder"></div>
+          {{end}}
+          <div class="book-info">
+            <h3 class="book-title">{{.Title}}</h3>
+            <p class="book-authors">{{.Authors}}</p>
+            {{if .ISBN}}<p class="book-meta">ISBN: {{.ISBN}}</p>{{end}}
+            <form method="POST" action="/admin/books/{{.ID}}/status" class="inline">
+              <select name="status" onchange="this.form.submit()">
+                <option value="read"{{if eq .Status "read"}} selected{{end}}>{{$labels.Read}}</option>
+                <option value="reading"{{if eq .Status "reading"}} selected{{end}}>{{$labels.Reading}}</option>
+                <option value="want"{{if eq .Status "want"}} selected{{end}}>{{$labels.Want}}</option>
+              </select>
+              <noscript><button type="submit">Save</button></noscript>
+            </form>
+            <form method="POST" action="/admin/books/{{.ID}}/notes" class="inline notes-form">
+              <textarea name="notes" rows="5" placeholder="notes">{{.Notes}}</textarea>
+              <button type="submit">Save notes</button>
+            </form>
+            <form method="POST" action="/admin/books/{{.ID}}/delete" class="inline">
+              <button type="submit" class="danger">Delete</button>
+            </form>
+          </div>
+        </div>
+        {{end}}
+      </div>
+      {{end}}
+    </section>
+
+    <div id="category-labels-data"
+         data-want="{{.Labels.Want}}"
+         data-reading="{{.Labels.Reading}}"
+         data-read="{{.Labels.Read}}"
+         hidden></div>
+
+    <script src="https://unpkg.com/@zxing/browser@0.1.5/umd/zxing-browser.min.js"></script>
+    <script>
+      (function() {
+        const el = document.getElementById('category-labels-data');
+        window.__categoryLabels = {
+          want: el.dataset.want,
+          reading: el.dataset.reading,
+          read: el.dataset.read,
+        };
+      })();
+
+      async function searchBooks() {
+        const q = document.getElementById('book-query').value.trim();
+        if (!q) return;
+        const btn = document.getElementById('search-btn');
+        const status = document.getElementById('search-status');
+        const results = document.getElementById('search-results');
+        btn.disabled = true;
+        btn.textContent = 'Searching...';
+        status.style.display = 'none';
+        results.innerHTML = '';
+        try {
+          const resp = await fetch('/admin/search?q=' + encodeURIComponent(q));
+          const data = await resp.json();
+          if (!resp.ok) {
+            status.textContent = data.error || 'Search failed';
+            status.className = 'search-status error';
+            status.style.display = 'block';
+            return;
+          }
+          if (!data.length) {
+            status.textContent = 'No results';
+            status.className = 'search-status';
+            status.style.display = 'block';
+            return;
+          }
+          data.forEach(function(hit) {
+            results.appendChild(renderHit(hit));
+          });
+        } catch (e) {
+          status.textContent = 'Request failed';
+          status.className = 'search-status error';
+          status.style.display = 'block';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Search';
+        }
+      }
+
+      function renderHit(hit) {
+        const card = document.createElement('form');
+        card.method = 'POST';
+        card.action = '/admin/add';
+        card.className = 'book-card hit';
+
+        const cover = document.createElement('div');
+        if (hit.cover_url) {
+          const img = document.createElement('img');
+          img.src = hit.cover_url;
+          img.className = 'book-cover';
+          img.loading = 'lazy';
+          card.appendChild(img);
+        } else {
+          cover.className = 'book-cover placeholder';
+          card.appendChild(cover);
+        }
+
+        const info = document.createElement('div');
+        info.className = 'book-info';
+        info.innerHTML =
+          '<h3 class="book-title"></h3>' +
+          '<p class="book-authors"></p>' +
+          (hit.isbn ? '<p class="book-meta">ISBN: ' + escapeHtml(hit.isbn) + '</p>' : '');
+        info.querySelector('.book-title').textContent = hit.title;
+        info.querySelector('.book-authors').textContent = hit.authors;
+
+        const hidden = function(name, value) {
+          const el = document.createElement('input');
+          el.type = 'hidden';
+          el.name = name;
+          el.value = value || '';
+          return el;
+        };
+        info.appendChild(hidden('google_id', hit.google_id));
+        info.appendChild(hidden('title', hit.title));
+        info.appendChild(hidden('authors', hit.authors));
+        info.appendChild(hidden('isbn', hit.isbn));
+        info.appendChild(hidden('cover_url', hit.cover_url));
+
+        const select = document.createElement('select');
+        select.name = 'status';
+        const labels = window.__categoryLabels || { want: 'Want to Read', reading: 'Reading', read: 'Read' };
+        ['want', 'reading', 'read'].forEach(function(s) {
+          const o = document.createElement('option');
+          o.value = s;
+          o.textContent = labels[s];
+          select.appendChild(o);
+        });
+        info.appendChild(select);
+
+        const btn = document.createElement('button');
+        btn.type = 'submit';
+        btn.textContent = 'Add';
+        info.appendChild(btn);
+
+        card.appendChild(info);
+        return card;
+      }
+
+      function escapeHtml(s) {
+        return String(s || '').replace(/[&<>"']/g, function(c) {
+          return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c];
+        });
+      }
+
+      let scanStream = null;
+      let scanRaf = null;
+      let zxingControls = null;
+
+      const hasNativeBarcode = 'BarcodeDetector' in window;
+      const hasZxing = typeof ZXingBrowser !== 'undefined';
+
+      (function initScan() {
+        if ((hasNativeBarcode || hasZxing) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          document.getElementById('scan-btn').hidden = false;
+        }
+      })();
+
+      async function openScanner() {
+        const modal = document.getElementById('scan-modal');
+        const video = document.getElementById('scan-video');
+        const status = document.getElementById('scan-status');
+        status.textContent = 'Point camera at barcode';
+        modal.hidden = false;
+
+        const onHit = (isbn) => {
+          closeScanner();
+          document.getElementById('book-query').value = isbn;
+          searchBooks();
+        };
+
+        try {
+          let detector = null;
+          if (hasNativeBarcode) {
+            try {
+              detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a'] });
+            } catch (_) {
+              detector = null;
+            }
+          }
+
+          if (detector) {
+            scanStream = await navigator.mediaDevices.getUserMedia({
+              video: { facingMode: 'environment' }
+            });
+            video.srcObject = scanStream;
+            await video.play();
+            const tick = async () => {
+              if (!scanStream) return;
+              try {
+                const codes = await detector.detect(video);
+                if (codes.length) return onHit(codes[0].rawValue);
+              } catch (_) {}
+              scanRaf = requestAnimationFrame(tick);
+            };
+            tick();
+            return;
+          }
+
+          if (hasZxing) {
+            const reader = new ZXingBrowser.BrowserMultiFormatReader();
+            zxingControls = await reader.decodeFromVideoDevice(undefined, video, (result, err, controls) => {
+              if (result) {
+                controls.stop();
+                zxingControls = null;
+                onHit(result.getText());
+              }
+            });
+            return;
+          }
+
+          status.textContent = 'Scanner not supported';
+        } catch (e) {
+          status.textContent = 'Camera unavailable';
+        }
+      }
+
+      function closeScanner() {
+        if (scanRaf) cancelAnimationFrame(scanRaf);
+        scanRaf = null;
+        if (zxingControls) {
+          try { zxingControls.stop(); } catch (_) {}
+          zxingControls = null;
+        }
+        if (scanStream) {
+          scanStream.getTracks().forEach(function(t) { t.stop(); });
+          scanStream = null;
+        }
+        document.getElementById('scan-modal').hidden = true;
+      }
+    </script>
+  </body>
+</html>

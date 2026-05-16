@@ -1,0 +1,64 @@
+{{define "snippet.html"}}<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <title>{{.Name}} | Sipp</title>
+    <meta property="og:url" content="{{.BaseURL}}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Sipp | {{.Name}}">
+    <meta property="og:image" content="{{.BaseURL}}/static/og.png">
+  </head>
+  <body>
+    <div class="nav">
+      <a href="/" class="header"><h1>SIPP</h1></a>
+    </div>
+    <div id="snippetForm">
+      <label id="snippetName">{{.Name}}</label>
+      <div class="code-container">{{.HighlightedContent}}</div>
+      <textarea id="content" style="display:none;">{{.Content}}</textarea>
+      <div class="button-group">
+        <button type="button" id="copyLinkBtn" data-original-text="Copy Link">Copy Link</button>
+        <button type="button" id="copyContentBtn" data-original-text="Copy Content">Copy Content</button>
+        <button type="button" id="createNewBtn">Create New Snippet</button>
+      </div>
+    </div>
+    <script>
+      async function copyToClipboard(text, button) {
+        try {
+          await navigator.clipboard.writeText(text);
+          showButtonFeedback(button, '✔ Copied', 'success');
+        } catch (error) {
+          showButtonFeedback(button, '✘ Failed', 'error');
+        }
+      }
+      function showButtonFeedback(button, message, type) {
+        const originalText = button.dataset.originalText || button.textContent;
+        button.textContent = message;
+        button.disabled = true;
+        button.classList.add('copy-' + type);
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.disabled = false;
+          button.classList.remove('copy-' + type);
+        }, 1000);
+      }
+      document.getElementById('copyContentBtn').addEventListener('click', async () => {
+        await copyToClipboard(document.getElementById('content').value, document.getElementById('copyContentBtn'));
+      });
+      document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+        await copyToClipboard(window.location.href, document.getElementById('copyLinkBtn'));
+      });
+      document.getElementById('createNewBtn').addEventListener('click', () => {
+        window.location.href = '/';
+      });
+    </script>
+  </body>
+</html>{{end}}

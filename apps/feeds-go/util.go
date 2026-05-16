@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,20 +22,6 @@ func formatDate(ts int64) string {
 		return ""
 	}
 	return time.Unix(ts, 0).UTC().Format("Jan 2, 2006")
-}
-
-func getenv(key, fallback string) string {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-		return v
-	}
-	return fallback
-}
-
-func getenvInt(key string, fallback int) int {
-	if v, err := strconv.Atoi(strings.TrimSpace(os.Getenv(key))); err == nil {
-		return v
-	}
-	return fallback
 }
 
 func parseIntDefault(s string, fallback int) int {
@@ -118,25 +103,6 @@ func toSubscriptionView(s Subscription) subscriptionView {
 		}
 		return nil
 	}(), ETag: nullStringPointer(s.ETag), LastModified: nullStringPointer(s.LastModified), LastFetchedAt: nullStringPointer(s.LastFetchedAt), LastError: nullStringPointer(s.LastError), AddedAt: s.AddedAt}
-}
-
-func loadDotEnv(path string) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") || !strings.Contains(line, "=") {
-			continue
-		}
-		parts := strings.SplitN(line, "=", 2)
-		key := strings.TrimSpace(parts[0])
-		val := strings.Trim(strings.TrimSpace(parts[1]), `"'`)
-		if os.Getenv(key) == "" {
-			_ = os.Setenv(key, val)
-		}
-	}
 }
 
 func itoa(v int) string {

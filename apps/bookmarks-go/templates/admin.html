@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Bookmarks | Admin</title>
+    <style>
+      .section-label {
+        font-size: 14px;
+        font-weight: 400;
+        opacity: 0.5;
+        margin: 0 0 0.5rem;
+      }
+      section { width: 100%; margin-top: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">BOOKMARKS</a>
+      <nav class="links">
+        <a href="/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    <section>
+      <h3 class="section-label">Categories</h3>
+      <form class="form" method="POST" action="/admin/categories">
+        <div class="form-row">
+          <div class="form-field">
+            <input type="text" name="name" placeholder="new category" required />
+          </div>
+          <button type="submit">Add</button>
+        </div>
+      </form>
+      {{if not .Categories}}
+      <p class="empty">No categories yet.</p>
+      {{else}}
+      <ul class="admin-list">
+        {{range .Categories}}
+        <li class="admin-list-item">
+          <div class="admin-list-info">
+            <span class="admin-list-title">{{.Name}}</span>
+          </div>
+          <div class="admin-list-actions">
+            <form method="POST" action="/admin/categories/{{.ShortID}}/move/up" class="inline-form">
+              <button type="submit" class="link-button">↑</button>
+            </form>
+            <form method="POST" action="/admin/categories/{{.ShortID}}/move/down" class="inline-form">
+              <button type="submit" class="link-button">↓</button>
+            </form>
+            <form method="POST" action="/admin/categories/{{.ShortID}}/delete" class="inline-form">
+              <button type="submit" class="link-button danger">delete</button>
+            </form>
+          </div>
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </section>
+
+    <section>
+      <h3 class="section-label">Add Link</h3>
+      {{if not .Categories}}
+      <p class="empty">Add a category first.</p>
+      {{else}}
+      <form class="form" method="POST" action="/admin/links">
+        <div class="form-field">
+          <label for="title">Title</label>
+          <input type="text" id="title" name="title" required />
+        </div>
+        <div class="form-field">
+          <label for="url">URL</label>
+          <input type="url" id="url" name="url" required />
+        </div>
+        <div class="form-field">
+          <label for="category">Category</label>
+          <select id="category" name="category" required>
+            {{range .Categories}}
+            <option value="{{.Name}}">{{.Name}}</option>
+            {{end}}
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Add link</button>
+        </div>
+      </form>
+      {{end}}
+    </section>
+
+    <section>
+      <h3 class="section-label">Links</h3>
+      {{if not .Links}}
+      <p class="empty">No links yet.</p>
+      {{else}}
+      <ul class="admin-list">
+        {{range .Links}}
+        <li class="admin-list-item">
+          <div class="admin-list-info">
+            <a class="admin-list-title" href="{{.URL}}" target="_blank" rel="noopener noreferrer">
+              {{if .FaviconURL}}
+              <img class="favicon" src="{{.FaviconURL}}" alt="" width="16" height="16" loading="lazy" />
+              {{end}}
+              {{.Title}}
+            </a>
+            <div class="admin-list-meta">
+              <span class="tag">{{.Category}}</span>
+            </div>
+          </div>
+          <div class="admin-list-actions">
+            <form method="POST" action="/admin/links/{{.ShortID}}/delete" class="inline-form">
+              <button type="submit" class="link-button danger">delete</button>
+            </form>
+          </div>
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </section>
+  </body>
+</html>

@@ -5,15 +5,18 @@ import (
 	"embed"
 	"html/template"
 	"log/slog"
+
+	"github.com/stevedylandev/andromeda/crates-go/auth"
 )
 
-//go:embed templates/*.html static/* assets/* assets/fonts/*
+//go:embed templates/*.html static/*
 var appFS embed.FS
 
 type App struct {
 	DB                 *sql.DB
 	Log                *slog.Logger
 	Templates          *template.Template
+	Sessions           *auth.Store
 	AdminPassword      string
 	APIKey             string
 	CookieSecure       bool

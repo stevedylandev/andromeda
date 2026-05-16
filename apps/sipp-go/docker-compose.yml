@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/sipp-go/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+      - SIPP_DB_PATH=/data/sipp-go.sqlite
+      - SIPP_API_KEY=${SIPP_API_KEY:-}
+      - SIPP_AUTH_ENDPOINTS=${SIPP_AUTH_ENDPOINTS:-api_delete,api_list,api_update}
+      - SIPP_MAX_CONTENT_SIZE=${SIPP_MAX_CONTENT_SIZE:-512000}
+      - BASE_URL=${BASE_URL:-http://localhost:3000}
+    volumes:
+      - sipp-go-data:/data
+    restart: unless-stopped
+
+volumes:
+  sipp-go-data:

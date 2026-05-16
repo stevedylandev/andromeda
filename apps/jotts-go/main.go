@@ -6,20 +6,27 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
+
+	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/crates-go/config"
 )
 
 func main() {
-	loadDotEnv(".env")
+	config.LoadDotEnv(".env")
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
-	dbPath := getenv("JOTTS_DB_PATH", "jotts.sqlite")
+	dbPath := config.Getenv("JOTTS_DB_PATH", "jotts.sqlite")
 	db, err := openDB(dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	pruneExpiredSessions(db)
+
+	sessions := &auth.Store{DB: db, CookieName: "session", CookieSecure: config.GetenvBool("COOKIE_SECURE", false)}
+	if err := sessions.EnsureSchema(); err != nil {
+		log.Fatal(err)
+	}
+	sessions.PruneExpired()
 
 	tmpl := template.Must(template.ParseFS(appFS, "templates/*.html"))
 
@@ -37,12 +44,13 @@ func main() {
 		DB:           db,
 		Log:          logger,
 		Templates:    tmpl,
+		Sessions:     sessions,
 		Password:     password,
 		APIKey:       apiKey,
-		CookieSecure: strings.EqualFold(os.Getenv("COOKIE_SECURE"), "true"),
+		CookieSecure: sessions.CookieSecure,
 	}
 
-	addr := getenv("HOST", "127.0.0.1") + ":" + getenv("PORT", "3000")
+	addr := config.Getenv("HOST", "127.0.0.1") + ":" + config.Getenv("PORT", "3000")
 	logger.Info("jotts-go server running", "addr", addr)
 	if err := http.ListenAndServe(addr, app.routes()); err != nil {
 		log.Fatal(err)

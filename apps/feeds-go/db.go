@@ -13,12 +13,6 @@ import (
 const subscriptionSelectColumns = `id, feed_url, title, site_url, favicon_url, category_id, etag, last_modified, last_fetched_at, last_error, added_at`
 
 const feedsSchema = `
-CREATE TABLE IF NOT EXISTS sessions (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    token      TEXT NOT NULL UNIQUE,
-    expires_at TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS categories (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     name       TEXT NOT NULL UNIQUE,
@@ -380,29 +374,6 @@ func getSetting(db *sql.DB, key string) (string, bool, error) {
 func setSetting(db *sql.DB, key, value string) error {
 	_, err := db.Exec(`INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`, key, value)
 	return err
-}
-
-func createSession(db *sql.DB, token string, expiresAt time.Time) error {
-	_, err := db.Exec(`INSERT INTO sessions (token, expires_at) VALUES (?, ?)`, token, expiresAt.UTC().Format("2006-01-02 15:04:05"))
-	return err
-}
-
-func isValidSession(db *sql.DB, token string) bool {
-	var expires string
-	err := db.QueryRow(`SELECT expires_at FROM sessions WHERE token = ?`, token).Scan(&expires)
-	if err != nil {
-		return false
-	}
-	t, err := time.ParseInLocation("2006-01-02 15:04:05", expires, time.UTC)
-	return err == nil && t.After(time.Now().UTC())
-}
-
-func deleteSession(db *sql.DB, token string) {
-	_, _ = db.Exec(`DELETE FROM sessions WHERE token = ?`, token)
-}
-
-func pruneExpiredSessions(db *sql.DB) {
-	_, _ = db.Exec(`DELETE FROM sessions WHERE expires_at < datetime('now')`)
 }
 
 func querySubscription(db *sql.DB, query string, args ...any) (*Subscription, error) {
