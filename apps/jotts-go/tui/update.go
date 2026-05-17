@@ -47,7 +47,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case notesLoadedMsg:
-		m.loading = false
 		if msg.err != nil {
 			cmd := m.setStatus("load: "+msg.err.Error(), false)
 			return m, cmd
@@ -61,12 +60,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			return m, m.setStatus("save: "+msg.err.Error(), false)
 		}
+		if m.renderer != nil && msg.note != nil {
+			m.renderer.invalidate(msg.note.ShortID)
+		}
 		m.focus = FocusList
 		m.titleInput.Reset()
 		m.contentArea.Reset()
 		m.editShortID = ""
-		cmds := []tea.Cmd{loadNotesCmd(m.backend), m.setStatus("saved", true)}
-		return m, tea.Batch(cmds...)
+		return m, loadNotesCmd(m.backend)
 
 	case noteDeletedMsg:
 		if msg.err != nil {
@@ -115,32 +116,27 @@ func (m *Model) resizePanes() {
 	if !m.ready {
 		return
 	}
-	listW := m.width * 30 / 100
-	if listW < 24 {
-		listW = 24
-	}
-	contentW := m.width - listW - 2
-	if contentW < 20 {
-		contentW = 20
-	}
-	bodyH := m.height - 2
-	if bodyH < 5 {
-		bodyH = 5
-	}
 
-	m.contentVP.Width = contentW - 2
-	m.contentVP.Height = bodyH - 2
+	_, contentOuterW := splitWidths(m.width)
+	bodyOuterH := splitBodyHeight(m.height)
+	contentInnerW := maxInt(contentOuterW-paneFrameWidth(), 20)
+	contentInnerH := maxInt(bodyOuterH-paneFrameHeight(), 3)
 
-	m.titleInput.Width = contentW - 4
-	m.contentArea.SetWidth(contentW - 2)
-	m.contentArea.SetHeight(bodyH - 5)
+	m.contentVP.Width = maxInt(contentInnerW, 1)
+	m.contentVP.Height = maxInt(contentInnerH-1, 1)
 
-	m.searchInput.Width = listW - 4
+	m.titleInput.Width = maxInt(contentInnerW-2, 1)
+	m.contentArea.SetWidth(maxInt(contentInnerW, 1))
+	m.contentArea.SetHeight(maxInt(contentInnerH-4, 1))
+
+	listOuterW, _ := splitWidths(m.width)
+	listInnerW := maxInt(listOuterW-paneFrameWidth(), 1)
+	m.searchInput.Width = maxInt(listInnerW-2, 1)
 
 	if m.renderer == nil {
-		m.renderer = newRenderer(contentW)
+		m.renderer = newRenderer(contentInnerW)
 	} else {
-		m.renderer.resize(contentW)
+		m.renderer.resize(contentInnerW)
 	}
 	m.refreshPreview()
 }
@@ -278,7 +274,6 @@ func (m Model) keyList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.searchInput.Focus()
 	case key.Matches(msg, m.keys.Refresh):
 		if m.isRemote {
-			m.loading = true
 			return m, loadNotesCmd(m.backend)
 		}
 	case key.Matches(msg, m.keys.Help):

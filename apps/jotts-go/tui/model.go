@@ -53,11 +53,10 @@ type Model struct {
 
 	width, height int
 	ready         bool
-	loading       bool
 	err           error
 }
 
-func newModel(backend Backend) Model {
+func newModel(backend Backend, notes []Note, width, height int) Model {
 	ti := textinput.New()
 	ti.Placeholder = "Title"
 	ti.Prompt = ""
@@ -74,9 +73,10 @@ func newModel(backend Backend) Model {
 
 	vp := viewport.New(0, 0)
 
-	return Model{
+	m := Model{
 		backend:     backend,
 		isRemote:    backend.RemoteURL() != "",
+		notes:       notes,
 		focus:       FocusList,
 		titleInput:  ti,
 		contentArea: ta,
@@ -85,11 +85,16 @@ func newModel(backend Backend) Model {
 		help:        help.New(),
 		keys:        defaultKeys(),
 		wrap:        true,
+		width:       width,
+		height:      height,
+		ready:       true,
 	}
+	m.resizePanes()
+	return m
 }
 
 func (m Model) Init() tea.Cmd {
-	return loadNotesCmd(m.backend)
+	return tea.WindowSize()
 }
 
 func (m *Model) visibleNotes() []Note {
