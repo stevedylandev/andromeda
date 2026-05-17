@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"log"
 	"log/slog"
 	"net/http"
@@ -13,7 +12,10 @@ import (
 func main() {
 	config.LoadDotEnv(".env")
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	tmpl := template.Must(template.ParseFS(appFS, "templates/*.html"))
+	tmpl, err := buildTemplates()
+	if err != nil {
+		log.Fatal(err)
+	}
 	app := &App{Log: logger, Templates: tmpl}
 
 	addr := config.Getenv("HOST", "0.0.0.0") + ":" + config.Getenv("PORT", "3000")

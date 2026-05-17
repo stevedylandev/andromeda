@@ -17,7 +17,7 @@ var appFS embed.FS
 type App struct {
 	DB           *sql.DB
 	Log          *slog.Logger
-	Templates    *template.Template
+	Templates    map[string]*template.Template
 	Sessions     *auth.Store
 	AppPassword  string
 	CookieSecure bool

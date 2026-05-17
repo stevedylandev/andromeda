@@ -11,7 +11,7 @@ var appFS embed.FS
 
 type App struct {
 	Log       *slog.Logger
-	Templates *template.Template
+	Templates map[string]*template.Template
 }
 
 type tagKV struct {
