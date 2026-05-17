@@ -31,13 +31,15 @@ type LocalBackend struct {
 	DB *sql.DB
 }
 
-func (b *LocalBackend) List() ([]Snippet, error)                      { return store.List(b.DB) }
-func (b *LocalBackend) Get(s string) (*Snippet, error)                { return store.GetByShortID(b.DB, s) }
-func (b *LocalBackend) Create(n, c string) (*Snippet, error)          { return store.Create(b.DB, n, c) }
-func (b *LocalBackend) Update(s, n, c string) (*Snippet, error)       { return store.UpdateByShortID(b.DB, s, n, c) }
-func (b *LocalBackend) Delete(s string) (bool, error)                 { return store.DeleteByShortID(b.DB, s) }
-func (b *LocalBackend) RemoteURL() string                             { return "" }
-func (b *LocalBackend) Close() error                                  { return b.DB.Close() }
+func (b *LocalBackend) List() ([]Snippet, error)             { return store.List(b.DB) }
+func (b *LocalBackend) Get(s string) (*Snippet, error)       { return store.GetByShortID(b.DB, s) }
+func (b *LocalBackend) Create(n, c string) (*Snippet, error) { return store.Create(b.DB, n, c) }
+func (b *LocalBackend) Update(s, n, c string) (*Snippet, error) {
+	return store.UpdateByShortID(b.DB, s, n, c)
+}
+func (b *LocalBackend) Delete(s string) (bool, error) { return store.DeleteByShortID(b.DB, s) }
+func (b *LocalBackend) RemoteURL() string             { return "" }
+func (b *LocalBackend) Close() error                  { return b.DB.Close() }
 
 type RemoteBackend struct {
 	BaseURL string

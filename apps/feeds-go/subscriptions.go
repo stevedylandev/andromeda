@@ -87,6 +87,9 @@ func (a *App) createSubscriptionImmediately(ctx context.Context, feedURL, title 
 
 func (a *App) seedSubscription(subID int64, res *FetchResult) error {
 	for _, entry := range res.Entries {
+		if strings.TrimSpace(entry.Link) == "" {
+			continue
+		}
 		_, err := insertItemIgnoreDup(a.DB, NewItem{SubscriptionID: subID, GUID: entry.GUID, Title: entry.Title, Link: entry.Link, Author: entry.Author, PublishedAt: entry.PublishedAt})
 		if err != nil {
 			a.Log.Warn("seed insert failed", "sub_id", subID, "err", err)

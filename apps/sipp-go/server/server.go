@@ -33,21 +33,21 @@ var appFS embed.FS
 type Snippet = store.Snippet
 
 type App struct {
-	DB              *sql.DB
-	Log             *slog.Logger
-	Templates       *template.Template
-	Sessions        *auth.Store
-	APIKey          string
-	BaseURL         string
-	CookieSecure    bool
-	AuthEndpoints   map[string]bool
-	MaxContentSize  int
+	DB             *sql.DB
+	Log            *slog.Logger
+	Templates      *template.Template
+	Sessions       *auth.Store
+	APIKey         string
+	BaseURL        string
+	CookieSecure   bool
+	AuthEndpoints  map[string]bool
+	MaxContentSize int
 }
 
 var (
-	createSnippet         = store.Create
-	getSnippetByShortID   = store.GetByShortID
-	getAllSnippets        = store.List
+	createSnippet          = store.Create
+	getSnippetByShortID    = store.GetByShortID
+	getAllSnippets         = store.List
 	deleteSnippetByShortID = store.DeleteByShortID
 	updateSnippetByShortID = store.UpdateByShortID
 )

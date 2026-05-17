@@ -24,8 +24,8 @@ const (
 )
 
 type Model struct {
-	backend     Backend
-	isRemote    bool
+	backend  Backend
+	isRemote bool
 
 	notes    []Note
 	filtered []int
