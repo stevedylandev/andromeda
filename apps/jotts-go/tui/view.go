@@ -9,10 +9,10 @@ import (
 
 var (
 	borderStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("240"))
 	borderActive = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("214"))
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -39,24 +39,13 @@ var (
 )
 
 func (m Model) View() string {
-	if !m.ready {
-		return "loading..."
-	}
-
-	listW := m.width * 30 / 100
-	if listW < 24 {
-		listW = 24
-	}
-	contentW := m.width - listW - 2
-	bodyH := m.height - 2
+	listW, contentW := splitWidths(m.width)
+	bodyH := splitBodyHeight(m.height)
 
 	left := m.renderList(listW, bodyH)
 	right := m.renderRight(contentW, bodyH)
 
-	body := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
-	footer := m.renderFooter()
-
-	view := lipgloss.JoinVertical(lipgloss.Left, body, footer)
+	view := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 
 	if m.showHelp {
 		view = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
@@ -98,7 +87,7 @@ func (m Model) renderList(w, h int) string {
 		rows = append(rows, hintStyle.Render("  (empty — press c)"))
 	}
 	for i, n := range notes {
-		line := truncate(n.Title, w-6)
+		line := truncate(n.Title, maxInt(w-paneFrameWidth()-4, 1))
 		if i == m.cursor {
 			rows = append(rows, itemSelected.Render("▶ "+line))
 		} else {
@@ -111,7 +100,10 @@ func (m Model) renderList(w, h int) string {
 	}
 
 	content := strings.Join(rows, "\n")
-	return style.Width(w).Height(h).Render(content)
+	return style.
+		Width(maxInt(w-paneFrameWidth(), 1)).
+		Height(maxInt(h-paneFrameHeight(), 1)).
+		Render(content)
 }
 
 func (m Model) renderRight(w, h int) string {
@@ -134,7 +126,10 @@ func (m Model) renderContent(w, h int) string {
 	}
 	body := m.contentVP.View()
 	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), body)
-	return style.Width(w).Height(h).Render(inner)
+	return style.
+		Width(maxInt(w-paneFrameWidth(), 1)).
+		Height(maxInt(h-paneFrameHeight(), 1)).
+		Render(inner)
 }
 
 func (m Model) renderForm(w, h int) string {
@@ -157,16 +152,49 @@ func (m Model) renderForm(w, h int) string {
 	}
 
 	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), title, body)
-	return borderStyle.Width(w).Height(h).Render(inner)
+	return borderStyle.
+		Width(maxInt(w-paneFrameWidth(), 1)).
+		Height(maxInt(h-paneFrameHeight(), 1)).
+		Render(inner)
 }
 
-func (m Model) renderFooter() string {
-	mode := "local"
-	if m.isRemote {
-		mode = "remote " + m.backend.RemoteURL()
+func splitWidths(total int) (int, int) {
+	if total < 44 {
+		return total / 2, total - (total / 2)
 	}
-	help := m.help.ShortHelpView(m.keys.ShortHelp())
-	return hintStyle.Render(fmt.Sprintf("[%s] %s", mode, help))
+	list := total * 30 / 100
+	if list < 24 {
+		list = 24
+	}
+	if total-list < 20 {
+		list = total - 20
+	}
+	if list < 1 {
+		list = 1
+	}
+	return list, total - list
+}
+
+func splitBodyHeight(total int) int {
+	if total < 3 {
+		return 3
+	}
+	return total
+}
+
+func paneFrameWidth() int {
+	return borderStyle.GetHorizontalFrameSize()
+}
+
+func paneFrameHeight() int {
+	return borderStyle.GetVerticalFrameSize()
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 
 func truncate(s string, n int) string {

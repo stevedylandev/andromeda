@@ -170,9 +170,14 @@ func ResolveBackend(opts Options) (Backend, error) {
 	cfg, _ := LoadConfig()
 
 	remoteURL := opts.RemoteURL
+	explicitRemote := remoteURL != ""
 	if remoteURL == "" {
 		remoteURL = os.Getenv("JOTTS_REMOTE_URL")
 	}
+	if remoteURL == "" {
+		remoteURL = cfg.RemoteURL
+	}
+
 	apiKey := opts.APIKey
 	if apiKey == "" {
 		apiKey = os.Getenv("JOTTS_API_KEY")
@@ -182,17 +187,12 @@ func ResolveBackend(opts Options) (Backend, error) {
 	}
 
 	dbPath := opts.DBPath
+	explicitDB := dbPath != ""
 	if dbPath == "" {
 		dbPath = config.Getenv("JOTTS_DB_PATH", "jotts.sqlite")
 	}
 
-	useRemote := remoteURL != ""
-	if !useRemote {
-		if _, err := os.Stat(dbPath); err != nil && cfg.RemoteURL != "" {
-			remoteURL = cfg.RemoteURL
-			useRemote = true
-		}
-	}
+	useRemote := remoteURL != "" && (!explicitDB || explicitRemote)
 
 	if useRemote {
 		return &RemoteBackend{
