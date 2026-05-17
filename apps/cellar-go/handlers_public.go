@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +19,7 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 		svg := buildPentagonSVG(wine.Sweetness, wine.Acidity, wine.Tannin, wine.Alcohol, wine.Body, 80.0, false)
 		out = append(out, wineWithSVG{Wine: wine, PentagonSVG: template.HTML(svg)})
 	}
-	web.Render(a.Templates, w, "index.html", indexPageData{Wines: out}, a.Log)
+	a.renderPage(w, "index.html", indexPageData{Wines: out})
 }
 
 func (a *App) wineDetail(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +34,7 @@ func (a *App) wineDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	pentagon := buildPentagonSVG(wine.Sweetness, wine.Acidity, wine.Tannin, wine.Alcohol, wine.Body, 250.0, true)
 	bars := buildBarsSVG(wine.Clarity, wine.ColorIntensity, wine.AromaIntensity, wine.NoseComplexity, 250.0)
-	web.Render(a.Templates, w, "wine.html", wineDetailPageData{Wine: *wine, PentagonSVG: template.HTML(pentagon), BarsSVG: template.HTML(bars)}, a.Log)
+	a.renderPage(w, "wine.html", wineDetailPageData{Wine: *wine, PentagonSVG: template.HTML(pentagon), BarsSVG: template.HTML(bars)})
 }
 
 func (a *App) wineImage(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +60,7 @@ func (a *App) wishlistHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	web.Render(a.Templates, w, "wishlist.html", wishlistPageData{Wines: wines, IsAdmin: a.Sessions.HasValid(r)}, a.Log)
+	a.renderPage(w, "wishlist.html", wishlistPageData{Wines: wines, IsAdmin: a.Sessions.HasValid(r)})
 }
 
 func xmlEscape(s string) string {

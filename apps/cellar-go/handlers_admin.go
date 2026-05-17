@@ -11,7 +11,7 @@ import (
 
 func (a *App) loginGet(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	web.Render(a.Templates, w, "login.html", loginPageData{Error: q.Get("error"), Next: q.Get("next")}, a.Log)
+	a.renderPage(w, "login.html", loginPageData{Error: q.Get("error"), Next: q.Get("next")})
 }
 
 func (a *App) loginPost(w http.ResponseWriter, r *http.Request) {
@@ -57,11 +57,11 @@ func (a *App) adminIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	web.Render(a.Templates, w, "admin.html", adminPageData{Wines: wines}, a.Log)
+	a.renderPage(w, "admin.html", adminPageData{Wines: wines})
 }
 
 func (a *App) newWineGet(w http.ResponseWriter, r *http.Request) {
-	web.Render(a.Templates, w, "wine_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""}, a.Log)
+	a.renderPage(w, "wine_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
 }
 
 func (a *App) editWineGet(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +75,7 @@ func (a *App) editWineGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Wine not found", http.StatusNotFound)
 		return
 	}
-	web.Render(a.Templates, w, "wine_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""}, a.Log)
+	a.renderPage(w, "wine_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
 }
 
 func (a *App) newWinePost(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +129,7 @@ func (a *App) deleteWinePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) newWishlistGet(w http.ResponseWriter, r *http.Request) {
-	web.Render(a.Templates, w, "wishlist_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""}, a.Log)
+	a.renderPage(w, "wishlist_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
 }
 
 func (a *App) editWishlistGet(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +142,7 @@ func (a *App) editWishlistGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Wine not found", http.StatusNotFound)
 		return
 	}
-	web.Render(a.Templates, w, "wishlist_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""}, a.Log)
+	a.renderPage(w, "wishlist_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
 }
 
 func (a *App) newWishlistPost(w http.ResponseWriter, r *http.Request) {
