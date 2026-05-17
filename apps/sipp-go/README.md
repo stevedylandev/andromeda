@@ -2,10 +2,10 @@
 
 Go rewrite of [sipp](../sipp). Two binaries:
 
+- root (`.`) — CLI dispatcher: `sipp server`, or `sipp <file>` to upload a
+  snippet to a remote instance via the JSON API.
 - `cmd/server` — web server only (HTTP + admin + API + syntax highlight via
   `github.com/alecthomas/chroma/v2`).
-- `cmd/sipp` — CLI dispatcher: `sipp server`, or `sipp <file>` to upload a
-  snippet to a remote instance via the JSON API.
 
 ## Notes vs Rust version
 
@@ -22,14 +22,14 @@ Go rewrite of [sipp](../sipp). Two binaries:
 cp .env.example .env
 go run ./cmd/server
 # or
-go run ./cmd/sipp server --port 3000
+go run . server --port 3000
 ```
 
 Upload a file:
 
 ```bash
 SIPP_REMOTE_URL=http://localhost:3000 SIPP_API_KEY=$KEY \
-  go run ./cmd/sipp ./path/to/file.go
+  go run . ./path/to/file.go
 ```
 
 See `.env.example` for env vars.

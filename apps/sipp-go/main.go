@@ -42,7 +42,6 @@ env:
 `
 
 func main() {
-	config.LoadDotEnv(".env")
 	args := os.Args[1:]
 	if len(args) == 0 {
 		runTUI(nil)
@@ -63,6 +62,7 @@ func main() {
 }
 
 func runServer(args []string) {
+	config.LoadDotEnv(".env")
 	host := config.Getenv("HOST", "127.0.0.1")
 	port := config.GetenvInt("PORT", 3000)
 	for i := 0; i < len(args); i++ {

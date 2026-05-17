@@ -1,7 +1,7 @@
 package tui
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func Run(opts Options) error {
@@ -11,7 +11,7 @@ func Run(opts Options) error {
 	}
 	defer backend.Close()
 
-	p := tea.NewProgram(newModel(backend), tea.WithAltScreen())
+	p := tea.NewProgram(newModel(backend))
 	_, err = p.Run()
 	return err
 }
