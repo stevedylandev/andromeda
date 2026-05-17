@@ -44,7 +44,7 @@ type Post struct {
 	UpdatedAt       string
 }
 
-func (p *Post) DisplayTitle() string {
+func (p Post) DisplayTitle() string {
 	if p.Title != nil {
 		if t := strings.TrimSpace(*p.Title); t != "" {
 			return t
@@ -66,60 +66,60 @@ func (p *Post) DisplayTitle() string {
 	return snip
 }
 
-func (p *Post) TitleStr() string {
+func (p Post) TitleStr() string {
 	if p.Title != nil {
 		return *p.Title
 	}
 	return ""
 }
 
-func (p *Post) HasTitle() bool {
+func (p Post) HasTitle() bool {
 	return p.Title != nil && strings.TrimSpace(*p.Title) != ""
 }
 
-func (p *Post) PublishedDateStr() string {
+func (p Post) PublishedDateStr() string {
 	if p.PublishedDate != nil {
 		return *p.PublishedDate
 	}
 	return ""
 }
 
-func (p *Post) AliasStr() string {
+func (p Post) AliasStr() string {
 	if p.Alias != nil {
 		return *p.Alias
 	}
 	return ""
 }
 
-func (p *Post) MetaDescriptionStr() string {
+func (p Post) MetaDescriptionStr() string {
 	if p.MetaDescription != nil {
 		return *p.MetaDescription
 	}
 	return ""
 }
 
-func (p *Post) MetaImageStr() string {
+func (p Post) MetaImageStr() string {
 	if p.MetaImage != nil {
 		return *p.MetaImage
 	}
 	return ""
 }
 
-func (p *Post) CanonicalURLStr() string {
+func (p Post) CanonicalURLStr() string {
 	if p.CanonicalURL != nil {
 		return *p.CanonicalURL
 	}
 	return ""
 }
 
-func (p *Post) TagsStr() string {
+func (p Post) TagsStr() string {
 	if p.Tags != nil {
 		return *p.Tags
 	}
 	return ""
 }
 
-func (p *Post) TagList() []string {
+func (p Post) TagList() []string {
 	if p.Tags == nil {
 		return nil
 	}
