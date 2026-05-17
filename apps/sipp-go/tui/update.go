@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 func loadSnippetsCmd(b Backend) tea.Cmd {
@@ -106,7 +106,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = ""
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 	}
 
@@ -130,10 +130,10 @@ func (m *Model) resizePanes() {
 		bodyH = 5
 	}
 
-	m.contentVP.Width = contentW - 2
-	m.contentVP.Height = bodyH - 2
+	m.contentVP.SetWidth(contentW - 2)
+	m.contentVP.SetHeight(bodyH - 2)
 
-	m.nameInput.Width = contentW - 4
+	m.nameInput.SetWidth(contentW - 4)
 	if m.wrapContent {
 		m.contentArea.SetWidth(contentW - 2)
 	} else {
@@ -141,7 +141,7 @@ func (m *Model) resizePanes() {
 	}
 	m.contentArea.SetHeight(bodyH - 5)
 
-	m.searchInput.Width = listW - 4
+	m.searchInput.SetWidth(listW - 4)
 
 	m.refreshPreview()
 }
@@ -156,13 +156,13 @@ func (m *Model) refreshPreview() {
 	if m.highlighter != nil {
 		body = m.highlighter.render(s.ShortID, s.Name, s.Content)
 	}
-	if m.wrapContent && m.contentVP.Width > 0 {
-		body = lipgloss.NewStyle().Width(m.contentVP.Width).Render(body)
+	if m.wrapContent && m.contentVP.Width() > 0 {
+		body = lipgloss.NewStyle().Width(m.contentVP.Width()).Render(body)
 	}
 	m.contentVP.SetContent(body)
 }
 
-func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if msg.String() == "ctrl+c" {
 		return m, tea.Quit
 	}
@@ -203,7 +203,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) keyList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keyList(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	list := m.visible()
 	switch {
 	case key.Matches(msg, m.keys.Quit):
@@ -288,7 +288,7 @@ func (m Model) keyList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) keyContent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keyContent(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.WrapToggle):
 		m.wrapContent = !m.wrapContent
@@ -344,12 +344,12 @@ func (m Model) keyContent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) keyForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keyForm(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.WrapToggle):
 		m.wrapContent = !m.wrapContent
 		if m.wrapContent {
-			m.contentArea.SetWidth(m.contentVP.Width)
+			m.contentArea.SetWidth(m.contentVP.Width())
 			return m, m.setStatus("wrap on", true)
 		}
 		m.contentArea.SetWidth(10000)
@@ -405,7 +405,7 @@ func (m *Model) applyFormFocus() {
 	}
 }
 
-func (m Model) keySearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keySearch(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		m.searchInput.SetValue("")

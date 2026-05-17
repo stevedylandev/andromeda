@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 var (
@@ -39,9 +40,9 @@ var (
 			Background(lipgloss.Color("236"))
 )
 
-func (m Model) View() string {
+func (m Model) View() tea.View {
 	if !m.ready {
-		return "loading..."
+		return tea.View{Content: "loading...", AltScreen: true}
 	}
 
 	listW := m.width * 30 / 100
@@ -57,12 +58,12 @@ func (m Model) View() string {
 	body := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 	footer := m.renderFooter()
 
-	view := lipgloss.JoinVertical(lipgloss.Left, body, footer)
+	base := lipgloss.JoinVertical(lipgloss.Left, body, footer)
 
+	var overlays []*lipgloss.Layer
 	if m.showHelp {
-		view = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
-			modalStyle.Render(m.help.FullHelpView(m.keys.FullHelp())),
-			lipgloss.WithWhitespaceChars(" "))
+		overlays = append(overlays, centerLayer(m.width, m.height,
+			modalStyle.Render(m.help.FullHelpView(m.keys.FullHelp())), 1))
 	}
 	if m.confirmDelete {
 		s := m.current()
@@ -70,20 +71,53 @@ func (m Model) View() string {
 		if s != nil {
 			name = s.Name
 		}
-		view = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
-			modalStyle.Render(fmt.Sprintf("Delete %q?\n\ny / n", name)),
-			lipgloss.WithWhitespaceChars(" "))
+		overlays = append(overlays, centerLayer(m.width, m.height,
+			modalStyle.Render(fmt.Sprintf("Delete %q?\n\ny / n", name)), 2))
 	}
 	if m.status != "" {
 		st := statusOK
 		if !m.statusOK {
 			st = statusErr
 		}
-		view = lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Bottom,
-			modalStyle.Render(st.Render(m.status)),
-			lipgloss.WithWhitespaceChars(" "))
+		overlays = append(overlays, bottomCenterLayer(m.width, m.height,
+			modalStyle.Render(st.Render(m.status)), 3))
 	}
-	return view
+
+	content := base
+	if len(overlays) > 0 {
+		layers := append([]*lipgloss.Layer{lipgloss.NewLayer(base)}, overlays...)
+		canvas := lipgloss.NewCanvas(m.width, m.height)
+		canvas.Compose(lipgloss.NewCompositor(layers...))
+		content = canvas.Render()
+	}
+
+	return tea.View{Content: content, AltScreen: true}
+}
+
+func centerLayer(w, h int, content string, z int) *lipgloss.Layer {
+	cw, ch := lipgloss.Width(content), lipgloss.Height(content)
+	x := (w - cw) / 2
+	y := (h - ch) / 2
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+	return lipgloss.NewLayer(content).X(x).Y(y).Z(z)
+}
+
+func bottomCenterLayer(w, h int, content string, z int) *lipgloss.Layer {
+	cw, ch := lipgloss.Width(content), lipgloss.Height(content)
+	x := (w - cw) / 2
+	y := h - ch - 1
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+	return lipgloss.NewLayer(content).X(x).Y(y).Z(z)
 }
 
 func (m Model) renderList(w, h int) string {

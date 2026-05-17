@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func openExternalEditor(shortID, name, content string) tea.Cmd {

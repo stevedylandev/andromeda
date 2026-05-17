@@ -4,11 +4,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/textarea"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/textarea"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
 )
 
 type Focus int
@@ -71,7 +71,7 @@ func newModel(backend Backend) Model {
 	si.Placeholder = "search names"
 	si.Prompt = "/ "
 
-	vp := viewport.New(0, 0)
+	vp := viewport.New()
 
 	return Model{
 		backend:     backend,
@@ -88,7 +88,7 @@ func newModel(backend Backend) Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	return loadSnippetsCmd(m.backend)
+	return tea.Batch(tea.RequestWindowSize, loadSnippetsCmd(m.backend))
 }
 
 func (m *Model) visible() []Snippet {
