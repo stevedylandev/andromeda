@@ -27,3 +27,11 @@ type statusMsg struct {
 }
 
 type clearStatusMsg struct{}
+
+type submitFormMsg struct {
+	shortID string
+	name    string
+	content string
+}
+
+type cancelFormMsg struct{}

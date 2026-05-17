@@ -10,8 +10,11 @@ import (
 	"github.com/alecthomas/chroma/v2/styles"
 )
 
+const highlightCacheMax = 64
+
 type highlighter struct {
 	cache map[string]string
+	order []string
 }
 
 func newHighlighter() *highlighter {
@@ -24,11 +27,26 @@ func (h *highlighter) render(shortID, name, content string) string {
 	}
 	out := highlightCode(name, content)
 	h.cache[shortID] = out
+	h.order = append(h.order, shortID)
+	if len(h.order) > highlightCacheMax {
+		drop := h.order[0]
+		h.order = h.order[1:]
+		delete(h.cache, drop)
+	}
 	return out
 }
 
 func (h *highlighter) invalidate(shortID string) {
+	if _, ok := h.cache[shortID]; !ok {
+		return
+	}
 	delete(h.cache, shortID)
+	for i, k := range h.order {
+		if k == shortID {
+			h.order = append(h.order[:i], h.order[i+1:]...)
+			break
+		}
+	}
 }
 
 func highlightCode(name, content string) string {
@@ -42,11 +60,11 @@ func highlightCode(name, content string) string {
 	if lexer == nil {
 		lexer = lexers.Fallback
 	}
-	style := styles.Get("monokai")
+	style := styles.Get("vim")
 	if style == nil {
 		style = styles.Fallback
 	}
-	formatter := formatters.Get("terminal256")
+	formatter := formatters.Get("terminal16")
 	if formatter == nil {
 		formatter = formatters.Fallback
 	}

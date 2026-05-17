@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -19,19 +18,12 @@ var (
 			Bold(true).
 			Foreground(lipgloss.Color("3")).
 			Padding(0, 1)
-	itemStyle    = lipgloss.NewStyle().Padding(0, 1)
-	itemSelected = lipgloss.NewStyle().
-			Padding(0, 1).
-			Bold(true).
-			Foreground(lipgloss.Color("3"))
-	statusOK = lipgloss.NewStyle().
+	statusOKStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("2")).
 			Bold(true)
-	statusErr = lipgloss.NewStyle().
+	statusErrStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("1")).
 			Bold(true)
-	hintStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8"))
 	modalStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("3")).
@@ -42,8 +34,8 @@ func (m Model) View() tea.View {
 	listW, contentW := splitWidths(m.width)
 	bodyH := splitBodyHeight(m.height)
 
-	left := m.renderList(listW, bodyH)
-	right := m.renderRight(contentW, bodyH)
+	left := m.renderListPane(listW, bodyH)
+	right := m.renderRightPane(contentW, bodyH)
 
 	base := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 
@@ -53,18 +45,17 @@ func (m Model) View() tea.View {
 			modalStyle.Render(m.help.FullHelpView(m.keys.FullHelp())), 1))
 	}
 	if m.confirmDelete {
-		n := m.currentNote()
 		title := ""
-		if n != nil {
+		if n, ok := m.list.Selected(); ok {
 			title = n.Title
 		}
 		overlays = append(overlays, centerLayer(m.width, m.height,
 			modalStyle.Render(fmt.Sprintf("Delete %q?\n\ny / n", title)), 2))
 	}
 	if m.status != "" {
-		st := statusOK
+		st := statusOKStyle
 		if !m.statusOK {
-			st = statusErr
+			st = statusErrStyle
 		}
 		overlays = append(overlays, bottomCenterLayer(m.width, m.height,
 			modalStyle.Render(st.Render(m.status)), 3))
@@ -79,6 +70,67 @@ func (m Model) View() tea.View {
 	}
 
 	return tea.View{Content: content, AltScreen: true}
+}
+
+func (m Model) renderListPane(w, h int) string {
+	style := borderStyle
+	if m.state == stateList {
+		style = borderActive
+	}
+	return style.
+		Width(max(w-paneFrameWidth(), 1)).
+		Height(max(h-paneFrameHeight(), 1)).
+		Render(m.list.View())
+}
+
+func (m Model) renderRightPane(w, h int) string {
+	if m.state == stateForm {
+		return m.renderForm(w, h)
+	}
+	return m.renderContent(w, h)
+}
+
+func (m Model) renderContent(w, h int) string {
+	style := borderStyle
+	if m.state == stateContent {
+		style = borderActive
+	}
+	header := "preview"
+	if t := m.cont.Title(); t != "" {
+		header = t
+	}
+	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), m.cont.View())
+	return style.
+		Width(max(w-paneFrameWidth(), 1)).
+		Height(max(h-paneFrameHeight(), 1)).
+		Render(inner)
+}
+
+func (m Model) renderForm(w, h int) string {
+	header := "new note"
+	if !m.form.IsCreate() {
+		header = "edit"
+	}
+
+	titleField := m.form.title.View()
+	if m.form.ActiveField() == formFieldTitle {
+		titleField = borderActive.Render(titleField)
+	} else {
+		titleField = borderStyle.Render(titleField)
+	}
+
+	body := m.form.content.View()
+	if m.form.ActiveField() == formFieldContent {
+		body = borderActive.Render(body)
+	} else {
+		body = borderStyle.Render(body)
+	}
+
+	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), titleField, body)
+	return borderActive.
+		Width(max(w-paneFrameWidth(), 1)).
+		Height(max(h-paneFrameHeight(), 1)).
+		Render(inner)
 }
 
 func centerLayer(w, h int, content string, z int) *lipgloss.Layer {
@@ -107,90 +159,6 @@ func bottomCenterLayer(w, h int, content string, z int) *lipgloss.Layer {
 	return lipgloss.NewLayer(content).X(x).Y(y).Z(z)
 }
 
-func (m Model) renderList(w, h int) string {
-	style := borderStyle
-	if m.focus == FocusList || m.focus == FocusSearch {
-		style = borderActive
-	}
-
-	notes := m.visibleNotes()
-	rows := make([]string, 0, len(notes)+2)
-	rows = append(rows, titleStyle.Render("notes"))
-	if len(notes) == 0 {
-		rows = append(rows, hintStyle.Render("  (empty — press c)"))
-	}
-	for i, n := range notes {
-		line := truncate(n.Title, maxInt(w-paneFrameWidth()-4, 1))
-		if i == m.cursor {
-			rows = append(rows, itemSelected.Render("▶ "+line))
-		} else {
-			rows = append(rows, itemStyle.Render("  "+line))
-		}
-	}
-
-	if m.focus == FocusSearch || m.searchInput.Value() != "" {
-		rows = append(rows, "", hintStyle.Render(m.searchInput.View()))
-	}
-
-	content := strings.Join(rows, "\n")
-	return style.
-		Width(maxInt(w-paneFrameWidth(), 1)).
-		Height(maxInt(h-paneFrameHeight(), 1)).
-		Render(content)
-}
-
-func (m Model) renderRight(w, h int) string {
-	switch m.focus {
-	case FocusCreateTitle, FocusCreateContent, FocusEditTitle, FocusEditContent:
-		return m.renderForm(w, h)
-	}
-	return m.renderContent(w, h)
-}
-
-func (m Model) renderContent(w, h int) string {
-	style := borderStyle
-	if m.focus == FocusContent {
-		style = borderActive
-	}
-	header := "preview"
-	n := m.currentNote()
-	if n != nil {
-		header = n.Title
-	}
-	body := m.contentVP.View()
-	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), body)
-	return style.
-		Width(maxInt(w-paneFrameWidth(), 1)).
-		Height(maxInt(h-paneFrameHeight(), 1)).
-		Render(inner)
-}
-
-func (m Model) renderForm(w, h int) string {
-	header := "new note"
-	if m.editShortID != "" {
-		header = "edit"
-	}
-	title := m.titleInput.View()
-	if m.focus == FocusCreateTitle || m.focus == FocusEditTitle {
-		title = borderActive.Render(title)
-	} else {
-		title = borderStyle.Render(title)
-	}
-
-	body := m.contentArea.View()
-	if m.focus == FocusCreateContent || m.focus == FocusEditContent {
-		body = borderActive.Render(body)
-	} else {
-		body = borderStyle.Render(body)
-	}
-
-	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), title, body)
-	return borderStyle.
-		Width(maxInt(w-paneFrameWidth(), 1)).
-		Height(maxInt(h-paneFrameHeight(), 1)).
-		Render(inner)
-}
-
 func splitWidths(total int) (int, int) {
 	if total < 44 {
 		return total / 2, total - (total / 2)
@@ -215,30 +183,5 @@ func splitBodyHeight(total int) int {
 	return total
 }
 
-func paneFrameWidth() int {
-	return borderStyle.GetHorizontalFrameSize()
-}
-
-func paneFrameHeight() int {
-	return borderStyle.GetVerticalFrameSize()
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func truncate(s string, n int) string {
-	if n < 1 {
-		return ""
-	}
-	if len(s) <= n {
-		return s
-	}
-	if n <= 1 {
-		return "…"
-	}
-	return s[:n-1] + "…"
-}
+func paneFrameWidth() int  { return borderStyle.GetHorizontalFrameSize() }
+func paneFrameHeight() int { return borderStyle.GetVerticalFrameSize() }
