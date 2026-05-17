@@ -4,8 +4,6 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
-
-	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 func (a *App) site() siteContext {
@@ -77,13 +75,13 @@ func (a *App) publicIndex(w http.ResponseWriter, r *http.Request) {
 		introHTML = strings.ReplaceAll(introHTML, "{{latest_posts}}", embed)
 	}
 
-	web.Render(a.Templates, w, "index.html", indexPageData{
+	a.renderPage(w, "index.html", indexPageData{
 		BlogTitle: ctx.BlogTitle, BlogDescription: blogDesc,
 		IntroHTML: template.HTML(introHTML),
 		Posts:     posts,
 		NavLinks:  ctx.NavLinks, FaviconURL: ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
 		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	}, a.Log)
+	})
 }
 
 func (a *App) publicPost(w http.ResponseWriter, r *http.Request) {
@@ -99,12 +97,12 @@ func (a *App) publicPost(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := a.site()
 	rendered := renderMarkdown(post.Content)
-	web.Render(a.Templates, w, "post.html", postPageData{
+	a.renderPage(w, "post.html", postPageData{
 		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Post: *post,
 		RenderedContent: template.HTML(rendered),
 		FaviconURL:      ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
 		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	}, a.Log)
+	})
 }
 
 func (a *App) publicPage(w http.ResponseWriter, r *http.Request) {
@@ -125,12 +123,12 @@ func (a *App) publicPage(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := a.site()
 	rendered := renderMarkdown(page.Content)
-	web.Render(a.Templates, w, "page.html", pagePageData{
+	a.renderPage(w, "page.html", pagePageData{
 		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Page: *page,
 		RenderedContent: template.HTML(rendered),
 		FaviconURL:      ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
 		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	}, a.Log)
+	})
 }
 
 func (a *App) publicPostsList(w http.ResponseWriter, r *http.Request) {
@@ -140,11 +138,11 @@ func (a *App) publicPostsList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	web.Render(a.Templates, w, "posts.html", postsListPageData{
+	a.renderPage(w, "posts.html", postsListPageData{
 		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Posts: posts,
 		FaviconURL: ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
 		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	}, a.Log)
+	})
 }
 
 func (a *App) customCSS(w http.ResponseWriter, r *http.Request) {

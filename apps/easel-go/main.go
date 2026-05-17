@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"html/template"
 	"log"
 	"log/slog"
 	"net/http"
@@ -49,7 +48,10 @@ func main() {
 	}
 	excludeTerms := splitCommaTrim(config.Getenv("EASEL_EXCLUDE_TERMS", "erotic,erotica,shunga"))
 
-	tmpl := template.Must(template.ParseFS(appFS, "templates/*.html"))
+	tmpl, err := buildTemplates()
+	if err != nil {
+		log.Fatal(err)
+	}
 	app := &App{
 		DB:              db,
 		Log:             logger,

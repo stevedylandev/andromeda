@@ -13,17 +13,17 @@ import (
 var appFS embed.FS
 
 type App struct {
-	DB                *sql.DB
-	Log               *slog.Logger
-	Templates         *template.Template
-	HTTP              *http.Client
-	TZ                *time.Location
-	TZName            string
-	Classifications   []string
-	ExcludeTerms      []string
-	BackfillDays      int
-	MaxDedupRetries   int
-	BaseURL           string
+	DB              *sql.DB
+	Log             *slog.Logger
+	Templates       map[string]*template.Template
+	HTTP            *http.Client
+	TZ              *time.Location
+	TZName          string
+	Classifications []string
+	ExcludeTerms    []string
+	BackfillDays    int
+	MaxDedupRetries int
+	BaseURL         string
 }
 
 type artworkView struct {

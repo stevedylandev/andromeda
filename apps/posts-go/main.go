@@ -1,7 +1,6 @@
 package main
 
 import (
-	"html/template"
 	"log"
 	"log/slog"
 	"net/http"
@@ -60,7 +59,10 @@ func main() {
 	}
 	sessions.PruneExpired()
 
-	tmpl := template.Must(template.ParseFS(appFS, "templates/*.html"))
+	tmpl, err := buildTemplates()
+	if err != nil {
+		log.Fatal(err)
+	}
 	app := &App{
 		DB:           db,
 		Log:          logger,

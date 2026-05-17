@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 const importMaxBytes = 50 * 1024 * 1024
@@ -18,7 +17,7 @@ const uploadMaxBytes = 10 * 1024 * 1024
 const bodyLimit = 51 * 1024 * 1024
 
 func (a *App) loginGet(w http.ResponseWriter, r *http.Request) {
-	web.Render(a.Templates, w, "login.html", loginPageData{Error: r.URL.Query().Get("error")}, a.Log)
+	a.renderPage(w, "login.html", loginPageData{Error: r.URL.Query().Get("error")})
 }
 
 func (a *App) loginPost(w http.ResponseWriter, r *http.Request) {
@@ -55,11 +54,11 @@ func (a *App) adminIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	web.Render(a.Templates, w, "admin_index.html", adminIndexPageData{Posts: posts}, a.Log)
+	a.renderPage(w, "admin_index.html", adminIndexPageData{Posts: posts})
 }
 
 func (a *App) adminNewPost(w http.ResponseWriter, r *http.Request) {
-	web.Render(a.Templates, w, "admin_post_form.html", adminPostFormPageData{Error: r.URL.Query().Get("error")}, a.Log)
+	a.renderPage(w, "admin_post_form.html", adminPostFormPageData{Error: r.URL.Query().Get("error")})
 }
 
 func (a *App) adminCreatePost(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +119,7 @@ func (a *App) adminEditPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
 	}
-	web.Render(a.Templates, w, "admin_post_form.html", adminPostFormPageData{Post: post, Error: r.URL.Query().Get("error")}, a.Log)
+	a.renderPage(w, "admin_post_form.html", adminPostFormPageData{Post: post, Error: r.URL.Query().Get("error")})
 }
 
 func (a *App) adminUpdatePost(w http.ResponseWriter, r *http.Request) {
@@ -176,11 +175,11 @@ func (a *App) adminPages(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	web.Render(a.Templates, w, "admin_pages.html", adminPagesPageData{Pages: pages}, a.Log)
+	a.renderPage(w, "admin_pages.html", adminPagesPageData{Pages: pages})
 }
 
 func (a *App) adminNewPage(w http.ResponseWriter, r *http.Request) {
-	web.Render(a.Templates, w, "admin_page_form.html", adminPageFormPageData{Error: r.URL.Query().Get("error")}, a.Log)
+	a.renderPage(w, "admin_page_form.html", adminPageFormPageData{Error: r.URL.Query().Get("error")})
 }
 
 func (a *App) adminCreatePage(w http.ResponseWriter, r *http.Request) {
@@ -217,7 +216,7 @@ func (a *App) adminEditPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
 		return
 	}
-	web.Render(a.Templates, w, "admin_page_form.html", adminPageFormPageData{Page: page, Error: r.URL.Query().Get("error")}, a.Log)
+	a.renderPage(w, "admin_page_form.html", adminPageFormPageData{Page: page, Error: r.URL.Query().Get("error")})
 }
 
 func (a *App) adminUpdatePage(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +252,7 @@ func (a *App) adminDeletePage(w http.ResponseWriter, r *http.Request) {
 func (a *App) adminGetSettings(w http.ResponseWriter, r *http.Request) {
 	get := func(k string) string { v, _ := getSetting(a.DB, k); return v }
 	defaultCSS, _ := appFS.ReadFile("static/styles.css")
-	web.Render(a.Templates, w, "admin_settings.html", adminSettingsPageData{
+	a.renderPage(w, "admin_settings.html", adminSettingsPageData{
 		BlogTitle:       get("blog_title"),
 		BlogDescription: get("blog_description"),
 		IntroContent:    get("intro_content"),
@@ -265,7 +264,7 @@ func (a *App) adminGetSettings(w http.ResponseWriter, r *http.Request) {
 		CustomHeader:    get("custom_header"),
 		CustomFooter:    get("custom_footer"),
 		Success:         r.URL.Query().Get("success") == "true",
-	}, a.Log)
+	})
 }
 
 func (a *App) adminPostSettings(w http.ResponseWriter, r *http.Request) {
@@ -291,11 +290,11 @@ func (a *App) adminFiles(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	web.Render(a.Templates, w, "admin_files.html", adminFilesPageData{
+	a.renderPage(w, "admin_files.html", adminFilesPageData{
 		Files: files, SiteURL: a.SiteURL,
 		Error:   r.URL.Query().Get("error"),
 		Success: r.URL.Query().Get("success") == "true",
-	}, a.Log)
+	})
 }
 
 func (a *App) adminUploadFile(w http.ResponseWriter, r *http.Request) {
@@ -435,7 +434,7 @@ func (a *App) adminImportForm(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Sscanf(v, "%d", &n)
 		data.Skipped = &n
 	}
-	web.Render(a.Templates, w, "admin_import.html", data, a.Log)
+	a.renderPage(w, "admin_import.html", data)
 }
 
 func (a *App) adminImportPosts(w http.ResponseWriter, r *http.Request) {

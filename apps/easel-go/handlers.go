@@ -3,8 +3,6 @@ package main
 import (
 	"html/template"
 	"net/http"
-
-	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 func iiifURL(imageID string) string {
@@ -61,7 +59,7 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	d, err := getDaily(a.DB, today)
 	if err != nil {
 		a.Log.Error("index db error", "err", err)
-		web.Render(a.Templates, w, "error.html", errorPageData{Title: "Error", Message: "Could not load today's artwork."}, a.Log)
+		a.renderPageStatus(w, http.StatusInternalServerError, "error.html", errorPageData{Title: "Error", Message: "Could not load today's artwork."})
 		return
 	}
 	data := indexPageData{TodayDate: today}
@@ -69,35 +67,31 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 		v := toArtworkView(*d)
 		data.Artwork = &v
 	}
-	web.Render(a.Templates, w, "index.html", data, a.Log)
+	a.renderPage(w, "index.html", data)
 }
 
 func (a *App) dayHandler(w http.ResponseWriter, r *http.Request) {
 	date := r.PathValue("date")
 	if _, ok := parseDate(date); !ok {
-		w.WriteHeader(http.StatusBadRequest)
-		web.Render(a.Templates, w, "error.html", errorPageData{Title: "Invalid date", Message: "'" + date + "' is not a valid YYYY-MM-DD date."}, a.Log)
+		a.renderPageStatus(w, http.StatusBadRequest, "error.html", errorPageData{Title: "Invalid date", Message: "'" + date + "' is not a valid YYYY-MM-DD date."})
 		return
 	}
 	today := a.todayInTZ()
 	if date > today {
-		w.WriteHeader(http.StatusNotFound)
-		web.Render(a.Templates, w, "error.html", errorPageData{Title: "Not yet", Message: date + " is in the future."}, a.Log)
+		a.renderPageStatus(w, http.StatusNotFound, "error.html", errorPageData{Title: "Not yet", Message: date + " is in the future."})
 		return
 	}
 	d, err := getDaily(a.DB, date)
 	if err != nil {
 		a.Log.Error("day db error", "err", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		web.Render(a.Templates, w, "error.html", errorPageData{Title: "Error", Message: "Database error."}, a.Log)
+		a.renderPageStatus(w, http.StatusInternalServerError, "error.html", errorPageData{Title: "Error", Message: "Database error."})
 		return
 	}
 	if d == nil {
-		w.WriteHeader(http.StatusNotFound)
-		web.Render(a.Templates, w, "error.html", errorPageData{Title: "Not found", Message: "No artwork stored for " + date + "."}, a.Log)
+		a.renderPageStatus(w, http.StatusNotFound, "error.html", errorPageData{Title: "Not found", Message: "No artwork stored for " + date + "."})
 		return
 	}
-	web.Render(a.Templates, w, "day.html", dayPageData{Date: date, Artwork: toArtworkView(*d)}, a.Log)
+	a.renderPage(w, "day.html", dayPageData{Date: date, Artwork: toArtworkView(*d)})
 }
 
 func (a *App) archiveHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,5 +104,5 @@ func (a *App) archiveHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		rows = append(rows, archiveRow{Date: it.Date, Title: it.Title, Artist: artist})
 	}
-	web.Render(a.Templates, w, "archive.html", archivePageData{Archive: rows}, a.Log)
+	a.renderPage(w, "archive.html", archivePageData{Archive: rows})
 }

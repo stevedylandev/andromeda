@@ -4,24 +4,22 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-
-	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
 var commonTags = []string{"og:title", "og:description", "og:image", "og:url", "og:type"}
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
-	web.Render(a.Templates, w, "index.html", nil, a.Log)
+	a.renderPage(w, "index.html", nil)
 }
 
 func (a *App) checkHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		web.Render(a.Templates, w, "results.html", resultsData{Error: "Bad request"}, a.Log)
+		a.renderPage(w, "results.html", resultsData{Error: "Bad request"})
 		return
 	}
 	u := strings.TrimSpace(r.FormValue("url"))
 	if u == "" {
-		web.Render(a.Templates, w, "results.html", resultsData{Error: "Please enter a URL"}, a.Log)
+		a.renderPage(w, "results.html", resultsData{Error: "Please enter a URL"})
 		return
 	}
 	if !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://") {
@@ -30,7 +28,7 @@ func (a *App) checkHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := fetchOGData(r.Context(), u)
 	if err != nil {
-		web.Render(a.Templates, w, "results.html", resultsData{URL: u, Error: err.Error()}, a.Log)
+		a.renderPage(w, "results.html", resultsData{URL: u, Error: err.Error()})
 		return
 	}
 
@@ -49,5 +47,5 @@ func (a *App) checkHandler(w http.ResponseWriter, r *http.Request) {
 		data.FoundTags = append(data.FoundTags, tagKV{Key: key, Value: res.OGTags[key]})
 	}
 	data.LinkTags = res.LinkTags
-	web.Render(a.Templates, w, "results.html", data, a.Log)
+	a.renderPage(w, "results.html", data)
 }
