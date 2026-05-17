@@ -24,6 +24,8 @@ var (
 	statusErrStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("1")).
 			Bold(true)
+	hintStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("8"))
 	modalStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("3")).
@@ -32,12 +34,14 @@ var (
 
 func (m Model) View() tea.View {
 	listW, contentW := splitWidths(m.width)
-	bodyH := splitBodyHeight(m.height)
+	bodyH := splitBodyHeight(m.height - 1)
 
 	left := m.renderListPane(listW, bodyH)
 	right := m.renderRightPane(contentW, bodyH)
 
-	base := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+	body := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+	footer := m.renderFooter()
+	base := lipgloss.JoinVertical(lipgloss.Left, body, footer)
 
 	var overlays []*lipgloss.Layer
 	if m.showHelp {
@@ -131,6 +135,15 @@ func (m Model) renderForm(w, h int) string {
 		Width(max(w-paneFrameWidth(), 1)).
 		Height(max(h-paneFrameHeight(), 1)).
 		Render(inner)
+}
+
+func (m Model) renderFooter() string {
+	mode := "local"
+	if m.isRemote {
+		mode = "remote " + m.backend.RemoteURL()
+	}
+	help := m.help.ShortHelpView(m.keys.ShortHelp())
+	return hintStyle.Render(fmt.Sprintf("[%s] %s", mode, help))
 }
 
 func centerLayer(w, h int, content string, z int) *lipgloss.Layer {
