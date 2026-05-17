@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -11,33 +10,26 @@ import (
 var (
 	borderStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240"))
+			BorderForeground(lipgloss.Color("8"))
 	borderActive = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("214"))
+			BorderForeground(lipgloss.Color("3"))
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("214")).
+			Foreground(lipgloss.Color("3")).
 			Padding(0, 1)
-	itemStyle    = lipgloss.NewStyle().Padding(0, 1)
-	itemSelected = lipgloss.NewStyle().
-			Padding(0, 1).
-			Bold(true).
-			Foreground(lipgloss.Color("214"))
-	dimStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
-	statusOK = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("82")).
+	statusOKStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("2")).
 			Bold(true)
-	statusErr = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("196")).
+	statusErrStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("1")).
 			Bold(true)
 	hintStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("244"))
+			Foreground(lipgloss.Color("8"))
 	modalStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("214")).
-			Padding(1, 2).
-			Background(lipgloss.Color("236"))
+			BorderForeground(lipgloss.Color("3")).
+			Padding(1, 2)
 )
 
 func (m Model) View() tea.View {
@@ -52,12 +44,11 @@ func (m Model) View() tea.View {
 	contentW := m.width - listW - 2
 	bodyH := m.height - 2
 
-	left := m.renderList(listW, bodyH)
-	right := m.renderRight(contentW, bodyH)
+	left := m.renderListPane(listW, bodyH)
+	right := m.renderRightPane(contentW, bodyH)
 
 	body := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 	footer := m.renderFooter()
-
 	base := lipgloss.JoinVertical(lipgloss.Left, body, footer)
 
 	var overlays []*lipgloss.Layer
@@ -66,18 +57,20 @@ func (m Model) View() tea.View {
 			modalStyle.Render(m.help.FullHelpView(m.keys.FullHelp())), 1))
 	}
 	if m.confirmDelete {
-		s := m.current()
 		name := ""
-		if s != nil {
+		if s, ok := m.list.Selected(); ok {
 			name = s.Name
+			if name == "" {
+				name = s.ShortID
+			}
 		}
 		overlays = append(overlays, centerLayer(m.width, m.height,
 			modalStyle.Render(fmt.Sprintf("Delete %q?\n\ny / n", name)), 2))
 	}
 	if m.status != "" {
-		st := statusOK
+		st := statusOKStyle
 		if !m.statusOK {
-			st = statusErr
+			st = statusErrStyle
 		}
 		overlays = append(overlays, bottomCenterLayer(m.width, m.height,
 			modalStyle.Render(st.Render(m.status)), 3))
@@ -92,6 +85,73 @@ func (m Model) View() tea.View {
 	}
 
 	return tea.View{Content: content, AltScreen: true}
+}
+
+func (m Model) renderListPane(w, h int) string {
+	style := borderStyle
+	if m.state == stateList {
+		style = borderActive
+	}
+	return style.Width(w).Height(h).Render(m.list.View())
+}
+
+func (m Model) renderRightPane(w, h int) string {
+	if m.state == stateForm {
+		return m.renderForm(w, h)
+	}
+	return m.renderContent(w, h)
+}
+
+func (m Model) renderContent(w, h int) string {
+	style := borderStyle
+	if m.state == stateContent {
+		style = borderActive
+	}
+	header := "preview"
+	if m.cont.Wrap() {
+		header += " (wrap)"
+	}
+	if t := m.cont.Header(); t != "" {
+		header = t
+		if m.cont.Wrap() {
+			header += " (wrap)"
+		}
+	}
+	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), m.cont.View())
+	return style.Width(w).Height(h).Render(inner)
+}
+
+func (m Model) renderForm(w, h int) string {
+	header := "new snippet"
+	if !m.form.IsCreate() {
+		header = "edit"
+	}
+
+	nameField := m.form.name.View()
+	if m.form.ActiveField() == formFieldName {
+		nameField = borderActive.Render(nameField)
+	} else {
+		nameField = borderStyle.Render(nameField)
+	}
+
+	body := m.form.content.View()
+	if m.form.ActiveField() == formFieldContent {
+		body = borderActive.Render(body)
+	} else {
+		body = borderStyle.Render(body)
+	}
+
+	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), nameField, body)
+	return borderActive.Width(w).Height(h).Render(inner)
+}
+
+func (m Model) renderFooter() string {
+	mode := "local"
+	if m.isRemote {
+		mode = "remote " + m.backend.RemoteURL()
+	}
+	help := m.help.ShortHelpView(m.keys.ShortHelp())
+	return hintStyle.Render(fmt.Sprintf("[%s] %s", mode, help))
 }
 
 func centerLayer(w, h int, content string, z int) *lipgloss.Layer {
@@ -120,113 +180,5 @@ func bottomCenterLayer(w, h int, content string, z int) *lipgloss.Layer {
 	return lipgloss.NewLayer(content).X(x).Y(y).Z(z)
 }
 
-func (m Model) renderList(w, h int) string {
-	style := borderStyle
-	if m.focus == FocusList || m.focus == FocusSearch {
-		style = borderActive
-	}
-
-	list := m.visible()
-	rows := make([]string, 0, len(list)+2)
-	rows = append(rows, titleStyle.Render("snippets"))
-	if len(list) == 0 {
-		rows = append(rows, hintStyle.Render("  (empty — press c)"))
-	}
-	for i, s := range list {
-		label := s.Name
-		if label == "" {
-			label = s.ShortID
-		}
-		line := truncate(label, w-6)
-		id := dimStyle.Render(" " + s.ShortID)
-		if i == m.cursor {
-			rows = append(rows, itemSelected.Render("▶ "+line)+id)
-		} else {
-			rows = append(rows, itemStyle.Render("  "+line)+id)
-		}
-	}
-
-	if m.focus == FocusSearch || m.searchInput.Value() != "" {
-		rows = append(rows, "", hintStyle.Render(m.searchInput.View()))
-	}
-
-	content := strings.Join(rows, "\n")
-	return style.Width(w).Height(h).Render(content)
-}
-
-func (m Model) renderRight(w, h int) string {
-	switch m.focus {
-	case FocusCreateName, FocusCreateContent, FocusEditName, FocusEditContent:
-		return m.renderForm(w, h)
-	}
-	return m.renderContent(w, h)
-}
-
-func (m Model) renderContent(w, h int) string {
-	style := borderStyle
-	if m.focus == FocusContent {
-		style = borderActive
-	}
-	header := "preview"
-	if m.wrapContent {
-		header += " (wrap)"
-	}
-	s := m.current()
-	if s != nil {
-		header = s.Name
-		if header == "" {
-			header = s.ShortID
-		}
-	}
-	body := m.contentVP.View()
-	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), body)
-	return style.Width(w).Height(h).Render(inner)
-}
-
-func (m Model) renderForm(w, h int) string {
-	header := "new snippet"
-	if m.editShortID != "" {
-		header = "edit"
-	}
-	if m.wrapContent {
-		header += " (wrap)"
-	}
-	name := m.nameInput.View()
-	if m.focus == FocusCreateName || m.focus == FocusEditName {
-		name = borderActive.Render(name)
-	} else {
-		name = borderStyle.Render(name)
-	}
-
-	body := m.contentArea.View()
-	if m.focus == FocusCreateContent || m.focus == FocusEditContent {
-		body = borderActive.Render(body)
-	} else {
-		body = borderStyle.Render(body)
-	}
-
-	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), name, body)
-	return borderStyle.Width(w).Height(h).Render(inner)
-}
-
-func (m Model) renderFooter() string {
-	mode := "local"
-	if m.isRemote {
-		mode = "remote " + m.backend.RemoteURL()
-	}
-	help := m.help.ShortHelpView(m.keys.ShortHelp())
-	return hintStyle.Render(fmt.Sprintf("[%s] %s", mode, help))
-}
-
-func truncate(s string, n int) string {
-	if n < 1 {
-		return ""
-	}
-	if len(s) <= n {
-		return s
-	}
-	if n <= 1 {
-		return "…"
-	}
-	return s[:n-1] + "…"
-}
+func paneFrameWidth() int  { return borderStyle.GetHorizontalFrameSize() }
+func paneFrameHeight() int { return borderStyle.GetVerticalFrameSize() }

@@ -7,10 +7,13 @@ import (
 	"charm.land/glamour/v2/ansi"
 )
 
+const mdCacheMax = 64
+
 type mdRenderer struct {
 	r     *glamour.TermRenderer
 	width int
 	cache map[string]string
+	order []string
 }
 
 func sp(s string) *string { return &s }
@@ -92,6 +95,18 @@ func newRenderer(width int) *mdRenderer {
 	return &mdRenderer{r: r, width: width, cache: map[string]string{}}
 }
 
+func (m *mdRenderer) store(key, value string) {
+	if _, ok := m.cache[key]; !ok {
+		m.order = append(m.order, key)
+		if len(m.order) > mdCacheMax {
+			drop := m.order[0]
+			m.order = m.order[1:]
+			delete(m.cache, drop)
+		}
+	}
+	m.cache[key] = value
+}
+
 func (m *mdRenderer) resize(width int) {
 	if width == m.width || width < 20 {
 		return
@@ -104,6 +119,7 @@ func (m *mdRenderer) resize(width int) {
 	m.r = r
 	m.width = width
 	m.cache = map[string]string{}
+	m.order = nil
 }
 
 func (m *mdRenderer) render(key, body string) string {
@@ -117,10 +133,19 @@ func (m *mdRenderer) render(key, body string) string {
 	if err != nil {
 		out = fmt.Sprintf("render error: %v\n\n%s", err, body)
 	}
-	m.cache[key] = out
+	m.store(key, out)
 	return out
 }
 
 func (m *mdRenderer) invalidate(key string) {
+	if _, ok := m.cache[key]; !ok {
+		return
+	}
 	delete(m.cache, key)
+	for i, k := range m.order {
+		if k == key {
+			m.order = append(m.order[:i], m.order[i+1:]...)
+			break
+		}
+	}
 }

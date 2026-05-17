@@ -2,40 +2,11 @@ package tui
 
 import (
 	"strings"
+	"time"
 
-	"github.com/atotto/clipboard"
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 )
-
-func loadNotesCmd(b Backend) tea.Cmd {
-	return func() tea.Msg {
-		notes, err := b.List()
-		return notesLoadedMsg{notes: notes, err: err}
-	}
-}
-
-func saveNoteCmd(b Backend, shortID, title, content string) tea.Cmd {
-	return func() tea.Msg {
-		var (
-			note *Note
-			err  error
-		)
-		if shortID == "" {
-			note, err = b.Create(title, content)
-		} else {
-			note, err = b.Update(shortID, title, content)
-		}
-		return noteSavedMsg{note: note, err: err}
-	}
-}
-
-func deleteNoteCmd(b Backend, shortID string) tea.Cmd {
-	return func() tea.Msg {
-		_, err := b.Delete(shortID)
-		return noteDeletedMsg{shortID: shortID, err: err}
-	}
-}
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -43,39 +14,38 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 		m.ready = true
-		m.resizePanes()
+		m.applyLayout()
 		return m, nil
 
 	case notesLoadedMsg:
 		if msg.err != nil {
-			cmd := m.setStatus("load: "+msg.err.Error(), false)
-			return m, cmd
+			return m, m.setStatus("load: "+msg.err.Error(), false)
 		}
-		m.notes = msg.notes
-		m.applyFilter(m.searchInput.Value())
-		m.refreshPreview()
-		return m, nil
+		cmd := m.list.SetNotes(msg.notes)
+		if n, ok := m.list.Selected(); ok {
+			m.cont.SetNote(&n)
+		} else {
+			m.cont.SetNote(nil)
+		}
+		return m, cmd
 
 	case noteSavedMsg:
 		if msg.err != nil {
 			return m, m.setStatus("save: "+msg.err.Error(), false)
 		}
-		if m.renderer != nil && msg.note != nil {
-			m.renderer.invalidate(msg.note.ShortID)
+		if msg.note != nil {
+			m.cont.Invalidate(msg.note.ShortID)
 		}
-		m.focus = FocusList
-		m.titleInput.Reset()
-		m.contentArea.Reset()
-		m.editShortID = ""
-		return m, loadNotesCmd(m.backend)
+		m.state = stateList
+		m.form.Blur()
+		return m, tea.Batch(loadNotesCmd(m.backend), m.setStatus("saved", true))
 
 	case noteDeletedMsg:
 		if msg.err != nil {
 			return m, m.setStatus("delete: "+msg.err.Error(), false)
 		}
-		if m.renderer != nil {
-			m.renderer.invalidate(msg.shortID)
-		}
+		m.cont.Invalidate(msg.shortID)
+		m.state = stateList
 		return m, tea.Batch(loadNotesCmd(m.backend), m.setStatus("deleted", true))
 
 	case editorFinishedMsg:
@@ -83,13 +53,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, m.setStatus("editor: "+msg.err.Error(), false)
 		}
 		if msg.shortID == "" {
-			m.contentArea.SetValue(msg.content)
+			m.form.SetContent(msg.content)
 			return m, nil
 		}
 		var orig *Note
-		for i := range m.notes {
-			if m.notes[i].ShortID == msg.shortID {
-				orig = &m.notes[i]
+		for _, it := range m.list.inner.Items() {
+			ni, ok := it.(noteItem)
+			if ok && ni.note.ShortID == msg.shortID {
+				n := ni.note
+				orig = &n
 				break
 			}
 		}
@@ -98,10 +70,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, saveNoteCmd(m.backend, msg.shortID, orig.Title, msg.content)
 
+	case submitFormMsg:
+		return m, saveNoteCmd(m.backend, msg.shortID, msg.title, msg.content)
+
+	case cancelFormMsg:
+		m.state = stateList
+		return m, nil
+
 	case statusMsg:
 		return m, m.setStatus(msg.text, msg.ok)
 
 	case clearStatusMsg:
+		if time.Now().Before(m.statusUntil) {
+			return m, nil
+		}
 		m.status = ""
 		return m, nil
 
@@ -112,66 +94,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) resizePanes() {
-	if !m.ready {
-		return
-	}
-
-	_, contentOuterW := splitWidths(m.width)
-	bodyOuterH := splitBodyHeight(m.height)
-	contentInnerW := maxInt(contentOuterW-paneFrameWidth(), 20)
-	contentInnerH := maxInt(bodyOuterH-paneFrameHeight(), 3)
-
-	m.contentVP.SetWidth(maxInt(contentInnerW, 1))
-	m.contentVP.SetHeight(maxInt(contentInnerH-1, 1))
-
-	m.titleInput.SetWidth(maxInt(contentInnerW-4, 1))
-	m.contentArea.SetWidth(maxInt(contentInnerW-2, 1))
-	m.contentArea.SetHeight(maxInt(contentInnerH-6, 1))
-
-	listOuterW, _ := splitWidths(m.width)
-	listInnerW := maxInt(listOuterW-paneFrameWidth(), 1)
-	m.searchInput.SetWidth(maxInt(listInnerW-2, 1))
-
-	if m.renderer == nil {
-		m.renderer = newRenderer(contentInnerW)
-	} else {
-		m.renderer.resize(contentInnerW)
-	}
-	m.refreshPreview()
-}
-
-func (m *Model) refreshPreview() {
-	if m.renderer == nil {
-		return
-	}
-	n := m.currentNote()
-	if n == nil {
-		m.contentVP.SetContent("")
-		return
-	}
-	body := n.Content
-	if !m.wrap {
-		// raw view: no rendering
-		m.contentVP.SetContent(body)
-		return
-	}
-	m.contentVP.SetContent(m.renderer.render(n.ShortID, body))
-}
-
 func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if m.confirmDelete {
 		switch msg.String() {
 		case "y", "Y":
-			n := m.currentNote()
 			m.confirmDelete = false
-			if n == nil {
+			n, ok := m.list.Selected()
+			if !ok {
 				return m, nil
 			}
 			return m, deleteNoteCmd(m.backend, n.ShortID)
 		case "n", "N", "esc", "q":
 			m.confirmDelete = false
-			return m, nil
 		}
 		return m, nil
 	}
@@ -183,226 +117,179 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	switch m.focus {
-	case FocusList:
-		return m.keyList(msg)
-	case FocusContent:
-		return m.keyContent(msg)
-	case FocusCreateTitle, FocusCreateContent, FocusEditTitle, FocusEditContent:
-		return m.keyForm(msg)
-	case FocusSearch:
-		return m.keySearch(msg)
+	switch m.state {
+	case stateList:
+		return m.handleListKey(msg)
+	case stateContent:
+		return m.handleContentKey(msg)
+	case stateForm:
+		var cmd tea.Cmd
+		m.form, cmd = m.form.Update(msg)
+		return m, cmd
 	}
 	return m, nil
 }
 
-func (m Model) keyList(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	notes := m.visibleNotes()
+func (m Model) handleListKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	// While the list is in filter-entry mode, route every key to it
+	// so typing and esc/enter behave as expected.
+	if m.list.IsFiltering() {
+		var cmd tea.Cmd
+		m.list, cmd = m.list.Update(msg)
+		m.refreshContentFromSelection()
+		return m, cmd
+	}
+
 	switch {
 	case key.Matches(msg, m.keys.Quit):
 		return m, tea.Quit
-	case key.Matches(msg, m.keys.Down):
-		if m.cursor < len(notes)-1 {
-			m.cursor++
-			m.refreshPreview()
-		}
-	case key.Matches(msg, m.keys.Up):
-		if m.cursor > 0 {
-			m.cursor--
-			m.refreshPreview()
-		}
 	case key.Matches(msg, m.keys.Open):
-		if len(notes) > 0 {
-			m.focus = FocusContent
-			m.contentVP.GotoTop()
+		if n, ok := m.list.Selected(); ok {
+			m.cont.SetNote(&n)
+			m.state = stateContent
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.Create):
-		m.focus = FocusCreateTitle
-		m.editShortID = ""
-		m.titleInput.SetValue("")
-		m.contentArea.SetValue("")
-		m.titleInput.Focus()
-		m.contentArea.Blur()
+		m.form.StartCreate()
+		m.state = stateForm
+		return m, nil
 	case key.Matches(msg, m.keys.Edit):
-		n := m.currentNote()
-		if n != nil {
-			m.focus = FocusEditTitle
-			m.editShortID = n.ShortID
-			m.titleInput.SetValue(n.Title)
-			m.contentArea.SetValue(n.Content)
-			m.titleInput.Focus()
-			m.contentArea.Blur()
+		if n, ok := m.list.Selected(); ok {
+			m.form.StartEdit(n)
+			m.state = stateForm
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.ExtEdit):
-		n := m.currentNote()
-		if n != nil {
+		if n, ok := m.list.Selected(); ok {
 			return m, openExternalEditor(n.ShortID, n.Content)
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.Delete):
-		if m.currentNote() != nil {
+		if _, ok := m.list.Selected(); ok {
 			m.confirmDelete = true
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.Copy):
-		n := m.currentNote()
-		if n != nil {
-			if err := clipboard.WriteAll(n.Content); err != nil {
-				return m, m.setStatus("clipboard: "+err.Error(), false)
-			}
-			return m, m.setStatus("copied text", true)
+		if n, ok := m.list.Selected(); ok {
+			return m, copyToClipboardCmd(n.Content, "copied text")
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.CopyLink):
-		n := m.currentNote()
-		if n != nil && m.isRemote {
-			link := strings.TrimRight(m.backend.RemoteURL(), "/") + "/notes/" + n.ShortID
-			if err := clipboard.WriteAll(link); err != nil {
-				return m, m.setStatus("clipboard: "+err.Error(), false)
-			}
-			return m, m.setStatus("copied link", true)
+		if !m.isRemote {
+			return m, m.setStatus("local mode: no link", false)
 		}
-		return m, m.setStatus("local mode: no link", false)
+		if n, ok := m.list.Selected(); ok {
+			return m, copyToClipboardCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID), "copied link")
+		}
+		return m, nil
 	case key.Matches(msg, m.keys.OpenBrowser):
-		n := m.currentNote()
-		if n != nil && m.isRemote {
-			link := strings.TrimRight(m.backend.RemoteURL(), "/") + "/notes/" + n.ShortID
-			if err := openURL(link); err != nil {
-				return m, m.setStatus("open: "+err.Error(), false)
-			}
-			return m, m.setStatus("opened "+link, true)
+		if !m.isRemote {
+			return m, nil
 		}
-	case key.Matches(msg, m.keys.Search):
-		m.focus = FocusSearch
-		m.searchInput.Focus()
+		if n, ok := m.list.Selected(); ok {
+			return m, openURLCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID))
+		}
+		return m, nil
 	case key.Matches(msg, m.keys.Refresh):
 		if m.isRemote {
 			return m, loadNotesCmd(m.backend)
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.Help):
 		m.showHelp = true
+		return m, nil
 	}
-	return m, nil
+
+	var cmd tea.Cmd
+	m.list, cmd = m.list.Update(msg)
+	m.refreshContentFromSelection()
+	return m, cmd
 }
 
-func (m Model) keyContent(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleContentKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Quit), key.Matches(msg, m.keys.Back):
-		m.focus = FocusList
+		m.state = stateList
 		return m, nil
-	case key.Matches(msg, m.keys.Down):
-		m.contentVP.ScrollDown(1)
-	case key.Matches(msg, m.keys.Up):
-		m.contentVP.ScrollUp(1)
+	case key.Matches(msg, m.keys.ScrollDown):
+		m.cont = m.cont.ScrollDown(1)
+		return m, nil
+	case key.Matches(msg, m.keys.ScrollUp):
+		m.cont = m.cont.ScrollUp(1)
+		return m, nil
 	case key.Matches(msg, m.keys.Edit):
-		n := m.currentNote()
-		if n != nil {
-			m.focus = FocusEditTitle
-			m.editShortID = n.ShortID
-			m.titleInput.SetValue(n.Title)
-			m.contentArea.SetValue(n.Content)
-			m.titleInput.Focus()
+		if n, ok := m.list.Selected(); ok {
+			m.form.StartEdit(n)
+			m.state = stateForm
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.ExtEdit):
-		n := m.currentNote()
-		if n != nil {
+		if n, ok := m.list.Selected(); ok {
 			return m, openExternalEditor(n.ShortID, n.Content)
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.Copy):
-		n := m.currentNote()
-		if n != nil {
-			clipboard.WriteAll(n.Content)
-			return m, m.setStatus("copied text", true)
+		if n, ok := m.list.Selected(); ok {
+			return m, copyToClipboardCmd(n.Content, "copied text")
 		}
+		return m, nil
 	case key.Matches(msg, m.keys.CopyLink):
-		n := m.currentNote()
-		if n != nil && m.isRemote {
-			link := strings.TrimRight(m.backend.RemoteURL(), "/") + "/notes/" + n.ShortID
-			clipboard.WriteAll(link)
-			return m, m.setStatus("copied link", true)
+		if !m.isRemote {
+			return m, m.setStatus("local mode: no link", false)
 		}
+		if n, ok := m.list.Selected(); ok {
+			return m, copyToClipboardCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID), "copied link")
+		}
+		return m, nil
 	case key.Matches(msg, m.keys.OpenBrowser):
-		n := m.currentNote()
-		if n != nil && m.isRemote {
-			openURL(strings.TrimRight(m.backend.RemoteURL(), "/") + "/notes/" + n.ShortID)
+		if !m.isRemote {
+			return m, nil
 		}
+		if n, ok := m.list.Selected(); ok {
+			return m, openURLCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID))
+		}
+		return m, nil
+	case key.Matches(msg, m.keys.ToggleWrap):
+		m.cont.ToggleWrap()
+		return m, nil
 	case key.Matches(msg, m.keys.Help):
 		m.showHelp = true
-	case key.Matches(msg, m.keys.ToggleWrap):
-		m.wrap = !m.wrap
-		m.refreshPreview()
-	}
-	var cmd tea.Cmd
-	m.contentVP, cmd = m.contentVP.Update(msg)
-	return m, cmd
-}
-
-func (m Model) keyForm(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch {
-	case key.Matches(msg, m.keys.Cancel):
-		m.focus = FocusList
-		m.titleInput.Blur()
-		m.contentArea.Blur()
-		return m, nil
-	case key.Matches(msg, m.keys.Save):
-		title := strings.TrimSpace(m.titleInput.Value())
-		if title == "" {
-			return m, m.setStatus("title required", false)
-		}
-		return m, saveNoteCmd(m.backend, m.editShortID, title, m.contentArea.Value())
-	case key.Matches(msg, m.keys.SwitchField):
-		switch m.focus {
-		case FocusCreateTitle:
-			m.focus = FocusCreateContent
-		case FocusCreateContent:
-			m.focus = FocusCreateTitle
-		case FocusEditTitle:
-			m.focus = FocusEditContent
-		case FocusEditContent:
-			m.focus = FocusEditTitle
-		}
-		m.applyFormFocus()
-		return m, nil
-	case key.Matches(msg, m.keys.ToggleWrap):
-		m.wrap = !m.wrap
 		return m, nil
 	}
 
 	var cmd tea.Cmd
-	switch m.focus {
-	case FocusCreateTitle, FocusEditTitle:
-		m.titleInput, cmd = m.titleInput.Update(msg)
-	case FocusCreateContent, FocusEditContent:
-		m.contentArea, cmd = m.contentArea.Update(msg)
-	}
+	m.cont, cmd = m.cont.Update(msg)
 	return m, cmd
 }
 
-func (m *Model) applyFormFocus() {
-	switch m.focus {
-	case FocusCreateTitle, FocusEditTitle:
-		m.titleInput.Focus()
-		m.contentArea.Blur()
-	case FocusCreateContent, FocusEditContent:
-		m.contentArea.Focus()
-		m.titleInput.Blur()
+func (m *Model) refreshContentFromSelection() {
+	if n, ok := m.list.Selected(); ok {
+		m.cont.SetNote(&n)
+	} else {
+		m.cont.SetNote(nil)
 	}
 }
 
-func (m Model) keySearch(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc":
-		m.searchInput.SetValue("")
-		m.searchInput.Blur()
-		m.focus = FocusList
-		m.applyFilter("")
-		m.refreshPreview()
-		return m, nil
-	case "enter":
-		m.searchInput.Blur()
-		m.focus = FocusList
-		return m, nil
+func (m *Model) applyLayout() {
+	if !m.ready {
+		return
 	}
-	var cmd tea.Cmd
-	m.searchInput, cmd = m.searchInput.Update(msg)
-	m.applyFilter(m.searchInput.Value())
-	m.refreshPreview()
-	return m, cmd
+	listW, contentW := splitWidths(m.width)
+	bodyH := splitBodyHeight(m.height)
+
+	listInnerW := max(listW-paneFrameWidth(), 1)
+	listInnerH := max(bodyH-paneFrameHeight(), 1)
+	m.list.SetSize(listInnerW, listInnerH)
+
+	contentInnerW := max(contentW-paneFrameWidth(), 20)
+	contentInnerH := max(bodyH-paneFrameHeight(), 3)
+	m.cont.SetSize(contentInnerW, max(contentInnerH-1, 1))
+	m.form.SetSize(contentInnerW, contentInnerH)
+}
+
+func (m *Model) setStatus(text string, ok bool) tea.Cmd {
+	m.status = text
+	m.statusOK = ok
+	m.statusUntil = time.Now().Add(2 * time.Second)
+	return tea.Tick(2*time.Second, func(time.Time) tea.Msg { return clearStatusMsg{} })
 }
