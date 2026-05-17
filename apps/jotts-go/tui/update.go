@@ -275,7 +275,7 @@ func (m *Model) applyLayout() {
 		return
 	}
 	listW, contentW := splitWidths(m.width)
-	bodyH := splitBodyHeight(m.height)
+	bodyH := splitBodyHeight(m.height - 1)
 
 	listInnerW := max(listW-paneFrameWidth(), 1)
 	listInnerH := max(bodyH-paneFrameHeight(), 1)
