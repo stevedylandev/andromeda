@@ -125,9 +125,9 @@ func (m *Model) resizePanes() {
 	m.contentVP.Width = maxInt(contentInnerW, 1)
 	m.contentVP.Height = maxInt(contentInnerH-1, 1)
 
-	m.titleInput.Width = maxInt(contentInnerW-2, 1)
-	m.contentArea.SetWidth(maxInt(contentInnerW, 1))
-	m.contentArea.SetHeight(maxInt(contentInnerH-4, 1))
+	m.titleInput.Width = maxInt(contentInnerW-4, 1)
+	m.contentArea.SetWidth(maxInt(contentInnerW-2, 1))
+	m.contentArea.SetHeight(maxInt(contentInnerH-6, 1))
 
 	listOuterW, _ := splitWidths(m.width)
 	listInnerW := maxInt(listOuterW-paneFrameWidth(), 1)
