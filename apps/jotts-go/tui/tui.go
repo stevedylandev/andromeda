@@ -3,7 +3,7 @@ package tui
 import (
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"golang.org/x/term"
 )
 
@@ -24,7 +24,7 @@ func Run(opts Options) error {
 		width, height = w, h
 	}
 
-	p := tea.NewProgram(newModel(backend, notes, width, height), tea.WithAltScreen())
+	p := tea.NewProgram(newModel(backend, notes, width, height))
 	_, err = p.Run()
 	return err
 }

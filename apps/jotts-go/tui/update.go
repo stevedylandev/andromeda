@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
-	"github.com/charmbracelet/bubbles/key"
-	tea "github.com/charmbracelet/bubbletea"
+	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 )
 
 func loadNotesCmd(b Backend) tea.Cmd {
@@ -105,7 +105,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = ""
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return m.handleKey(msg)
 	}
 
@@ -122,16 +122,16 @@ func (m *Model) resizePanes() {
 	contentInnerW := maxInt(contentOuterW-paneFrameWidth(), 20)
 	contentInnerH := maxInt(bodyOuterH-paneFrameHeight(), 3)
 
-	m.contentVP.Width = maxInt(contentInnerW, 1)
-	m.contentVP.Height = maxInt(contentInnerH-1, 1)
+	m.contentVP.SetWidth(maxInt(contentInnerW, 1))
+	m.contentVP.SetHeight(maxInt(contentInnerH-1, 1))
 
-	m.titleInput.Width = maxInt(contentInnerW-4, 1)
+	m.titleInput.SetWidth(maxInt(contentInnerW-4, 1))
 	m.contentArea.SetWidth(maxInt(contentInnerW-2, 1))
 	m.contentArea.SetHeight(maxInt(contentInnerH-6, 1))
 
 	listOuterW, _ := splitWidths(m.width)
 	listInnerW := maxInt(listOuterW-paneFrameWidth(), 1)
-	m.searchInput.Width = maxInt(listInnerW-2, 1)
+	m.searchInput.SetWidth(maxInt(listInnerW-2, 1))
 
 	if m.renderer == nil {
 		m.renderer = newRenderer(contentInnerW)
@@ -159,7 +159,7 @@ func (m *Model) refreshPreview() {
 	m.contentVP.SetContent(m.renderer.render(n.ShortID, body))
 }
 
-func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if m.confirmDelete {
 		switch msg.String() {
 		case "y", "Y":
@@ -196,7 +196,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) keyList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keyList(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	notes := m.visibleNotes()
 	switch {
 	case key.Matches(msg, m.keys.Quit):
@@ -282,15 +282,15 @@ func (m Model) keyList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) keyContent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keyContent(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Quit), key.Matches(msg, m.keys.Back):
 		m.focus = FocusList
 		return m, nil
 	case key.Matches(msg, m.keys.Down):
-		m.contentVP.LineDown(1)
+		m.contentVP.ScrollDown(1)
 	case key.Matches(msg, m.keys.Up):
-		m.contentVP.LineUp(1)
+		m.contentVP.ScrollUp(1)
 	case key.Matches(msg, m.keys.Edit):
 		n := m.currentNote()
 		if n != nil {
@@ -334,7 +334,7 @@ func (m Model) keyContent(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) keyForm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keyForm(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, m.keys.Cancel):
 		m.focus = FocusList
@@ -386,7 +386,7 @@ func (m *Model) applyFormFocus() {
 	}
 }
 
-func (m Model) keySearch(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m Model) keySearch(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
 		m.searchInput.SetValue("")
