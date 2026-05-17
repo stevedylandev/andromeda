@@ -3,8 +3,8 @@ package tui
 import (
 	"fmt"
 
-	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/glamour/ansi"
+	"charm.land/glamour/v2"
+	"charm.land/glamour/v2/ansi"
 )
 
 type mdRenderer struct {

@@ -5,12 +5,9 @@ import (
 	"os"
 
 	"github.com/stevedylandev/andromeda/apps/jotts-go/tui"
-	"github.com/stevedylandev/andromeda/crates-go/config"
 )
 
 func main() {
-	config.LoadDotEnv(".env")
-
 	args := os.Args[1:]
 	if len(args) == 0 {
 		runTUI(nil)
