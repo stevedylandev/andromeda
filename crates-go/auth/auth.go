@@ -104,7 +104,7 @@ func (s *Store) SessionCookie(token string) *http.Cookie {
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   s.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		MaxAge:   int(s.maxAge().Seconds()),
 	}
 }
@@ -117,7 +117,7 @@ func (s *Store) ClearCookie() *http.Cookie {
 		Path:     "/",
 		HttpOnly: true,
 		Secure:   s.CookieSecure,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		MaxAge:   -1,
 	}
 }
@@ -176,9 +176,21 @@ func VerifyPassword(input, expected string) bool {
 	return SecureEqual(input, expected)
 }
 
-// SecureEqual reports whether a and b are equal in constant time.
+// SecureEqual reports whether a and b are equal in constant time. Inputs are
+// padded/truncated to a fixed 256-byte buffer so length differences don't leak
+// via timing. A length-equal mask is AND-ed with the buffer compare.
 func SecureEqual(a, b string) bool {
-	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+	const padLen = 256
+	var bufA, bufB [padLen]byte
+	ab := []byte(a)
+	bb := []byte(b)
+	na := min(len(ab), padLen)
+	nb := min(len(bb), padLen)
+	copy(bufA[:na], ab[:na])
+	copy(bufB[:nb], bb[:nb])
+	lengthsMatch := subtle.ConstantTimeEq(int32(len(ab)), int32(len(bb)))
+	bytesMatch := subtle.ConstantTimeCompare(bufA[:], bufB[:])
+	return (lengthsMatch & bytesMatch) == 1
 }
 
 // GenerateSessionToken returns a 32-byte random hex token.

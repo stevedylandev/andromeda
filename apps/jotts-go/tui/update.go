@@ -6,6 +6,7 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+	sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -18,10 +19,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case notesLoadedMsg:
-		if msg.err != nil {
-			return m, m.setStatus("load: "+msg.err.Error(), false)
+		if msg.Err != nil {
+			return m, m.setStatus("load: "+msg.Err.Error(), false)
 		}
-		cmd := m.list.SetNotes(msg.notes)
+		cmd := m.list.SetNotes(msg.Notes)
 		if n, ok := m.list.Selected(); ok {
 			m.cont.SetNote(&n)
 		} else {
@@ -30,55 +31,55 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case noteSavedMsg:
-		if msg.err != nil {
-			return m, m.setStatus("save: "+msg.err.Error(), false)
+		if msg.Err != nil {
+			return m, m.setStatus("save: "+msg.Err.Error(), false)
 		}
-		if msg.note != nil {
-			m.cont.Invalidate(msg.note.ShortID)
+		if msg.Note != nil {
+			m.cont.Invalidate(msg.Note.ShortID)
 		}
 		m.state = stateList
 		m.form.Blur()
 		return m, tea.Batch(loadNotesCmd(m.backend), m.setStatus("saved", true))
 
 	case noteDeletedMsg:
-		if msg.err != nil {
-			return m, m.setStatus("delete: "+msg.err.Error(), false)
+		if msg.Err != nil {
+			return m, m.setStatus("delete: "+msg.Err.Error(), false)
 		}
-		m.cont.Invalidate(msg.shortID)
+		m.cont.Invalidate(msg.ShortID)
 		m.state = stateList
 		return m, tea.Batch(loadNotesCmd(m.backend), m.setStatus("deleted", true))
 
 	case editorFinishedMsg:
-		if msg.err != nil {
-			return m, m.setStatus("editor: "+msg.err.Error(), false)
+		if msg.Err != nil {
+			return m, m.setStatus("editor: "+msg.Err.Error(), false)
 		}
-		if msg.shortID == "" {
-			m.form.SetContent(msg.content)
+		if msg.Tag == "" {
+			m.form.SetContent(msg.Content)
 			return m, nil
 		}
 		var orig *Note
 		for _, it := range m.list.inner.Items() {
 			ni, ok := it.(noteItem)
-			if ok && ni.note.ShortID == msg.shortID {
+			if ok && ni.note.ShortID == msg.Tag {
 				n := ni.note
 				orig = &n
 				break
 			}
 		}
-		if orig == nil || strings.TrimRight(orig.Content, "\n") == strings.TrimRight(msg.content, "\n") {
+		if orig == nil || strings.TrimRight(orig.Content, "\n") == strings.TrimRight(msg.Content, "\n") {
 			return m, nil
 		}
-		return m, saveNoteCmd(m.backend, msg.shortID, orig.Title, msg.content)
+		return m, saveNoteCmd(m.backend, msg.Tag, orig.Title, msg.Content)
 
 	case submitFormMsg:
-		return m, saveNoteCmd(m.backend, msg.shortID, msg.title, msg.content)
+		return m, saveNoteCmd(m.backend, msg.ShortID, msg.Title, msg.Content)
 
 	case cancelFormMsg:
 		m.state = stateList
 		return m, nil
 
 	case statusMsg:
-		return m, m.setStatus(msg.text, msg.ok)
+		return m, m.setStatus(msg.Text, msg.OK)
 
 	case clearStatusMsg:
 		if time.Now().Before(m.statusUntil) {
@@ -171,7 +172,7 @@ func (m Model) handleListKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case key.Matches(msg, m.keys.Copy):
 		if n, ok := m.list.Selected(); ok {
-			return m, copyToClipboardCmd(n.Content, "copied text")
+			return m, sharedtui.CopyToClipboardCmd(n.Content, "copied text")
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.CopyLink):
@@ -179,7 +180,7 @@ func (m Model) handleListKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, m.setStatus("local mode: no link", false)
 		}
 		if n, ok := m.list.Selected(); ok {
-			return m, copyToClipboardCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID), "copied link")
+			return m, sharedtui.CopyToClipboardCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID), "copied link")
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.OpenBrowser):
@@ -187,7 +188,7 @@ func (m Model) handleListKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if n, ok := m.list.Selected(); ok {
-			return m, openURLCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID))
+			return m, sharedtui.OpenURLCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID))
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.Refresh):
@@ -230,7 +231,7 @@ func (m Model) handleContentKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case key.Matches(msg, m.keys.Copy):
 		if n, ok := m.list.Selected(); ok {
-			return m, copyToClipboardCmd(n.Content, "copied text")
+			return m, sharedtui.CopyToClipboardCmd(n.Content, "copied text")
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.CopyLink):
@@ -238,7 +239,7 @@ func (m Model) handleContentKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, m.setStatus("local mode: no link", false)
 		}
 		if n, ok := m.list.Selected(); ok {
-			return m, copyToClipboardCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID), "copied link")
+			return m, sharedtui.CopyToClipboardCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID), "copied link")
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.OpenBrowser):
@@ -246,7 +247,7 @@ func (m Model) handleContentKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if n, ok := m.list.Selected(); ok {
-			return m, openURLCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID))
+			return m, sharedtui.OpenURLCmd(noteLinkURL(m.backend.RemoteURL(), n.ShortID))
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.ToggleWrap):
