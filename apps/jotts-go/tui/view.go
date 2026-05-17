@@ -10,32 +10,31 @@ import (
 var (
 	borderStyle = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("240"))
+			BorderForeground(lipgloss.Color("8"))
 	borderActive = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("214"))
+			BorderForeground(lipgloss.Color("3"))
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("214")).
+			Foreground(lipgloss.Color("3")).
 			Padding(0, 1)
 	itemStyle    = lipgloss.NewStyle().Padding(0, 1)
 	itemSelected = lipgloss.NewStyle().
 			Padding(0, 1).
 			Bold(true).
-			Foreground(lipgloss.Color("214"))
+			Foreground(lipgloss.Color("3"))
 	statusOK = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("82")).
+			Foreground(lipgloss.Color("2")).
 			Bold(true)
 	statusErr = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("196")).
+			Foreground(lipgloss.Color("1")).
 			Bold(true)
 	hintStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("244"))
+			Foreground(lipgloss.Color("8"))
 	modalStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("214")).
-			Padding(1, 2).
-			Background(lipgloss.Color("236"))
+			BorderForeground(lipgloss.Color("3")).
+			Padding(1, 2)
 )
 
 func (m Model) View() string {
