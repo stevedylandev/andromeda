@@ -27,5 +27,4 @@ apps/library-go/library-go
 apps/og-go/og-go
 apps/posts-go/posts-go
 apps/shrink-go/shrink-go
-apps/sipp-go/sipp-cli
-apps/sipp-go/sipp-server
+apps/sipp-go/sipp-go
