@@ -31,9 +31,9 @@ type LocalBackend struct {
 	DB *sql.DB
 }
 
-func (b *LocalBackend) List() ([]Note, error)               { return store.List(b.DB) }
-func (b *LocalBackend) Get(s string) (*Note, error)         { return store.GetByShortID(b.DB, s) }
-func (b *LocalBackend) Create(t, c string) (*Note, error)   { return store.Create(b.DB, t, c) }
+func (b *LocalBackend) List() ([]Note, error)             { return store.List(b.DB) }
+func (b *LocalBackend) Get(s string) (*Note, error)       { return store.GetByShortID(b.DB, s) }
+func (b *LocalBackend) Create(t, c string) (*Note, error) { return store.Create(b.DB, t, c) }
 func (b *LocalBackend) Update(s, t, c string) (*Note, error) {
 	return store.UpdateByShortID(b.DB, s, t, c)
 }

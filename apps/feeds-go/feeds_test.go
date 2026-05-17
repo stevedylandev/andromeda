@@ -41,6 +41,19 @@ func seedSubscriptionForTest(t *testing.T, db *sql.DB, feedURL, title string, ca
 	return sub
 }
 
+func parsedEntry(guid, link string, publishedAt int64) ParsedEntry {
+	return ParsedEntry{
+		GUID:        guid,
+		Title:       "post " + guid,
+		Link:        link,
+		PublishedAt: publishedAt,
+	}
+}
+
+func int64Ptr(v int64) *int64 {
+	return &v
+}
+
 func TestParseOPMLHandlesNestedCategories(t *testing.T) {
 	content := `<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
@@ -76,6 +89,67 @@ func TestParseOPMLInvalidReturnsNil(t *testing.T) {
 	}
 }
 
+func TestParseOPMLFlatOutlines(t *testing.T) {
+	content := `<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0"><body>
+    <outline type="rss" text="Blog A" xmlUrl="https://a.com/feed" />
+    <outline type="rss" text="Blog B" xmlUrl="https://b.com/rss" />
+</body></opml>`
+
+	entries := parseOPML(content)
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
+	}
+	if entries[0].XMLURL != "https://a.com/feed" || entries[0].Title != "Blog A" || entries[0].Category != "" {
+		t.Fatalf("unexpected first entry: %+v", entries[0])
+	}
+}
+
+func TestParseOPMLEmptyAndMissingURLs(t *testing.T) {
+	if got := parseOPML(`<?xml version="1.0"?><opml><body></body></opml>`); len(got) != 0 {
+		t.Fatalf("expected empty OPML to produce no entries, got %+v", got)
+	}
+	if got := parseOPML(`<?xml version="1.0"?><opml><body><outline type="rss" text="No URL" htmlUrl="https://example.com" /></body></opml>`); len(got) != 0 {
+		t.Fatalf("expected outline without xmlUrl to be skipped, got %+v", got)
+	}
+}
+
+func TestParseOPMLDeeplyNestedUsesNearestCategory(t *testing.T) {
+	content := `<?xml version="1.0"?>
+<opml><body>
+  <outline text="Root">
+    <outline text="Tech">
+      <outline type="rss" text="A" xmlUrl="https://a.com/feed" />
+    </outline>
+    <outline type="rss" text="B" xmlUrl="https://b.com/feed" />
+  </outline>
+</body></opml>`
+
+	entries := parseOPML(content)
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
+	}
+	if entries[0].XMLURL != "https://a.com/feed" || entries[0].Category != "Tech" {
+		t.Fatalf("unexpected deeply nested entry: %+v", entries[0])
+	}
+	if entries[1].XMLURL != "https://b.com/feed" || entries[1].Category != "Root" {
+		t.Fatalf("unexpected root nested entry: %+v", entries[1])
+	}
+}
+
+func TestParseOPMLSkipsEmptyURL(t *testing.T) {
+	content := `<?xml version="1.0"?>
+<opml><body>
+  <outline type="rss" text="Empty" xmlUrl="" />
+  <outline type="rss" text="Valid" xmlUrl="https://valid.com/feed" />
+</body></opml>`
+
+	entries := parseOPML(content)
+	if len(entries) != 1 || entries[0].XMLURL != "https://valid.com/feed" {
+		t.Fatalf("expected only valid URL entry, got %+v", entries)
+	}
+}
+
 func TestDeriveTitleFromHTMLStripsMarkupAndTruncates(t *testing.T) {
 	src := `<p>Hello <strong>world</strong> &amp; friends.</p>`
 	if got := deriveTitleFromHTML(src); got != "Hello world & friends." {
@@ -86,6 +160,17 @@ func TestDeriveTitleFromHTMLStripsMarkupAndTruncates(t *testing.T) {
 	got := deriveTitleFromHTML("<div>" + long + "</div>")
 	if !strings.HasSuffix(got, "…") {
 		t.Fatalf("expected ellipsis, got %q", got)
+	}
+	if len([]rune(got)) > 81 {
+		t.Fatalf("expected title to be capped at 81 runes including ellipsis, got %d", len([]rune(got)))
+	}
+}
+
+func TestDeriveTitleFromHTMLEmptyYieldsEmpty(t *testing.T) {
+	for _, src := range []string{"", "<p>   </p>"} {
+		if got := deriveTitleFromHTML(src); got != "" {
+			t.Fatalf("expected empty derived title for %q, got %q", src, got)
+		}
 	}
 }
 
@@ -158,18 +243,38 @@ func TestWithCORSHandlesOptions(t *testing.T) {
 	}
 }
 
-func TestGetOrCreateCategoryTrimsAndReuses(t *testing.T) {
+func TestCategoryCRUD(t *testing.T) {
 	db := newTestDB(t)
-	first, err := getOrCreateCategory(db, "  News  ")
+	first, err := getOrCreateCategory(db, "  Tech  ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := getOrCreateCategory(db, "News")
+	if first == nil || first.Name != "Tech" {
+		t.Fatalf("unexpected category: %+v", first)
+	}
+	second, err := getOrCreateCategory(db, "Tech")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first == nil || second == nil || first.ID != second.ID {
+	if second == nil || first.ID != second.ID {
 		t.Fatalf("expected same category, got first=%+v second=%+v", first, second)
+	}
+	other, err := getOrCreateCategory(db, "News")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if other == nil || other.ID == first.ID {
+		t.Fatalf("expected distinct second category, got %+v", other)
+	}
+	if ok, err := deleteCategory(db, first.ID); err != nil || !ok {
+		t.Fatalf("delete category failed: ok=%v err=%v", ok, err)
+	}
+	cats, err := listCategories(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cats) != 1 || cats[0].Name != "News" {
+		t.Fatalf("unexpected categories after delete: %+v", cats)
 	}
 }
 
@@ -247,5 +352,228 @@ func TestPollIntervalMinutesUsesFallbackForMissingOrInvalidSetting(t *testing.T)
 	}
 	if got := app.pollIntervalMinutes(); got != 30 {
 		t.Fatalf("expected fallback for invalid setting, got %d", got)
+	}
+}
+
+func TestSettingsUpsert(t *testing.T) {
+	db := newTestDB(t)
+	if value, ok, err := getSetting(db, "poll"); err != nil || ok || value != "" {
+		t.Fatalf("expected missing setting, value=%q ok=%v err=%v", value, ok, err)
+	}
+	if err := setSetting(db, "poll", "30"); err != nil {
+		t.Fatal(err)
+	}
+	if value, ok, err := getSetting(db, "poll"); err != nil || !ok || value != "30" {
+		t.Fatalf("expected setting=30, value=%q ok=%v err=%v", value, ok, err)
+	}
+	if err := setSetting(db, "poll", "60"); err != nil {
+		t.Fatal(err)
+	}
+	if value, ok, err := getSetting(db, "poll"); err != nil || !ok || value != "60" {
+		t.Fatalf("expected setting=60, value=%q ok=%v err=%v", value, ok, err)
+	}
+}
+
+func TestSubscriptionCRUDAndMeta(t *testing.T) {
+	db := newTestDB(t)
+	siteURL := "https://example.com"
+	sub, err := insertSubscription(db, "https://example.com/feed", "Example", &siteURL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sub.Title != "Example" || !sub.SiteURL.Valid || sub.SiteURL.String != siteURL {
+		t.Fatalf("unexpected subscription: %+v", sub)
+	}
+
+	byURL, err := getSubscriptionByURL(db, "https://example.com/feed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if byURL == nil || byURL.ID != sub.ID {
+		t.Fatalf("expected subscription by URL, got %+v", byURL)
+	}
+
+	etag := "etag-1"
+	lastModified := "Sun, 01 Jan 2024 00:00:00 GMT"
+	if err := updateSubscriptionMeta(db, sub.ID, &etag, &lastModified, nil); err != nil {
+		t.Fatal(err)
+	}
+	after, err := getSubscription(db, sub.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after == nil || !after.ETag.Valid || after.ETag.String != etag || !after.LastModified.Valid || after.LastModified.String != lastModified || !after.LastFetchedAt.Valid || after.LastError.Valid {
+		t.Fatalf("unexpected subscription meta: %+v", after)
+	}
+
+	if ok, err := deleteSubscription(db, sub.ID); err != nil || !ok {
+		t.Fatalf("delete subscription failed: ok=%v err=%v", ok, err)
+	}
+	gone, err := getSubscription(db, sub.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gone != nil {
+		t.Fatalf("expected subscription to be deleted, got %+v", gone)
+	}
+}
+
+func TestMarkReadUnread(t *testing.T) {
+	db := newTestDB(t)
+	sub := seedSubscriptionForTest(t, db, "https://a.com/feed", "A", nil)
+	if ok, err := insertItemIgnoreDup(db, NewItem{SubscriptionID: sub.ID, GUID: "g", Title: "t", Link: "l", PublishedAt: 1}); err != nil || !ok {
+		t.Fatalf("insert item failed: ok=%v err=%v", ok, err)
+	}
+	items, err := listItems(db, ListItemsFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %+v", items)
+	}
+
+	if ok, err := markItemRead(db, items[0].ID, true); err != nil || !ok {
+		t.Fatalf("mark read failed: ok=%v err=%v", ok, err)
+	}
+	unread, err := listItems(db, ListItemsFilter{UnreadOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(unread) != 0 {
+		t.Fatalf("expected no unread items, got %+v", unread)
+	}
+
+	if ok, err := markItemRead(db, items[0].ID, false); err != nil || !ok {
+		t.Fatalf("mark unread failed: ok=%v err=%v", ok, err)
+	}
+	unread, err = listItems(db, ListItemsFilter{UnreadOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(unread) != 1 {
+		t.Fatalf("expected one unread item, got %+v", unread)
+	}
+}
+
+func TestCategoryFilterOnItems(t *testing.T) {
+	db := newTestDB(t)
+	tech, err := getOrCreateCategory(db, "Tech")
+	if err != nil {
+		t.Fatal(err)
+	}
+	subTech := seedSubscriptionForTest(t, db, "https://a.com/feed", "A", &tech.ID)
+	subOther := seedSubscriptionForTest(t, db, "https://b.com/feed", "B", nil)
+	_, _ = insertItemIgnoreDup(db, NewItem{SubscriptionID: subTech.ID, GUID: "g1", Title: "tech post", Link: "https://a.com/1", PublishedAt: 1})
+	_, _ = insertItemIgnoreDup(db, NewItem{SubscriptionID: subOther.ID, GUID: "g2", Title: "other post", Link: "https://b.com/1", PublishedAt: 2})
+
+	items, err := listItems(db, ListItemsFilter{CategoryID: &tech.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].Title != "tech post" || items[0].CategoryName == nil || *items[0].CategoryName != "Tech" {
+		t.Fatalf("unexpected category-filtered items: %+v", items)
+	}
+}
+
+func TestSeedSubscriptionPersistsEntriesAndMeta(t *testing.T) {
+	app := newTestApp(t)
+	sub := seedSubscriptionForTest(t, app.DB, "https://x.com/feed", "X", nil)
+	res := &FetchResult{
+		ETag:         "etag-1",
+		LastModified: "Sun, 01 Jan",
+		Entries:      []ParsedEntry{parsedEntry("g1", "https://x.com/1", 100), parsedEntry("g2", "https://x.com/2", 200)},
+	}
+
+	if err := app.seedSubscription(sub.ID, res); err != nil {
+		t.Fatal(err)
+	}
+	items, err := listItems(app.DB, ListItemsFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 seeded items, got %+v", items)
+	}
+	after, err := getSubscription(app.DB, sub.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after == nil || !after.ETag.Valid || after.ETag.String != "etag-1" || !after.LastModified.Valid || after.LastModified.String != "Sun, 01 Jan" || !after.LastFetchedAt.Valid || after.LastError.Valid {
+		t.Fatalf("unexpected seeded subscription meta: %+v", after)
+	}
+}
+
+func TestSeedSubscriptionSkipsEmptyLinksAndDedups(t *testing.T) {
+	app := newTestApp(t)
+	sub := seedSubscriptionForTest(t, app.DB, "https://x.com/feed", "X", nil)
+	res := &FetchResult{Entries: []ParsedEntry{parsedEntry("g1", "", 100), parsedEntry("g2", "https://x.com/2", 200)}}
+	if err := app.seedSubscription(sub.ID, res); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.seedSubscription(sub.ID, res); err != nil {
+		t.Fatal(err)
+	}
+	items, err := listItems(app.DB, ListItemsFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].GUID != "g2" {
+		t.Fatalf("expected one deduped non-empty-link item, got %+v", items)
+	}
+}
+
+func TestSeedSubscriptionPrunesToItemCap(t *testing.T) {
+	app := newTestApp(t)
+	app.ItemCap = 3
+	sub := seedSubscriptionForTest(t, app.DB, "https://x.com/feed", "X", nil)
+	entries := make([]ParsedEntry, 0, 10)
+	for i := int64(0); i < 10; i++ {
+		entries = append(entries, parsedEntry(string(rune('a'+i)), "https://x.com/"+string(rune('a'+i)), i))
+	}
+
+	if err := app.seedSubscription(sub.ID, &FetchResult{Entries: entries}); err != nil {
+		t.Fatal(err)
+	}
+	items, err := listItems(app.DB, ListItemsFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 3 || items[0].PublishedAt != 9 || items[2].PublishedAt != 7 {
+		t.Fatalf("expected newest three items after prune, got %+v", items)
+	}
+}
+
+func TestSeedSubscriptionWithNoEntriesStillPersistsMeta(t *testing.T) {
+	app := newTestApp(t)
+	sub := seedSubscriptionForTest(t, app.DB, "https://x.com/feed", "X", nil)
+	if err := app.seedSubscription(sub.ID, &FetchResult{ETag: "etag-empty"}); err != nil {
+		t.Fatal(err)
+	}
+	after, err := getSubscription(app.DB, sub.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after == nil || !after.ETag.Valid || after.ETag.String != "etag-empty" {
+		t.Fatalf("expected empty seed to persist etag, got %+v", after)
+	}
+}
+
+func TestResolveCategoryPrefersIDAndCreatesByName(t *testing.T) {
+	app := newTestApp(t)
+	existing, err := getOrCreateCategory(app.DB, "Existing")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := app.resolveCategory(&existing.ID, "Ignored"); err != nil || got == nil || *got != existing.ID {
+		t.Fatalf("expected existing id, got id=%v err=%v", got, err)
+	}
+	if got, err := app.resolveCategory(nil, "Created"); err != nil || got == nil {
+		t.Fatalf("expected created category id, got id=%v err=%v", got, err)
+	}
+	if got, err := app.resolveCategory(nil, "   "); err != nil || got != nil {
+		t.Fatalf("expected nil category for blank name, got id=%v err=%v", got, err)
+	}
+	if got, err := app.resolveSubscriptionCategory(updateSubscriptionBody{CategoryID: int64Ptr(existing.ID), ClearCategory: true}); err != nil || got != nil {
+		t.Fatalf("expected clear category to return nil, got id=%v err=%v", got, err)
 	}
 }
