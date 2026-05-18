@@ -1,5 +1,5 @@
 # Build from repo root: docker build -t feeds-go -f apps/feeds-go/Dockerfile .
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.25-bookworm AS builder
 WORKDIR /app
 COPY crates-go/ ./crates-go/
 COPY apps/feeds-go/go.mod apps/feeds-go/go.sum ./apps/feeds-go/
@@ -15,5 +15,6 @@ COPY --from=builder /feeds-go /usr/local/bin/feeds-go
 WORKDIR /data
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV GODEBUG=x509usefallbackroots=1
 EXPOSE 3000
 CMD ["feeds-go"]
