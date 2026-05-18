@@ -36,7 +36,10 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean
+          # skip=validate: real git tag is "<app>-go/vX.Y.Z" but we pass
+          # GORELEASER_CURRENT_TAG=vX.Y.Z so the validate-tag-at-HEAD check
+          # fails. The push trigger already guarantees we're on a real tag.
+          args: release --clean --skip=validate
           workdir: ${{ steps.app.outputs.dir }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
