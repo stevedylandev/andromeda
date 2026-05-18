@@ -106,10 +106,10 @@ func (f formModel) Update(msg tea.Msg) (formModel, tea.Cmd) {
 		case key.Matches(km, f.keys.Save):
 			title := strings.TrimSpace(f.title.Value())
 			if title == "" {
-				return f, func() tea.Msg { return statusMsg{text: "title required", ok: false} }
+				return f, func() tea.Msg { return statusMsg{Text: "title required"} }
 			}
 			return f, func() tea.Msg {
-				return submitFormMsg{shortID: f.shortID, title: title, content: f.content.Value()}
+				return submitFormMsg{ShortID: f.shortID, Title: title, Content: f.content.Value()}
 			}
 		case key.Matches(km, f.keys.SwitchField):
 			if f.field == formFieldTitle {

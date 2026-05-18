@@ -106,14 +106,14 @@ func (f formModel) Update(msg tea.Msg) (formModel, tea.Cmd) {
 		case key.Matches(km, f.keys.Save):
 			name := strings.TrimSpace(f.name.Value())
 			if name == "" {
-				return f, func() tea.Msg { return statusMsg{text: "name required", ok: false} }
+				return f, func() tea.Msg { return statusMsg{Text: "name required"} }
 			}
 			content := f.content.Value()
 			if strings.TrimSpace(content) == "" {
-				return f, func() tea.Msg { return statusMsg{text: "content required", ok: false} }
+				return f, func() tea.Msg { return statusMsg{Text: "content required"} }
 			}
 			return f, func() tea.Msg {
-				return submitFormMsg{shortID: f.shortID, name: name, content: content}
+				return submitFormMsg{ShortID: f.shortID, Name: name, Content: content}
 			}
 		case key.Matches(km, f.keys.SwitchField):
 			if f.field == formFieldName {
