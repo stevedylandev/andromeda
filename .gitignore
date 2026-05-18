@@ -9,9 +9,6 @@
 apps/posts/uploads
 docs/node_modules
 
-# GoReleaser
-apps/*-go/dist/
-
 # Go
 *.exe
 *.dll
