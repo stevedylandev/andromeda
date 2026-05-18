@@ -1,0 +1,35 @@
+version: 2
+
+project_name: cellar-go
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cellar-go
+    main: .
+    binary: cellar-go
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+
+release:
+  github:
+    owner: stevedylandev
+    name: andromeda
