@@ -1,0 +1,48 @@
+version: 2
+
+project_name: jotts-go
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: jotts-go
+    main: .
+    binary: jotts-go
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  use: github
+  sort: asc
+
+release:
+  github:
+    owner: stevedylandev
+    name: andromeda
+
+brews:
+  - name: jotts-go
+    repository:
+      owner: stevedylandev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    homepage: https://github.com/stevedylandev/andromeda
+    description: "Andromeda jotts-go: markdown notes app"
+    license: MIT
