@@ -10,7 +10,7 @@ import (
 
 func TestConfigTOMLRoundTrip(t *testing.T) {
 	cfg := Config{RemoteURL: "https://example.test", APIKey: "secret"}
-	var path = filepath.Join(t.TempDir(), "config.toml")
+	path := filepath.Join(t.TempDir(), "config.toml")
 	f, err := os.Create(path)
 	if err != nil {
 		t.Fatal(err)
@@ -33,7 +33,7 @@ func TestConfigTOMLRoundTrip(t *testing.T) {
 func TestLoadConfigMissingAndSaveRoundTrip(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
-	cfg, err := LoadConfig()
+	cfg, err := LoadConfig("testapp")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,10 +42,10 @@ func TestLoadConfigMissingAndSaveRoundTrip(t *testing.T) {
 	}
 
 	want := Config{RemoteURL: "http://localhost:3000", APIKey: "key"}
-	if err := SaveConfig(want); err != nil {
+	if err := SaveConfig("testapp", want); err != nil {
 		t.Fatal(err)
 	}
-	got, err := LoadConfig()
+	got, err := LoadConfig("testapp")
 	if err != nil {
 		t.Fatal(err)
 	}

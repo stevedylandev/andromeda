@@ -1,37 +1,32 @@
 package tui
 
+import sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
+
 type snippetsLoadedMsg struct {
-	snippets []Snippet
-	err      error
+	Snippets []Snippet
+	Err      error
 }
 
 type snippetSavedMsg struct {
-	snippet *Snippet
-	err     error
+	Snippet *Snippet
+	Err     error
 }
 
 type snippetDeletedMsg struct {
-	shortID string
-	err     error
+	ShortID string
+	Err     error
 }
-
-type editorFinishedMsg struct {
-	shortID string
-	content string
-	err     error
-}
-
-type statusMsg struct {
-	text string
-	ok   bool
-}
-
-type clearStatusMsg struct{}
 
 type submitFormMsg struct {
-	shortID string
-	name    string
-	content string
+	ShortID string
+	Name    string
+	Content string
 }
 
 type cancelFormMsg struct{}
+
+type (
+	statusMsg         = sharedtui.StatusMsg
+	clearStatusMsg    = sharedtui.ClearStatusMsg
+	editorFinishedMsg = sharedtui.EditorFinishedMsg
+)

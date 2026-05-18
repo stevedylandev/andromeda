@@ -5,31 +5,18 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
 )
 
 var (
-	borderStyle = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("8"))
-	borderActive = lipgloss.NewStyle().
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color("3"))
-	titleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(lipgloss.Color("3")).
-			Padding(0, 1)
-	statusOKStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("2")).
-			Bold(true)
-	statusErrStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("1")).
-			Bold(true)
-	hintStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("8"))
-	modalStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("3")).
-			Padding(1, 2)
+	borderStyle    = sharedtui.Border(lipgloss.NormalBorder())
+	borderActive   = sharedtui.BorderActive(lipgloss.NormalBorder())
+	titleStyle     = sharedtui.TitleStyle
+	statusOKStyle  = sharedtui.StatusOKStyle
+	statusErrStyle = sharedtui.StatusErrStyle
+	hintStyle      = sharedtui.HintStyle
+	modalStyle       = sharedtui.ModalStyle
+	statusModalStyle = sharedtui.StatusModalStyle
 )
 
 func (m Model) View() tea.View {
@@ -62,7 +49,7 @@ func (m Model) View() tea.View {
 			st = statusErrStyle
 		}
 		overlays = append(overlays, bottomCenterLayer(m.width, m.height,
-			modalStyle.Render(st.Render(m.status)), 3))
+			statusModalStyle.Render(st.Render(m.status)), 3))
 	}
 
 	content := base
