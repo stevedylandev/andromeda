@@ -11,7 +11,7 @@ import (
 	"github.com/stevedylandev/andromeda/crates-go/web"
 )
 
-const opmlPreviewPerFeed = 3
+const opmlPreviewPerFeed = 5
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("url")
