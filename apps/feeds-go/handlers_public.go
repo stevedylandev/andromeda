@@ -49,7 +49,6 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			urls = feedURLs
-			data.FeedURLs = feedURLs
 			perFeed = opmlPreviewPerFeed
 		}
 		for _, item := range previewURLs(r.Context(), urls, perFeed, a.Log) {
