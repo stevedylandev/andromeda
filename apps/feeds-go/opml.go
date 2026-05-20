@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/xml"
+	"fmt"
+	"io"
+	"net/http"
 	"strings"
 )
 
@@ -47,4 +51,25 @@ func parseOPML(content string) []OPMLEntry {
 	}
 	walk(doc.Body.Nodes, "")
 	return out
+}
+
+func fetchOPMLDoc(ctx context.Context, opmlURL string) (string, error) {
+	client := buildHTTPClient()
+	req, err := newRequest(ctx, http.MethodGet, opmlURL)
+	if err != nil {
+		return "", err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("fetch failed: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return "", fmt.Errorf("upstream returned %d", resp.StatusCode)
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
+	if err != nil {
+		return "", fmt.Errorf("read failed: %w", err)
+	}
+	return string(body), nil
 }

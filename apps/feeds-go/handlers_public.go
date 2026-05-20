@@ -4,11 +4,14 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/stevedylandev/andromeda/crates-go/web"
 )
+
+const opmlPreviewPerFeed = 3
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("url")
@@ -24,7 +27,32 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 			web.Render(a.Templates, w, "index.html", data, a.Log)
 			return
 		}
-		for _, item := range previewURLs(r.Context(), urls, a.Log) {
+		perFeed := 0
+		if len(urls) == 1 && isOPMLURL(urls[0]) {
+			content, err := fetchOPMLDoc(r.Context(), urls[0])
+			if err != nil {
+				a.Log.Warn("opml preview fetch failed", "url", urls[0], "err", err)
+				data.Error = "Could not load OPML"
+				web.Render(a.Templates, w, "index.html", data, a.Log)
+				return
+			}
+			entries := parseOPML(content)
+			if len(entries) == 0 {
+				data.Error = "No feeds found in OPML"
+				web.Render(a.Templates, w, "index.html", data, a.Log)
+				return
+			}
+			feedURLs := make([]string, 0, len(entries))
+			for _, e := range entries {
+				if e.XMLURL != "" {
+					feedURLs = append(feedURLs, e.XMLURL)
+				}
+			}
+			urls = feedURLs
+			data.FeedURLs = feedURLs
+			perFeed = opmlPreviewPerFeed
+		}
+		for _, item := range previewURLs(r.Context(), urls, perFeed, a.Log) {
 			data.Items = append(data.Items, templateItem{Title: item.Title, Link: item.Link, Author: item.Author, FormattedDate: formatDate(item.Published)})
 		}
 		web.Render(a.Templates, w, "index.html", data, a.Log)
@@ -195,4 +223,12 @@ func (a *App) writeOPMLExport(w http.ResponseWriter, subs []Subscription) {
 	w.Header().Set("Content-Disposition", `attachment; filename="feeds.opml"`)
 	_, _ = w.Write([]byte(xml.Header))
 	_, _ = w.Write(body)
+}
+
+func isOPMLURL(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	return strings.HasSuffix(strings.ToLower(u.Path), ".opml")
 }
