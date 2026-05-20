@@ -169,7 +169,7 @@ func htmlToText(src string) string {
 	return html.UnescapeString(b.String())
 }
 
-func previewURLs(ctx context.Context, urls []string, log *slog.Logger) []FeedPreviewItem {
+func previewURLs(ctx context.Context, urls []string, perFeed int, log *slog.Logger) []FeedPreviewItem {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	items := []FeedPreviewItem{}
@@ -189,6 +189,9 @@ func previewURLs(ctx context.Context, urls []string, log *slog.Logger) []FeedPre
 			feedTitle := res.Title
 			local := make([]FeedPreviewItem, 0, len(res.Entries))
 			for _, entry := range res.Entries {
+				if perFeed > 0 && len(local) >= perFeed {
+					break
+				}
 				author := feedTitle
 				if entry.Author != "" && feedTitle != "" {
 					author = feedTitle + " - " + entry.Author
