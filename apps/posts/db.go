@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS posts (
     tags            TEXT,
     content         TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'draft',
-    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
 );
 
 CREATE TABLE IF NOT EXISTS pages (
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS pages (
     content         TEXT NOT NULL,
     is_published    INTEGER NOT NULL DEFAULT 0,
     nav_order       INTEGER NOT NULL DEFAULT 0,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
 );
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS files (
     original_name   TEXT NOT NULL,
     content_type    TEXT NOT NULL DEFAULT 'application/octet-stream',
     size            INTEGER NOT NULL,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     storage_backend TEXT NOT NULL DEFAULT 'local'
 );
 `
@@ -148,6 +148,7 @@ func createPost(db *sql.DB, in PostInput) (*Post, error) {
 	if err != nil {
 		return nil, err
 	}
+	in.PublishedDate = normalizePubDatePtr(in.PublishedDate)
 	res, err := db.Exec(
 		`INSERT INTO posts (short_id, title, slug, content, status, alias, canonical_url, published_date, meta_description, meta_image, lang, tags)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -209,11 +210,12 @@ func getPublishedPosts(db *sql.DB, limit int64) ([]Post, error) {
 }
 
 func updatePost(db *sql.DB, shortID string, in PostInput) (*Post, error) {
+	in.PublishedDate = normalizePubDatePtr(in.PublishedDate)
 	res, err := db.Exec(
 		`UPDATE posts SET title = ?, slug = ?, content = ?, status = ?, alias = ?, canonical_url = ?,
-		 published_date = CASE WHEN ? = 'published' THEN COALESCE(?, published_date, datetime('now')) ELSE ? END,
+		 published_date = CASE WHEN ? = 'published' THEN COALESCE(?, published_date, strftime('%Y-%m-%dT%H:%M:%SZ','now')) ELSE ? END,
 		 meta_description = ?, meta_image = ?, lang = ?, tags = ?,
-		 updated_at = datetime('now') WHERE short_id = ?`,
+		 updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE short_id = ?`,
 		nullable(in.Title), in.Slug, in.Content, in.Status, nullable(in.Alias), nullable(in.CanonicalURL),
 		in.Status, nullable(in.PublishedDate), nullable(in.PublishedDate),
 		nullable(in.MetaDescription), nullable(in.MetaImage), in.Lang, nullable(in.Tags), shortID,
@@ -251,10 +253,10 @@ func togglePostStatus(db *sql.DB, shortID string) (string, error) {
 	}
 	if newStatus == "published" {
 		_, err = db.Exec(
-			`UPDATE posts SET status = ?, published_date = COALESCE(published_date, datetime('now')), updated_at = datetime('now') WHERE short_id = ?`,
+			`UPDATE posts SET status = ?, published_date = COALESCE(published_date, strftime('%Y-%m-%dT%H:%M:%SZ','now')), updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE short_id = ?`,
 			newStatus, shortID)
 	} else {
-		_, err = db.Exec(`UPDATE posts SET status = ?, updated_at = datetime('now') WHERE short_id = ?`,
+		_, err = db.Exec(`UPDATE posts SET status = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE short_id = ?`,
 			newStatus, shortID)
 	}
 	return newStatus, err
@@ -338,7 +340,7 @@ func updatePage(db *sql.DB, shortID, title, slug, content string, isPublished bo
 		pub = 1
 	}
 	res, err := db.Exec(
-		`UPDATE pages SET title = ?, slug = ?, content = ?, is_published = ?, nav_order = ?, updated_at = datetime('now') WHERE short_id = ?`,
+		`UPDATE pages SET title = ?, slug = ?, content = ?, is_published = ?, nav_order = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE short_id = ?`,
 		title, slug, content, pub, navOrder, shortID)
 	if err != nil {
 		return nil, err
@@ -437,7 +439,46 @@ func deleteFile(db *sql.DB, shortID string) (*UploadedFile, error) {
 }
 
 func nowDatetime() string {
-	return time.Now().UTC().Format("2006-01-02 15:04:05")
+	return time.Now().UTC().Format(time.RFC3339)
+}
+
+// migrateTimestamps rewrites legacy "YYYY-MM-DD HH:MM:SS" and date-only values
+// to RFC3339 UTC. Idempotent: skips values already in RFC3339 form.
+func migrateTimestamps(db *sql.DB) error {
+	stmts := []string{
+		`UPDATE posts SET published_date = REPLACE(published_date, ' ', 'T') || 'Z'
+		 WHERE published_date IS NOT NULL AND length(published_date) = 19
+		   AND published_date LIKE '____-__-__ __:__:__'`,
+		`UPDATE posts SET published_date = published_date || 'T00:00:00Z'
+		 WHERE published_date IS NOT NULL AND length(published_date) = 10
+		   AND published_date LIKE '____-__-__'`,
+		`UPDATE posts SET created_at = REPLACE(created_at, ' ', 'T') || 'Z'
+		 WHERE length(created_at) = 19 AND created_at LIKE '____-__-__ __:__:__'`,
+		`UPDATE posts SET updated_at = REPLACE(updated_at, ' ', 'T') || 'Z'
+		 WHERE length(updated_at) = 19 AND updated_at LIKE '____-__-__ __:__:__'`,
+		`UPDATE pages SET created_at = REPLACE(created_at, ' ', 'T') || 'Z'
+		 WHERE length(created_at) = 19 AND created_at LIKE '____-__-__ __:__:__'`,
+		`UPDATE pages SET updated_at = REPLACE(updated_at, ' ', 'T') || 'Z'
+		 WHERE length(updated_at) = 19 AND updated_at LIKE '____-__-__ __:__:__'`,
+		`UPDATE files SET created_at = REPLACE(created_at, ' ', 'T') || 'Z'
+		 WHERE length(created_at) = 19 AND created_at LIKE '____-__-__ __:__:__'`,
+	}
+	for _, s := range stmts {
+		if _, err := db.Exec(s); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func normalizePubDatePtr(p *string) *string {
+	if p == nil {
+		return nil
+	}
+	if v, ok := parsePubDate(*p); ok {
+		return &v
+	}
+	return p
 }
 
 func _useStrings() {

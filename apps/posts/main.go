@@ -23,6 +23,9 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	if err := migrateTimestamps(db); err != nil {
+		log.Fatalf("migrate timestamps: %v", err)
+	}
 	seedDefaultSettings(db)
 
 	uploadsDir := config.Getenv("UPLOADS_DIR", "uploads")

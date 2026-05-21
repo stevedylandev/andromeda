@@ -167,11 +167,35 @@ func parseNavLinks(input string) []NavLink {
 	return out
 }
 
-func toRFC2822(sqliteTS string) string {
-	if t, err := time.Parse("2006-01-02 15:04:05", sqliteTS); err == nil {
-		return t.UTC().Format(time.RFC1123Z)
+var pubDateLayouts = []string{
+	time.RFC3339,
+	"2006-01-02T15:04:05",
+	"2006-01-02 15:04:05",
+	"2006-01-02",
+}
+
+// parsePubDate accepts RFC3339, naive datetime, or date-only input and returns
+// the value normalized to RFC3339 UTC. Returns ok=false if no layout matches.
+func parsePubDate(s string) (string, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return "", false
 	}
-	return sqliteTS
+	for _, l := range pubDateLayouts {
+		if t, err := time.Parse(l, s); err == nil {
+			return t.UTC().Format(time.RFC3339), true
+		}
+	}
+	return "", false
+}
+
+func toRFC2822(ts string) string {
+	for _, l := range pubDateLayouts {
+		if t, err := time.Parse(l, ts); err == nil {
+			return t.UTC().Format(time.RFC1123Z)
+		}
+	}
+	return ts
 }
 
 func xmlEscape(s string) string {
