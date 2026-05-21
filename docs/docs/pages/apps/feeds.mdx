@@ -94,6 +94,12 @@ You can also preview multiple URLs at once by using commas to separate them:
 ?urls=https://bearblog.dev/discover/feed/,https://bearblog.stevedylan.dev/feed/
 ```
 
+Pointing `?url=` at an OPML file fetches and previews every feed it lists, up to 5 items per feed:
+
+```
+?url=https://example.com/subscriptions.opml
+```
+
 Preview mode bypasses the database and renders whatever the feed returns live.
 
 ### Feeds Export

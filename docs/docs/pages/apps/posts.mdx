@@ -22,11 +22,18 @@ A self-hosted blog CMS built in Go.
 |---|---|---|
 | `POSTS_PASSWORD` | Password for admin login | `changeme` |
 | `POSTS_DB_PATH` | SQLite database file path | `posts.sqlite` |
-| `UPLOADS_DIR` | Directory for uploaded files | `uploads` |
+| `UPLOADS_DIR` | Directory for uploaded files (used when R2 unset) | `uploads` |
 | `SITE_URL` | Public URL for RSS feed and links | `http://localhost:3000` |
 | `HOST` | Server bind address | `127.0.0.1` |
 | `PORT` | Server port | `3000` |
 | `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+| `R2_BUCKET` | Cloudflare R2 bucket name (enables R2 storage) | _(unset)_ |
+| `R2_ACCOUNT_ID` | Cloudflare account ID | _(unset)_ |
+| `R2_ACCESS_KEY_ID` | R2 access key ID | _(unset)_ |
+| `R2_SECRET_ACCESS_KEY` | R2 secret access key | _(unset)_ |
+| `R2_PUBLIC_URL` | Public URL prefix for uploaded files | _(unset)_ |
+
+Upload storage falls back to local filesystem (`UPLOADS_DIR`) when `R2_BUCKET` is empty. Set all five `R2_*` variables to switch uploads to Cloudflare R2.
 
 ## Deploy
 
