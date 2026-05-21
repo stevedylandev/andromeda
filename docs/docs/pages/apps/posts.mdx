@@ -2,9 +2,9 @@
 
 ![demo of posts](https://assets.andromeda.build/posts-demo.png)
 
-A self-hosted blog CMS built with Rust.
+A self-hosted blog CMS built in Go.
 
-- Single Rust binary with embedded assets
+- Single Go binary with embedded assets
 - Password authentication with session cookies
 - Create, edit, publish, and delete blog posts with markdown
 - Static pages with custom navigation links
@@ -60,7 +60,7 @@ Or grab a prebuilt binary from the [releases page](https://github.com/stevedylan
 You can also build from source:
 
 ```bash
-cargo build --release -p posts
+cd apps/posts && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.

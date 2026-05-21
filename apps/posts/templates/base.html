@@ -1,44 +1,44 @@
-<!DOCTYPE html>
+{{define "base.html"}}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}{{ blog_title }}{% endblock %}</title>
-  {% if !favicon_url.is_empty() %}
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon_url }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon_url }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon_url }}">
-  {% else %}
+  <title>{{block "title" .}}{{.BlogTitle}}{{end}}</title>
+  {{if .FaviconURL}}
+    <link rel="apple-touch-icon" sizes="180x180" href="{{.FaviconURL}}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{.FaviconURL}}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{.FaviconURL}}">
+  {{else}}
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <link rel="manifest" href="/static/site.webmanifest">
-  {% endif %}
+  {{end}}
   <meta name="theme-color" content="#121113" />
-  {% block meta %}{% endblock %}
+  {{block "meta" .}}{{end}}
   <link rel="stylesheet" href="/assets/darkmatter.css">
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/custom-styles.css">
 </head>
 <body>
-  {% if !header_html.is_empty() %}
+  {{if .HeaderHTML}}
   <div class="custom-header">
-    {{ header_html|safe }}
+    {{.HeaderHTML}}
   </div>
-  {% endif %}
+  {{end}}
   <header class="header">
-    <a href="/" class="logo">{{ blog_title }}</a>
+    <a href="/" class="logo">{{.BlogTitle}}</a>
     <nav class="links">
-      {% for link in nav_links %}
-        <a href="{{ link.url }}">{{ link.label }}</a>
-      {% endfor %}
+      {{range .NavLinks}}
+        <a href="{{.URL}}">{{.Label}}</a>
+      {{end}}
     </nav>
   </header>
   <main>
-    {% block content %}{% endblock %}
+    {{block "content" .}}{{end}}
   </main>
   <footer class="footer">
-    {{ footer_html|safe }}
+    {{.FooterHTML}}
   </footer>
   <script>
     document.querySelectorAll('.post-date').forEach(el => {
@@ -51,4 +51,4 @@
     });
   </script>
 </body>
-</html>
+</html>{{end}}

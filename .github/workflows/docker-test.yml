@@ -19,17 +19,17 @@ jobs:
       - name: Determine which apps to build
         id: filter
         run: |
-          ALL='["cellar","sipp","feeds","parcels","jotts","og","shrink","backup","posts","library","bookmarks","easel","bookmarks-go","cellar-go","easel-go","feeds-go","jotts-go","library-go","og-go","posts-go","shrink-go","sipp-go"]'
+          ALL='["backup","bookmarks","cellar","easel","feeds","jotts","library","og","posts","shrink","sipp"]'
 
           changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
-          if echo "$changed" | grep -qE '^(Cargo\.(toml|lock)|crates/|crates-go/|\.github/workflows/docker(-test)?\.yml)'; then
+          if echo "$changed" | grep -qE '^(crates-go/|\.github/workflows/docker(-test)?\.yml)'; then
             echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           apps=()
-          for app in cellar sipp feeds parcels jotts og shrink backup posts library bookmarks easel bookmarks-go cellar-go easel-go feeds-go jotts-go library-go og-go posts-go shrink-go sipp-go; do
+          for app in backup bookmarks cellar easel feeds jotts library og posts shrink sipp; do
             if echo "$changed" | grep -q "^apps/${app}/"; then
               apps+=("\"${app}\"")
             fi

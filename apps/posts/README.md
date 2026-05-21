@@ -1,125 +1,15 @@
-# Posts
+# posts-go
 
-![cover](https://assets.andromeda.build/posts-demo.png)
+Go rewrite of [posts](../posts). CMS blog with admin, pages, file uploads,
+markdown rendering, RSS, zip import/export.
 
-A minimal CMS blog with admin interface
+## Notes vs Rust version
 
-## Quickstart
+- Upload storage supports local filesystem (`UPLOADS_DIR`, default `uploads`)
+  or Cloudflare R2 when `R2_BUCKET` and credentials are set.
+- Markdown: `github.com/yuin/goldmark` with GFM + Footnotes (replaces
+  pulldown-cmark).
+- Zip via stdlib `archive/zip`. Upload limit 10 MB; import zip limit 50 MB.
+- API: `GET /api/posts` and `GET /api/posts/{slug}` (permissive CORS).
 
-```bash
-cd apps/posts
-cp .env.example .env
-# Edit .env with your password
-cargo build --release
-./target/release/posts
-```
-
-### Environment Variables
-
-| Variable | Description | Default |
-|---|---|---|
-| `POSTS_PASSWORD` | Password for admin login | `changeme` |
-| `POSTS_DB_PATH` | SQLite database file path | `posts.sqlite` |
-| `UPLOADS_DIR` | Directory for uploaded files | `uploads` |
-| `SITE_URL` | Public URL for RSS feed and links | `http://localhost:3000` |
-| `HOST` | Server bind address | `127.0.0.1` |
-| `PORT` | Server port | `3000` |
-| `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
-
-## Overview
-
-A self-hosted blog CMS built with Rust. Here's a few highlights:
-- Single Rust binary with embedded assets
-- Password authentication with session cookies
-- Create, edit, publish, and delete blog posts with markdown
-- Static pages with custom navigation links
-- File uploads with admin management
-- Custom CSS support from the admin panel
-- RSS feed at `/feed.xml`
-- Dark themed UI with Commit Mono font
-- SQLite for persistent storage
-- Bulk import posts from a zip of markdown files at `/admin/import`
-
-## Structure
-
-```
-posts/
-├── src/
-│   ├── main.rs        # App entrypoint, env vars, starts server
-│   ├── server.rs      # Axum router, HTTP handlers, and templates
-│   ├── auth.rs        # Password verification and session management
-│   └── db.rs          # SQLite database layer (posts, pages, files, settings, sessions)
-├── templates/         # Askama HTML templates
-│   ├── base.html            # Public base layout
-│   ├── index.html           # Blog home page
-│   ├── post.html            # Single post view
-│   ├── posts.html           # Post listing
-│   ├── page.html            # Static page view
-│   ├── login.html           # Login page
-│   ├── admin_base.html      # Admin layout
-│   ├── admin_index.html     # Admin dashboard
-│   ├── admin_post_form.html # Create/edit post form
-│   ├── admin_pages.html     # Admin page listing
-│   ├── admin_page_form.html # Create/edit page form
-│   ├── admin_files.html     # File upload management
-│   └── admin_settings.html  # Blog settings
-├── static/            # Favicons, fonts, and styles
-├── uploads/           # Uploaded files directory
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
-
-### Railway
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tYtJYp?referralCode=JGcIp6)
-
-### Docker (recommended)
-
-```bash
-cd apps/posts
-cp .env.example .env
-# Edit .env with your password
-docker compose up -d
-```
-
-This will start Posts on port `3000` with a persistent volume for the SQLite database and uploads.
-
-### Binary
-
-```bash
-cargo build --release
-```
-
-The resulting binary at `./target/release/posts` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
-
-## Importing posts
-
-Visit `/admin/import` and upload a zip containing `.md` or `.markdown` files. Each file may start with YAML-style frontmatter:
-
-```markdown
----
-title: My Post
-slug: my-post
-status: published
-published_date: 2025-01-15 10:00:00
-tags: rust, sqlite
-description: A short summary
-lang: en
----
-
-Post body in markdown.
-```
-
-Supported keys: `title`, `slug`, `status` (`draft` or `published`), `published_date`, `tags`, `description`, `meta_image`, `alias`, `lang`. Files without frontmatter are imported with the title derived from the filename and a slug auto-generated from that title. Posts whose slug already exists in the database are skipped, so re-uploading the same archive is safe.
-
-The zip can be up to 50MB. Asset references inside posts (images, etc.) are left untouched — pre-host them or upload them separately at `/admin/files`.
-
-## Acknowledgements
-
-Posts is heavily inspired by [Bear Blog](https://bearblog.dev). If you'd rather not self-host, Bear Blog is a great alternative with the same minimal, no-nonsense approach to blogging.
-
-## License
-
-[MIT](LICENSE)
+See `.env.example`.

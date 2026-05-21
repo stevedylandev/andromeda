@@ -1,15 +1,13 @@
-{% extends "admin_base.html" %}
-{% block title %}Admin — Import{% endblock %}
-{% block content %}
+{{define "admin_import.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Import{{end}}
+{{define "content"}}
   <div class="admin-toolbar">
     <h2>Import posts</h2>
   </div>
-  {% if let Some(err) = error %}
-    <p class="error">{{ err }}</p>
-  {% endif %}
-  {% if let Some(n) = imported %}
-    <p class="success">Imported {{ n }} posts, skipped {{ skipped.unwrap_or(0) }}.</p>
-  {% endif %}
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{if .Imported}}
+    <p class="success">Imported {{.Imported}} posts, skipped {{if .Skipped}}{{.Skipped}}{{else}}0{{end}}.</p>
+  {{end}}
   <form method="POST" action="/admin/import" enctype="multipart/form-data" class="form">
     <label for="zip">upload zip of markdown files (max 50MB)</label>
     <input type="file" id="zip" name="zip" accept=".zip" required>
@@ -34,4 +32,4 @@ Post body in markdown.
 </code></pre>
     <p>Supported keys: <code>title</code>, <code>slug</code>, <code>status</code> (<code>draft</code> or <code>published</code>), <code>published_date</code>, <code>tags</code>, <code>description</code>, <code>meta_image</code>, <code>alias</code>, <code>lang</code>. Files without frontmatter are imported with the title derived from the filename. Posts whose slug already exists are skipped.</p>
   </section>
-{% endblock %}
+{{end}}

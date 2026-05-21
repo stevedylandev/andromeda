@@ -4,7 +4,7 @@
 
 Feeds is a minimal RSS reader that mimics the original experience of RSS. It's just a list of posts. No categories, no marking a post read or unread, and there is no in-app reading. With this approach you have to read the post on the author's personal website and experience it in its original context.
 
-- Single Rust binary with embedded assets
+- Single Go binary with embedded assets
 - Local SQLite storage with a background poller (ETag / `If-Modified-Since` aware)
 - Password-protected admin panel for managing subscriptions and categories
 - OPML import and JSON/OPML export
@@ -61,7 +61,7 @@ Or grab a prebuilt binary from the [releases page](https://github.com/stevedylan
 You can also build from source:
 
 ```bash
-cargo build --release -p feeds
+cd apps/feeds && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.

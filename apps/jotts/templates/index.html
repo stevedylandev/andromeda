@@ -1,15 +1,44 @@
-{% extends "base.html" %}
-{% block title %}Jotts{% endblock %}
-{% block content %}
-  {% if notes.is_empty() %}
-    <p class="empty">no notes yet</p>
-  {% endif %}
-  <div class="note-list">
-    {% for note in notes %}
-      <a href="/notes/{{ note.short_id }}" class="note-item">
-        <span class="note-title">{{ note.title }}</span>
-        <time class="note-date" datetime="{{ note.updated_at }}Z">{{ note.updated_at }}</time>
-      </a>
-    {% endfor %}
-  </div>
-{% endblock %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jotts</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="icon" href="/static/favicon.ico">
+    <meta property="og:title" content="Jotts">
+    <meta property="og:image" content="/static/og.png">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <header class="header">
+      <a href="/" class="logo">jotts</a>
+      <nav class="links">
+        <a href="/notes/new">new</a>
+      </nav>
+    </header>
+    <main>
+      {{if not .Notes}}<p class="empty">no notes yet</p>{{end}}
+      <div class="note-list">
+        {{range .Notes}}
+          <a href="/notes/{{.ShortID}}" class="note-item">
+            <span class="note-title">{{.Title}}</span>
+            <time class="note-date" datetime="{{.UpdatedAt}}Z">{{.UpdatedAt}}</time>
+          </a>
+        {{end}}
+      </div>
+    </main>
+    <script>
+      document.querySelectorAll("time.note-date").forEach(el => {
+        const d = new Date(el.getAttribute("datetime"));
+        if (!isNaN(d)) { el.textContent = d.toLocaleString(); }
+      });
+    </script>
+  </body>
+</html>

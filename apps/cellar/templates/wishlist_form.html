@@ -1,44 +1,38 @@
-{% extends "base.html" %}
-{% block title %}{% if wine.is_some() %}Edit{% else %}New{% endif %} Wishlist Wine - Cellar{% endblock %}
-{% block content %}
-  {% if let Some(error) = error %}
-    <p class="error">{{ error }}</p>
-  {% endif %}
+{{define "wishlist_form.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{if .Wine}}Edit{{else}}New{{end}} Wishlist Wine - Cellar{{end}}
+{{define "content"}}
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{$w := .Wine}}
   <form method="POST" enctype="multipart/form-data"
-    action="{% if let Some(w) = wine %}/admin/wishlist/edit/{{ w.short_id }}{% else %}/admin/wishlist/new{% endif %}"
+    action="{{if $w}}/admin/wishlist/edit/{{$w.ShortID}}{{else}}/admin/wishlist/new{{end}}"
     class="form">
 
     <label for="image">image</label>
     <div class="image-upload-row">
       <input type="file" id="image" name="image" accept="image/*">
-      {% if has_anthropic_key %}
-      <button type="button" id="analyze-btn" onclick="analyzeImage()">analyze</button>
-      {% endif %}
+      {{if .HasAnthropicKey}}<button type="button" id="analyze-btn" onclick="analyzeImage()">analyze</button>{{end}}
     </div>
 
     <label for="name">name</label>
-    <input type="text" id="name" name="name" required
-      value="{% if let Some(w) = wine %}{{ w.name }}{% endif %}">
+    <input type="text" id="name" name="name" required value="{{if $w}}{{$w.Name}}{{end}}">
 
     <label for="origin">origin</label>
-    <input type="text" id="origin" name="origin"
-      value="{% if let Some(w) = wine %}{{ w.origin }}{% endif %}">
+    <input type="text" id="origin" name="origin" value="{{if $w}}{{$w.Origin}}{{end}}">
 
     <label for="grape">grape</label>
-    <input type="text" id="grape" name="grape"
-      value="{% if let Some(w) = wine %}{{ w.grape }}{% endif %}">
+    <input type="text" id="grape" name="grape" value="{{if $w}}{{$w.Grape}}{{end}}">
 
     <label for="notes">notes</label>
-    <textarea id="notes" name="notes" rows="5">{% if let Some(w) = wine %}{{ w.notes }}{% endif %}</textarea>
+    <textarea id="notes" name="notes" rows="5">{{if $w}}{{$w.Notes}}{{end}}</textarea>
 
     <label for="background">background</label>
-    <textarea id="background" name="background" rows="5">{% if let Some(w) = wine %}{{ w.background }}{% endif %}</textarea>
+    <textarea id="background" name="background" rows="5">{{if $w}}{{$w.Background}}{{end}}</textarea>
 
-    <button type="submit">{% if wine.is_some() %}update{% else %}create{% endif %}</button>
+    <button type="submit">{{if $w}}update{{else}}create{{end}}</button>
   </form>
 
   <script>
-    {% if has_anthropic_key %}
+    {{if .HasAnthropicKey}}
     async function analyzeImage() {
       var fileInput = document.getElementById('image');
       if (!fileInput.files.length) return;
@@ -56,13 +50,9 @@
           if (data.grape) document.getElementById('grape').value = data.grape;
           if (data.background) document.getElementById('background').value = data.background;
         }
-      } catch (e) {
-        console.error('Analysis failed:', e);
-      } finally {
-        btn.textContent = 'analyze';
-        btn.disabled = false;
-      }
+      } catch (e) { console.error('Analysis failed:', e); }
+      finally { btn.textContent = 'analyze'; btn.disabled = false; }
     }
-    {% endif %}
+    {{end}}
   </script>
-{% endblock %}
+{{end}}

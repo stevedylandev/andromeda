@@ -69,10 +69,6 @@ export default defineConfig({
           link: '/apps/og',
         },
         {
-          text: 'Parcels',
-          link: '/apps/parcels',
-        },
-        {
           text: 'Posts',
           link: '/apps/posts',
         },

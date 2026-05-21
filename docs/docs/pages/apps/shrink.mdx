@@ -4,7 +4,7 @@
 
 A simple self-hosted tool for compressing and resizing images. Upload an image, set your desired quality and optional width, and download the compressed JPEG.
 
-- Single Rust binary
+- Single Go binary
 - Compress images to JPEG with configurable quality (1-100)
 - Optional resize by width (preserves aspect ratio)
 - 20MB upload limit
@@ -48,7 +48,7 @@ Or grab a prebuilt binary from the [releases page](https://github.com/stevedylan
 You can also build from source:
 
 ```bash
-cargo build --release -p shrink
+cd apps/shrink && go build .
 ```
 
 The resulting binary is self-contained. Copy it to your server and run it directly.

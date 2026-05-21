@@ -1,9 +1,9 @@
-{% extends "base.html" %}
-{% block title %}Easel — {{ title }}{% endblock %}
-{% block content %}
+{{define "error.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Easel — {{.Title}}{{end}}
+{{define "content"}}
   <div class="error-page">
-    <h2>{{ title }}</h2>
-    <p>{{ message }}</p>
+    <h2>{{.Title}}</h2>
+    <p>{{.Message}}</p>
     <p><a href="/">← back to today</a></p>
   </div>
-{% endblock %}
+{{end}}

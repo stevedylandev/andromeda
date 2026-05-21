@@ -1,32 +1,19 @@
 # Skills
 
-Andromeda ships with two [Claude Code](https://claude.ai/code) skills that make it easy to build new apps in the same style. Both live in the repo at [`skills/`](https://github.com/stevedylandev/andromeda/tree/main/skills).
-
-## andromeda-stack
-
-[`andromeda-stack`](https://github.com/stevedylandev/andromeda/blob/main/skills/andromeda-stack/SKILL.md) scaffolds a complete Rust CRUD web app matching the Andromeda stack:
-
-- Axum web server with routing
-- SQLite database with rusqlite
-- Askama HTML templates
-- `andromeda-auth` for session or API key auth
-- Embedded static assets via rust-embed
-- Dockerfile and docker-compose.yml for deployment
-
-New apps land under `apps/` in the workspace and share dependencies via the root `Cargo.toml`.
+Andromeda ships with a [Claude Code](https://claude.ai/code) skill for matching the shared visual style. It lives in the repo at [`skills/`](https://github.com/stevedylandev/andromeda/tree/main/skills).
 
 ## darkmatter-styles
 
 [`darkmatter-styles`](https://github.com/stevedylandev/andromeda/tree/main/skills/darkmatter-styles/SKILL.md) applies the shared Andromeda aesthetic: dark background, white borders, Commit Mono, minimal layout, no frameworks. Use it when building new pages or components that need to match the rest of the lineup.
 
-The canonical CSS and fonts live in the [`andromeda-darkmatter-css`](https://github.com/stevedylandev/andromeda/tree/main/crates/darkmatter-css) crate. Mount its router and link `/assets/darkmatter.css` from your templates — the skill guides style decisions while the crate serves the actual bytes.
+The canonical CSS and fonts live in the [`crates-go/darkmatter`](https://github.com/stevedylandev/andromeda/tree/main/crates-go/darkmatter) module. Mount its handler set and link `/assets/darkmatter.css` from your templates — the skill guides style decisions while the module serves the actual bytes.
 
 ## Installing
 
-Use [`npx skills add`](https://github.com/vercel-labs/skills) to pull either skill directly from the repo:
+Use [`npx skills add`](https://github.com/vercel-labs/skills) to pull the skill directly from the repo:
 
 ```bash
 npx skills add stevedylandev/andromeda/skills
 ```
 
-Once installed, invoke them in Claude Code by describing what you want to build — the skills trigger automatically based on their descriptions.
+Once installed, invoke it in Claude Code by describing what you want to build — the skill triggers automatically based on its description.

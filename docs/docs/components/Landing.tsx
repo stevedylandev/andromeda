@@ -11,7 +11,7 @@ export function Landing() {
 						Andromeda
 					</h1>
 					<h3 className="text-center text-lg font-normal font-['Commit_Mono',monospace] text-white">
-						Minimal, self-hosted, personal software in Rust
+						Minimal, self-hosted, personal software in Go
 					</h3>
 				</div>
 				<div className="flex items-center gap-4">

@@ -2,19 +2,19 @@ services:
   app:
     build:
       context: ../..
-      dockerfile: apps/bookmarks/Dockerfile
+      dockerfile: apps/bookmarks-go/Dockerfile
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     environment:
-      - BOOKMARKS_PASSWORD=${BOOKMARKS_PASSWORD:-changeme}
-      - BOOKMARKS_API_KEY=${BOOKMARKS_API_KEY:-}
-      - BOOKMARKS_DB_PATH=/data/bookmarks.sqlite
-      - COOKIE_SECURE=false
       - HOST=0.0.0.0
       - PORT=${PORT:-3000}
+      - BOOKMARKS_DB_PATH=/data/bookmarks-go.sqlite
+      - BOOKMARKS_PASSWORD=${BOOKMARKS_PASSWORD:-changeme}
+      - BOOKMARKS_API_KEY=${BOOKMARKS_API_KEY:-}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
     volumes:
-      - bookmarks-data:/data
+      - bookmarks-go-data:/data
     restart: unless-stopped
 
 volumes:
-  bookmarks-data:
+  bookmarks-go-data:

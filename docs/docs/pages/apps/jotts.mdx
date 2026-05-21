@@ -2,9 +2,9 @@
 
 ![demo of jotts](https://files.stevedylan.dev/jotts-demo.png)
 
-A simple, self-hosted markdown note app built with Rust.
+A simple, self-hosted markdown note app built in Go.
 
-- Single ~7MB Rust binary with embedded assets
+- Single Go binary with embedded assets
 - Password authentication with session cookies
 - Create, edit, and delete markdown notes
 - Markdown rendering with strikethrough, tables, and task lists
@@ -63,7 +63,7 @@ This will start Jotts on port `3000` with a persistent volume for the SQLite dat
 ### Binary
 
 ```bash
-cargo build --release -p jotts
+cd apps/jotts && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
