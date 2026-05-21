@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 type apiArtwork struct {

@@ -3,7 +3,7 @@ package tui
 import (
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
-	sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
+	sharedtui "github.com/stevedylandev/andromeda/pkg/tui"
 )
 
 type noteItem struct {

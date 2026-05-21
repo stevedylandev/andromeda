@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 var sectionDefs = []struct {

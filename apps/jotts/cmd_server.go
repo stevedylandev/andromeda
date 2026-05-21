@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/config"
 )
 
 func runServer(args []string) {

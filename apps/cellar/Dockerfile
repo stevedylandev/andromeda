@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t cellar -f apps/cellar/Dockerfile .
 FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/cellar/go.mod apps/cellar/go.sum ./apps/cellar/
 WORKDIR /app/apps/cellar
 RUN go mod download

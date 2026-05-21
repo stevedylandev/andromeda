@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t shrink -f apps/shrink/Dockerfile .
 FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/shrink/go.mod apps/shrink/go.sum ./apps/shrink/
 WORKDIR /app/apps/shrink
 RUN go mod download

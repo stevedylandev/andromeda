@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t sipp -f apps/sipp/Dockerfile .
 FROM golang:1.25-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/sipp/go.mod apps/sipp/go.sum ./apps/sipp/
 WORKDIR /app/apps/sipp
 RUN go mod download

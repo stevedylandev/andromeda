@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	sharedsqlite "github.com/stevedylandev/andromeda/crates-go/sqlite"
+	sharedsqlite "github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 func openEaselTestDB(t *testing.T) *sql.DB {

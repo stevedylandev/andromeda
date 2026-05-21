@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 const opmlPreviewPerFeed = 5

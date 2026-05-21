@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	tea "charm.land/bubbletea/v2"
-	sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
+	sharedtui "github.com/stevedylandev/andromeda/pkg/tui"
 )
 
 func openExternalEditor(shortID, name, content string) tea.Cmd {

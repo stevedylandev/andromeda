@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t og -f apps/og/Dockerfile .
 FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/og/go.mod apps/og/go.sum ./apps/og/
 WORKDIR /app/apps/og
 RUN go mod download

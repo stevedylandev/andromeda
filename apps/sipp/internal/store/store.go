@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/sqlite"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 type Snippet struct {

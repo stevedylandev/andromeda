@@ -5,7 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
+	sharedtui "github.com/stevedylandev/andromeda/pkg/tui"
 )
 
 var (

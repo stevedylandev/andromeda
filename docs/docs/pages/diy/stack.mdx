@@ -38,9 +38,9 @@ var assets embed.FS
 
 ## Shared Packages
 
-Each is its own Go module under `crates-go/`, referenced via `replace` directives in each app's `go.mod`.
+Each is its own Go module under `pkg/`, referenced via `replace` directives in each app's `go.mod`.
 
-### crates-go/auth
+### pkg/auth
 
 Provides session-based password authentication used across apps that require login. It handles:
 
@@ -49,11 +49,11 @@ Provides session-based password authentication used across apps that require log
 - `RequireSession`, `RequireAPIKey`, and `RequireBearerOrSession` middleware
 - Short-id and session-token generators
 
-### crates-go/sqlite
+### pkg/sqlite
 
 Thin bootstrap around `database/sql` + `modernc.org/sqlite`. `Open(path, schema)` opens the DB with the project defaults (`PRAGMA foreign_keys=ON`, single open connection) and applies an optional schema string on first open.
 
-### crates-go/web
+### pkg/web
 
 HTTP helpers used across apps:
 
@@ -62,11 +62,11 @@ HTTP helpers used across apps:
 - `EmbeddedHandler` — serve assets out of an `embed.FS`
 - redirect helpers
 
-### crates-go/config
+### pkg/config
 
 Loads env vars from process environment and `.env` files.
 
-### crates-go/darkmatter
+### pkg/darkmatter
 
 Ships the canonical Darkmatter stylesheet and Commit Mono fonts as an embedded handler set. Call `Mount()` once on your mux and every app inherits the shared aesthetic:
 
@@ -75,7 +75,7 @@ Ships the canonical Darkmatter stylesheet and Commit Mono fonts as an embedded h
 - `/darkmatter` — live component gallery
 
 ```go
-import "github.com/stevedylandev/andromeda/crates-go/darkmatter"
+import "github.com/stevedylandev/andromeda/pkg/darkmatter"
 
 mux := http.NewServeMux()
 darkmatter.Mount(mux, "/assets")

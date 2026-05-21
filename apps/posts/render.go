@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 func buildTemplates() (map[string]*template.Template, error) {

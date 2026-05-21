@@ -6,11 +6,11 @@ Andromeda ships with a [Claude Code](https://claude.ai/code) skill for matching 
 
 [`darkmatter-styles`](https://github.com/stevedylandev/andromeda/tree/main/skills/darkmatter-styles/SKILL.md) applies the shared Andromeda aesthetic: dark background, white borders, Commit Mono, minimal layout, no frameworks. Use it when building new pages or components that need to match the rest of the lineup.
 
-The canonical CSS and fonts live in the [`crates-go/darkmatter`](https://github.com/stevedylandev/andromeda/tree/main/crates-go/darkmatter) module. Mount its handler set and link `/assets/darkmatter.css` from your templates — the skill guides style decisions while the module serves the actual bytes.
+The canonical CSS and fonts live in the [`pkg/darkmatter`](https://github.com/stevedylandev/andromeda/tree/main/pkg/darkmatter) module. Mount its handler set and link `/assets/darkmatter.css` from your templates — the skill guides style decisions while the module serves the actual bytes.
 
 ## andromeda-stack
 
-[`andromeda-stack`](https://github.com/stevedylandev/andromeda/tree/main/skills/andromeda-stack/SKILL.md) scaffolds a new Go CRUD app in the monorepo using the standard project layout: `net/http` mux, `html/template`, `modernc.org/sqlite`, and the `crates-go/{auth,web,config,sqlite,darkmatter}` packages wired in via `replace` directives.
+[`andromeda-stack`](https://github.com/stevedylandev/andromeda/tree/main/skills/andromeda-stack/SKILL.md) scaffolds a new Go CRUD app in the monorepo using the standard project layout: `net/http` mux, `html/template`, `modernc.org/sqlite`, and the `pkg/{auth,web,config,sqlite,darkmatter}` packages wired in via `replace` directives.
 
 It covers the full app shape — `main.go` / `app.go` / `routes.go` / `db.go` / `handlers_*.go` / `templates/` / `static/` — plus session vs. API-key vs. bearer auth, the multi-stage `CGO_ENABLED=0` Dockerfile, and the workspace files that need updating (root `docker-compose.yml`, both `.github/workflows/docker*.yml` lists) so a new app actually ships.
 

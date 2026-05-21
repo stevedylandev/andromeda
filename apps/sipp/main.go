@@ -15,7 +15,7 @@ import (
 
 	"github.com/stevedylandev/andromeda/apps/sipp/server"
 	"github.com/stevedylandev/andromeda/apps/sipp/tui"
-	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/pkg/config"
 )
 
 const usage = `sipp — minimal code sharing CLI
