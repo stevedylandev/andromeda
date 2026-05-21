@@ -45,8 +45,13 @@ Each is its own Go module under `crates-go/`, referenced via `replace` directive
 Provides session-based password authentication used across apps that require login. It handles:
 
 - Constant-time password verification (bcrypt + plain)
-- Session cookie management with an in-memory store
+- Session cookie management backed by a `sessions` table in the app's SQLite DB
+- `RequireSession`, `RequireAPIKey`, and `RequireBearerOrSession` middleware
 - Short-id and session-token generators
+
+### crates-go/sqlite
+
+Thin bootstrap around `database/sql` + `modernc.org/sqlite`. `Open(path, schema)` opens the DB with the project defaults (`PRAGMA foreign_keys=ON`, single open connection) and applies an optional schema string on first open.
 
 ### crates-go/web
 
@@ -73,7 +78,7 @@ Ships the canonical Darkmatter stylesheet and Commit Mono fonts as an embedded h
 import "github.com/stevedylandev/andromeda/crates-go/darkmatter"
 
 mux := http.NewServeMux()
-darkmatter.Mount(mux)
+darkmatter.Mount(mux, "/assets")
 ```
 
 Then reference `/assets/darkmatter.css` from your templates instead of duplicating the styles per app.
