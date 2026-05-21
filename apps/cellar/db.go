@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
 const cellarSchema = `

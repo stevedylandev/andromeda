@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
 const postsSchema = `

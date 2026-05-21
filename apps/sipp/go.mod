@@ -8,12 +8,12 @@ require (
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/atotto/clipboard v0.1.4
-	github.com/stevedylandev/andromeda/crates-go/auth v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/config v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/darkmatter v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/sqlite v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/tui v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/web v0.0.0
+	github.com/stevedylandev/andromeda/pkg/auth v0.0.0
+	github.com/stevedylandev/andromeda/pkg/config v0.0.0
+	github.com/stevedylandev/andromeda/pkg/darkmatter v0.0.0
+	github.com/stevedylandev/andromeda/pkg/sqlite v0.0.0
+	github.com/stevedylandev/andromeda/pkg/tui v0.0.0
+	github.com/stevedylandev/andromeda/pkg/web v0.0.0
 	golang.org/x/term v0.43.0
 )
 
@@ -51,10 +51,10 @@ require (
 )
 
 replace (
-	github.com/stevedylandev/andromeda/crates-go/auth => ../../crates-go/auth
-	github.com/stevedylandev/andromeda/crates-go/config => ../../crates-go/config
-	github.com/stevedylandev/andromeda/crates-go/darkmatter => ../../crates-go/darkmatter
-	github.com/stevedylandev/andromeda/crates-go/sqlite => ../../crates-go/sqlite
-	github.com/stevedylandev/andromeda/crates-go/tui => ../../crates-go/tui
-	github.com/stevedylandev/andromeda/crates-go/web => ../../crates-go/web
+	github.com/stevedylandev/andromeda/pkg/auth => ../../pkg/auth
+	github.com/stevedylandev/andromeda/pkg/config => ../../pkg/config
+	github.com/stevedylandev/andromeda/pkg/darkmatter => ../../pkg/darkmatter
+	github.com/stevedylandev/andromeda/pkg/sqlite => ../../pkg/sqlite
+	github.com/stevedylandev/andromeda/pkg/tui => ../../pkg/tui
+	github.com/stevedylandev/andromeda/pkg/web => ../../pkg/web
 )

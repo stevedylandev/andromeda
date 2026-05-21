@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
 //go:embed templates/*.html static/*

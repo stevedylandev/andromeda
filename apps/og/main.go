@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/pkg/config"
 )
 
 func main() {

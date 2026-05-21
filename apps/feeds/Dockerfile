@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t feeds -f apps/feeds/Dockerfile .
 FROM golang:1.25-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/feeds/go.mod apps/feeds/go.sum ./apps/feeds/
 WORKDIR /app/apps/feeds
 RUN go mod download

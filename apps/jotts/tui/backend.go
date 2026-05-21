@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/stevedylandev/andromeda/apps/jotts/internal/store"
-	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/pkg/config"
 )
 
 type Note = store.Note

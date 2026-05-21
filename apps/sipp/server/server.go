@@ -21,10 +21,10 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/stevedylandev/andromeda/apps/sipp/internal/store"
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/config"
-	"github.com/stevedylandev/andromeda/crates-go/darkmatter"
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/config"
+	"github.com/stevedylandev/andromeda/pkg/darkmatter"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 //go:embed templates/*.html static/*
