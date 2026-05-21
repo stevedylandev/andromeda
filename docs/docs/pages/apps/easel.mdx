@@ -2,9 +2,9 @@
 
 ![demo of easel](https://assets.andromeda.build/easel-demo-2_compressed.jpg)
 
-A self-hosted daily painting viewer built with Rust. One public-domain artwork from the [Art Institute of Chicago](https://api.artic.edu/docs/) per calendar day, persisted to SQLite.
+A self-hosted daily painting viewer built in Go. One public-domain artwork from the [Art Institute of Chicago](https://api.artic.edu/docs/) per calendar day, persisted to SQLite.
 
-- Single Rust binary with embedded assets
+- Single Go binary with embedded assets
 - One artwork per day, picked from AIC's public-domain collection
 - Past days browsable via archive; future days unavailable until populated
 - Atom feed at `/feed.xml`
@@ -58,7 +58,7 @@ Or grab a prebuilt binary from the [releases page](https://github.com/stevedylan
 You can also build from source:
 
 ```bash
-cargo build --release -p easel
+cd apps/easel && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.

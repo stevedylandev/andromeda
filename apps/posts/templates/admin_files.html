@@ -1,52 +1,49 @@
-{% extends "admin_base.html" %}
-{% block title %}Admin — Files{% endblock %}
-{% block content %}
+{{define "admin_files.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Files{{end}}
+{{define "content"}}
   <div class="admin-toolbar">
     <h2>Files</h2>
   </div>
-  {% if let Some(err) = error %}
-    <p class="error">{{ err }}</p>
-  {% endif %}
-  {% if success %}
-    <p class="success">File uploaded.</p>
-  {% endif %}
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{if .Success}}<p class="success">File uploaded.</p>{{end}}
   <form method="POST" action="/admin/files/upload" enctype="multipart/form-data" class="form">
     <label for="file">upload file (max 10MB)</label>
     <input type="file" id="file" name="file" required>
     <button type="submit">upload</button>
   </form>
-  {% if files.is_empty() %}
+  {{if not .Files}}
     <p class="empty">no files yet</p>
-  {% else %}
+  {{else}}
+    {{$site := .SiteURL}}
     <div class="admin-list">
-      {% for file in files %}
+      {{range .Files}}
         <div class="admin-list-item">
-          {% if file.content_type.starts_with("image/") %}
-            <img src="/files/{{ file.filename }}" class="file-thumbnail" alt="{{ file.original_name }}">
-          {% endif %}
+          {{if .IsImage}}
+            <img src="/files/{{.Filename}}" class="file-thumbnail" alt="{{.OriginalName}}">
+          {{end}}
           <div class="admin-list-info">
-            <span class="admin-list-title">{{ file.original_name }}</span>
+            <span class="admin-list-title">{{.OriginalName}}</span>
             <div class="admin-list-meta">
-              <span class="admin-list-date">{{ file.content_type }}</span>
-              <span class="admin-list-date">{{ file.size|filesizeformat }}</span>
-              <span class="admin-list-date">{{ file.created_at }}</span>
+              <span class="admin-list-date">{{.ContentType}}</span>
+              <span class="admin-list-date">{{.SizeHuman}}</span>
+              <span class="admin-list-date">{{.CreatedAt}}</span>
             </div>
           </div>
           <div class="admin-list-actions">
             <button type="button" class="link-button"
-              onclick="navigator.clipboard.writeText('{{ site_url }}/files/{{ file.filename }}');this.textContent='copied!'">
+              onclick="navigator.clipboard.writeText('{{$site}}/files/{{.Filename}}');this.textContent='copied!'">
               copy url
             </button>
             <button type="button" class="link-button"
-              onclick="navigator.clipboard.writeText('![{{ file.original_name }}]({{ site_url }}/files/{{ file.filename }})');this.textContent='copied!'">
+              onclick="navigator.clipboard.writeText('![{{.OriginalName}}]({{$site}}/files/{{.Filename}})');this.textContent='copied!'">
               copy md
             </button>
-            <form method="POST" action="/admin/files/{{ file.short_id }}/delete" class="inline-form">
+            <form method="POST" action="/admin/files/{{.ShortID}}/delete" class="inline-form">
               <button type="submit" class="link-button danger" onclick="return confirm('Delete this file?')">delete</button>
             </form>
           </div>
         </div>
-      {% endfor %}
+      {{end}}
     </div>
-  {% endif %}
-{% endblock %}
+  {{end}}
+{{end}}

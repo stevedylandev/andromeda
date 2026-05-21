@@ -2,9 +2,9 @@
 
 ![demo of og](https://files.stevedylan.dev/og-demo.png)
 
-A self-hosted Open Graph tag inspector built with Rust. Enter any URL and instantly see its OG metadata.
+A self-hosted Open Graph tag inspector built in Go. Enter any URL and instantly see its OG metadata.
 
-- Single Rust binary with embedded assets
+- Single Go binary with embedded assets
 - Inspects title, description, image, and other OG tags
 - Dark themed UI with Commit Mono font
 - No database needed -- fully stateless
@@ -45,7 +45,7 @@ Or grab a prebuilt binary from the [releases page](https://github.com/stevedylan
 You can also build from source:
 
 ```bash
-cargo build --release -p og
+cd apps/og && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server and run it directly.

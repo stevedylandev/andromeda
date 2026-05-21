@@ -4,7 +4,7 @@
 
 Bookmarks is a single-user link saver. Add links via the admin panel or JSON API, organize them into categories, and view them on a public index page grouped by category.
 
-- Single Rust binary with embedded assets
+- Single Go binary with embedded assets
 - Local SQLite storage
 - Password-protected admin panel for managing categories and links
 - JSON read API (open) and write API (key-guarded)
@@ -45,7 +45,7 @@ docker compose up -d
 ### Binary
 
 ```bash
-cargo build --release -p bookmarks
+cd apps/bookmarks && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.

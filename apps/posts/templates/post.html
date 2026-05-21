@@ -1,49 +1,45 @@
-{% extends "base.html" %}
-{% block title %}{{ post.display_title() }} — {{ blog_title }}{% endblock %}
-{% block meta %}
-  {% if post.meta_description.is_some() %}
-    <meta name="description" content="{{ post.meta_description.as_deref().unwrap_or_default() }}">
-    <meta property="og:description" content="{{ post.meta_description.as_deref().unwrap_or_default() }}">
-  {% endif %}
-  {% if post.meta_image.is_some() && !post.meta_image.as_deref().unwrap_or_default().is_empty() %}
-    <meta property="og:image" content="{{ post.meta_image.as_deref().unwrap_or_default() }}">
-  {% else if !og_image_url.is_empty() %}
-    <meta property="og:image" content="{{ og_image_url }}">
-  {% else %}
-    <meta property="og:image" content="{{ site_url }}/static/og.png">
-  {% endif %}
-  {% if post.canonical_url.is_some() %}
-    <link rel="canonical" href="{{ post.canonical_url.as_deref().unwrap_or_default() }}">
-  {% endif %}
-  <meta property="og:title" content="{{ post.display_title() }}">
+{{define "post.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.Post.DisplayTitle}} — {{.BlogTitle}}{{end}}
+{{define "meta"}}
+  {{if .Post.MetaDescription}}
+    <meta name="description" content="{{.Post.MetaDescriptionStr}}">
+    <meta property="og:description" content="{{.Post.MetaDescriptionStr}}">
+  {{end}}
+  {{if and .Post.MetaImage .Post.MetaImageStr}}
+    <meta property="og:image" content="{{.Post.MetaImageStr}}">
+  {{else if .OGImageURL}}
+    <meta property="og:image" content="{{.OGImageURL}}">
+  {{else}}
+    <meta property="og:image" content="{{.SiteURL}}/static/og.png">
+  {{end}}
+  {{if .Post.CanonicalURL}}
+    <link rel="canonical" href="{{.Post.CanonicalURLStr}}">
+  {{end}}
+  <meta property="og:title" content="{{.Post.DisplayTitle}}">
   <meta property="og:type" content="article">
-  <meta property="og:url" content="{{ site_url }}/posts/{{ post.slug }}">
-  <meta property="article:published_time" content="{{ post.published_date.as_deref().unwrap_or_default() }}">
-{% endblock %}
-{% block content %}
+  <meta property="og:url" content="{{.SiteURL}}/posts/{{.Post.Slug}}">
+  <meta property="article:published_time" content="{{.Post.PublishedDateStr}}">
+{{end}}
+{{define "content"}}
   <div class="post-header">
-    {% if let Some(title) = post.title.as_deref() %}
-      {% if !title.trim().is_empty() %}
-        <h1>{{ title }}</h1>
-      {% endif %}
-    {% endif %}
-    {% if post.meta_description.is_some() %}
-      <p class="post-description">{{ post.meta_description.as_deref().unwrap_or_default() }}</p>
-    {% endif %}
-    {% if post.published_date.is_some() %}
-      <time class="post-date">{{ post.published_date.as_deref().unwrap_or_default() }}</time>
-    {% endif %}
-    {% if post.tags.is_some() %}
+    {{if .Post.HasTitle}}
+      <h1>{{.Post.TitleStr}}</h1>
+    {{end}}
+    {{if .Post.MetaDescription}}
+      <p class="post-description">{{.Post.MetaDescriptionStr}}</p>
+    {{end}}
+    {{if .Post.PublishedDate}}
+      <time class="post-date">{{.Post.PublishedDateStr}}</time>
+    {{end}}
+    {{if .Post.Tags}}
       <div class="post-tags">
-        {% for tag in post.tags.as_deref().unwrap_or_default().split(',') %}
-          {% if !tag.trim().is_empty() %}
-            <span class="tag">{{ tag.trim() }}</span>
-          {% endif %}
-        {% endfor %}
+        {{range .Post.TagList}}
+          <span class="tag">{{.}}</span>
+        {{end}}
       </div>
-    {% endif %}
+    {{end}}
   </div>
   <article class="markdown-body">
-    {{ rendered_content|safe }}
+    {{.RenderedContent}}
   </article>
-{% endblock %}
+{{end}}

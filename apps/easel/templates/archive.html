@@ -1,20 +1,20 @@
-{% extends "base.html" %}
-{% block title %}Easel — Archive{% endblock %}
-{% block content %}
+{{define "archive.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Easel — Archive{{end}}
+{{define "content"}}
   <h2>Archive</h2>
-  {% if archive.is_empty() %}
+  {{if not .Archive}}
     <p class="empty">No artworks stored yet.</p>
-  {% else %}
+  {{else}}
     <ul class="item-list">
-      {% for row in archive %}
+      {{range .Archive}}
       <li class="item">
-        <a href="/day/{{ row.date }}">
-          <span class="item-meta">{{ row.date }}</span>
-          <span class="item-title"><em>{{ row.title }}</em></span>
-          {% if !row.artist.is_empty() %}<span class="item-meta">{{ row.artist }}</span>{% endif %}
+        <a href="/day/{{.Date}}">
+          <span class="item-meta">{{.Date}}</span>
+          <span class="item-title"><em>{{.Title}}</em></span>
+          {{if .Artist}}<span class="item-meta">{{.Artist}}</span>{{end}}
         </a>
       </li>
-      {% endfor %}
+      {{end}}
     </ul>
-  {% endif %}
-{% endblock %}
+  {{end}}
+{{end}}

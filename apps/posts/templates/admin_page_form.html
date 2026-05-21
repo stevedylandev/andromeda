@@ -1,44 +1,42 @@
-{% extends "admin_base.html" %}
-{% block title %}Admin — {% if page.is_some() %}Edit Page{% else %}New Page{% endif %}{% endblock %}
-{% block content %}
-  <h2>{% if page.is_some() %}Edit Page{% else %}New Page{% endif %}</h2>
-  {% if let Some(error) = error %}
-    <p class="error">{{ error }}</p>
-  {% endif %}
-  {% match page %}
-    {% when Some with (p) %}
-      <form method="POST" action="/admin/pages/{{ p.short_id }}" class="form post-form">
-        <textarea name="attributes" class="attributes-textarea">title: {{ p.title }}
-slug: {{ p.slug }}
-published: {{ p.is_published }}</textarea>
-        <details class="available-fields">
-          <summary>available fields</summary>
-          <div class="fields-list">
-            <span>title: My Page Title</span>
-            <span>slug: my-page-slug</span>
-            <span>published: true</span>
-          </div>
-        </details>
-        <label for="content">content</label>
-        <textarea id="content" name="content" class="post-content">{{ p.content }}</textarea>
-        <button type="submit">save</button>
-      </form>
-    {% when None %}
-      <form method="POST" action="/admin/pages/create" class="form post-form">
-        <textarea name="attributes" class="attributes-textarea">title:
+{{define "admin_page_form.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — {{if .Page}}Edit Page{{else}}New Page{{end}}{{end}}
+{{define "content"}}
+  <h2>{{if .Page}}Edit Page{{else}}New Page{{end}}</h2>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{$p := .Page}}
+  {{if $p}}
+    <form method="POST" action="/admin/pages/{{$p.ShortID}}" class="form post-form">
+      <textarea name="attributes" class="attributes-textarea">title: {{$p.Title}}
+slug: {{$p.Slug}}
+published: {{$p.IsPublished}}</textarea>
+      <details class="available-fields">
+        <summary>available fields</summary>
+        <div class="fields-list">
+          <span>title: My Page Title</span>
+          <span>slug: my-page-slug</span>
+          <span>published: true</span>
+        </div>
+      </details>
+      <label for="content">content</label>
+      <textarea id="content" name="content" class="post-content">{{$p.Content}}</textarea>
+      <button type="submit">save</button>
+    </form>
+  {{else}}
+    <form method="POST" action="/admin/pages/create" class="form post-form">
+      <textarea name="attributes" class="attributes-textarea">title:
 slug:
 published: false</textarea>
-        <details class="available-fields">
-          <summary>available fields</summary>
-          <div class="fields-list">
-            <span>title: My Page Title</span>
-            <span>slug: my-page-slug</span>
-            <span>published: true</span>
-          </div>
-        </details>
-        <label for="content">content</label>
-        <textarea id="content" name="content" class="post-content" placeholder="write markdown here..."></textarea>
-        <button type="submit">save</button>
-      </form>
-  {% endmatch %}
-{% endblock %}
+      <details class="available-fields">
+        <summary>available fields</summary>
+        <div class="fields-list">
+          <span>title: My Page Title</span>
+          <span>slug: my-page-slug</span>
+          <span>published: true</span>
+        </div>
+      </details>
+      <label for="content">content</label>
+      <textarea id="content" name="content" class="post-content" placeholder="write markdown here..."></textarea>
+      <button type="submit">save</button>
+    </form>
+  {{end}}
+{{end}}

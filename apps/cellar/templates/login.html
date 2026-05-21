@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{define "login.html"}}<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,14 +13,12 @@
     <span class="logo">CELLAR</span>
   </header>
   <main>
-    {% if let Some(error) = error %}
-      <p class="error">{{ error }}</p>
-    {% endif %}
-    <form method="POST" action="/admin/login{% if let Some(next) = next %}?next={{ next }}{% endif %}" class="form">
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+    <form method="POST" action="/admin/login{{if .Next}}?next={{.Next}}{{end}}" class="form">
       <label for="password">password</label>
       <input type="password" id="password" name="password" autofocus required>
       <button type="submit">login</button>
     </form>
   </main>
 </body>
-</html>
+</html>{{end}}

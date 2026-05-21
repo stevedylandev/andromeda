@@ -2,20 +2,20 @@ services:
   app:
     build:
       context: ../..
-      dockerfile: apps/posts/Dockerfile
+      dockerfile: apps/posts-go/Dockerfile
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     environment:
-      - POSTS_PASSWORD=${POSTS_PASSWORD:-changeme}
-      - POSTS_DB_PATH=/data/posts.sqlite
-      - UPLOADS_DIR=/data/uploads
-      - SITE_URL=${SITE_URL:-http://localhost:3000}
-      - COOKIE_SECURE=false
       - HOST=0.0.0.0
       - PORT=${PORT:-3000}
+      - POSTS_DB_PATH=/data/posts-go.sqlite
+      - POSTS_PASSWORD=${POSTS_PASSWORD:-changeme}
+      - UPLOADS_DIR=/data/uploads
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - SITE_URL=${SITE_URL:-http://localhost:3000}
     volumes:
-      - posts-data:/data
+      - posts-go-data:/data
     restart: unless-stopped
 
 volumes:
-  posts-data:
+  posts-go-data:

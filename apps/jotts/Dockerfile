@@ -1,20 +1,17 @@
 # Build from repo root: docker build -t jotts -f apps/jotts/Dockerfile .
-FROM lukemathwalker/cargo-chef:latest-rust-1-slim-bookworm AS chef
+FROM golang:1.25-bookworm AS builder
 WORKDIR /app
-
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-FROM chef AS builder
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json -p jotts
-COPY . .
-RUN cargo build --release -p jotts
+COPY crates-go/ ./crates-go/
+COPY apps/jotts/go.mod apps/jotts/go.sum ./apps/jotts/
+WORKDIR /app/apps/jotts
+RUN go mod download
+COPY apps/jotts/ ./
+RUN CGO_ENABLED=0 go build -o /jotts .
 
 FROM debian:bookworm-slim
-COPY --from=builder /app/target/release/jotts /usr/local/bin/jotts
+COPY --from=builder /jotts /usr/local/bin/jotts
 WORKDIR /data
+ENV HOST=0.0.0.0
+ENV PORT=3000
 EXPOSE 3000
-CMD ["jotts", "server", "--port", "3000", "--host", "0.0.0.0"]
+CMD ["jotts", "server"]

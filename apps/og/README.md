@@ -1,72 +1,34 @@
-# OG
+# og-go
 
-![cover](https://files.stevedylan.dev/og-demo-1.png)
-
-A simple web tool for inspecting Open Graph tags on any URL.
+Go rewrite of [og](../og). Open Graph tag inspector for any URL.
 
 ## Quickstart
 
 ```bash
-git clone https://github.com/stevedylandev/og.git
-cd og
-cargo build --release
-./target/release/og
+cp .env.example .env
+go run .
 ```
+
+Then open `http://localhost:3000`.
 
 ### Environment Variables
 
-| Variable | Description | Default |
+| Variable | Default | Description |
 |---|---|---|
-| `PORT` | Server port | `3000` |
+| `HOST` | `0.0.0.0` | Bind host |
+| `PORT` | `3000` | Server port |
 
-## Overview
+## Routes
 
-A self-hosted Open Graph tag inspector built with Rust. Enter any URL and instantly see its OG metadata. A few highlights:
+- `GET /` — search form
+- `POST /check` — inspect a URL (form field: `url`)
+- `GET /static/*` — embedded favicon, styles, etc.
+- `GET /assets/darkmatter.css` + `/assets/fonts/*` — served by `crates-go/darkmatter`
 
-- Single Rust binary with embedded assets
-- Inspects title, description, image, and other OG tags
-- Dark themed UI with Commit Mono font
-- No database needed — fully stateless
-
-## Structure
-
-```
-og/
-├── src/
-│   ├── main.rs        # Entry point and server startup
-│   ├── server.rs      # Axum routes and request handling
-│   └── og.rs          # Open Graph tag fetching and parsing
-├── templates/         # Askama HTML templates
-│   ├── base.html      # Base layout
-│   ├── index.html     # Search form
-│   └── results.html   # OG tag results display
-├── static/            # Fonts, favicons, and styles
-├── Dockerfile
-└── docker-compose.yml
-```
-
-## Deployment
-
-### Railway
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/OdXBt_?referralCode=JGcIp6)
-
-### Docker (recommended)
+## Build
 
 ```bash
-git clone https://github.com/stevedylandev/og.git
-cd og
-docker compose up -d
+go build .
 ```
 
-### Binary
-
-```bash
-cargo build --release
-```
-
-The resulting binary at `./target/release/og` is self-contained with all assets embedded. Copy it to your server and run it directly.
-
-## License
-
-[MIT](LICENSE)
+The binary embeds all templates and static assets.

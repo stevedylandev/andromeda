@@ -1,11 +1,11 @@
-{% extends "base.html" %}
-{% block title %}Easel — {{ today_date }}{% endblock %}
-{% block content %}
-  {% if let Some(artwork) = artwork %}
-    {% include "_artwork.html" %}
-  {% else %}
+{{define "index.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Easel — {{.TodayDate}}{{end}}
+{{define "content"}}
+  {{if .Artwork}}
+    {{template "artwork" .Artwork}}
+  {{else}}
     <div class="empty">
-      <p>Today's artwork ({{ today_date }}) is not yet available. Check back shortly.</p>
+      <p>Today's artwork ({{.TodayDate}}) is not yet available. Check back shortly.</p>
     </div>
-  {% endif %}
-{% endblock %}
+  {{end}}
+{{end}}

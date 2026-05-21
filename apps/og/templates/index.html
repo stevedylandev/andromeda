@@ -1,8 +1,6 @@
-{% extends "base.html" %}
-
-{% block title %}OG{% endblock %}
-
-{% block content %}
+{{define "index.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}OG{{end}}
+{{define "content"}}
 <div class="index-container">
     <form action="/check" method="POST" class="check-form">
         <input
@@ -16,4 +14,4 @@
         <button type="submit">Check</button>
     </form>
 </div>
-{% endblock %}
+{{end}}
