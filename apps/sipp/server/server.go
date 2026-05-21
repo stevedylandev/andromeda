@@ -78,7 +78,7 @@ func highlight(name, content string) string {
 	if style == nil {
 		style = styles.Fallback
 	}
-	formatter := html.New(html.Standalone(false), html.WithClasses(false))
+	formatter := html.New(html.Standalone(false), html.WithClasses(true), html.ClassPrefix("chroma-"))
 	iterator, err := lexer.Tokenise(nil, content)
 	if err != nil {
 		escaped := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;").Replace(content)
