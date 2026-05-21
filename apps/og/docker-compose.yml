@@ -1,14 +1,11 @@
 services:
-  og:
+  app:
     build:
       context: ../..
-      dockerfile: apps/og/Dockerfile
+      dockerfile: apps/og-go/Dockerfile
     ports:
-      - "3000:3000"
-    volumes:
-      - db_data:/app/data
+      - "${PORT:-3000}:${PORT:-3000}"
     environment:
-      - PORT=3000
-
-volumes:
-  db_data:
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+    restart: unless-stopped

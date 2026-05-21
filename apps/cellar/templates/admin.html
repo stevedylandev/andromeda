@@ -1,29 +1,27 @@
-{% extends "base.html" %}
-{% block title %}Admin - Cellar{% endblock %}
-{% block nav %}
-  <nav class="links">
-    <a href="/admin/new">new</a>
-    <a href="/wishlist">wishlist</a>
-  </nav>
-{% endblock %}
-{% block content %}
-  {% if wines.is_empty() %}
-    <p class="empty">no wines yet</p>
-  {% endif %}
+{{define "admin.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Admin - Cellar{{end}}
+{{define "nav"}}
+<nav class="links">
+  <a href="/admin/new">new</a>
+  <a href="/wishlist">wishlist</a>
+</nav>
+{{end}}
+{{define "content"}}
+  {{if not .Wines}}<p class="empty">no wines yet</p>{{end}}
   <div class="admin-list">
-    {% for wine in wines %}
+    {{range .Wines}}
     <div class="admin-item">
       <div class="admin-item-info">
-        <a href="/wines/{{ wine.short_id }}" class="admin-item-name">{{ wine.name }}</a>
-        <span class="admin-item-meta">{{ wine.origin }}{% if !wine.grape.is_empty() %} &middot; {{ wine.grape }}{% endif %}</span>
+        <a href="/wines/{{.ShortID}}" class="admin-item-name">{{.Name}}</a>
+        <span class="admin-item-meta">{{.Origin}}{{if .Grape}} &middot; {{.Grape}}{{end}}</span>
       </div>
       <div class="admin-actions">
-        <a href="/admin/edit/{{ wine.short_id }}">edit</a>
-        <form method="POST" action="/admin/delete/{{ wine.short_id }}" class="inline-form" onsubmit="return confirm('delete this wine?')">
+        <a href="/admin/edit/{{.ShortID}}">edit</a>
+        <form method="POST" action="/admin/delete/{{.ShortID}}" class="inline-form" onsubmit="return confirm('delete this wine?')">
           <button type="submit" class="link-button">delete</button>
         </form>
       </div>
     </div>
-    {% endfor %}
+    {{end}}
   </div>
-{% endblock %}
+{{end}}

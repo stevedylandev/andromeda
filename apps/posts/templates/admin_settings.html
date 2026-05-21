@@ -1,38 +1,36 @@
-{% extends "admin_base.html" %}
-{% block title %}Admin — Settings{% endblock %}
-{% block content %}
+{{define "admin_settings.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Settings{{end}}
+{{define "content"}}
   <h2>Settings</h2>
-  {% if success %}
-    <p class="success">Settings saved.</p>
-  {% endif %}
+  {{if .Success}}<p class="success">Settings saved.</p>{{end}}
   <form method="POST" action="/admin/settings" class="form">
     <label for="blog_title">blog title</label>
-    <input type="text" id="blog_title" name="blog_title" value="{{ blog_title }}" required>
+    <input type="text" id="blog_title" name="blog_title" value="{{.BlogTitle}}" required>
     <label for="blog_description">blog description</label>
-    <input type="text" id="blog_description" name="blog_description" value="{{ blog_description }}">
+    <input type="text" id="blog_description" name="blog_description" value="{{.BlogDescription}}">
     <label for="nav_links">navigation links (format: [label](url) [label2](url2))</label>
-    <textarea id="nav_links" name="nav_links" class="nav-links-input">{{ nav_links }}</textarea>
+    <textarea id="nav_links" name="nav_links" class="nav-links-input">{{.NavLinksRaw}}</textarea>
     <label for="favicon_url">favicon URL (leave empty for default)</label>
-    <input type="text" id="favicon_url" name="favicon_url" value="{{ favicon_url }}" placeholder="https://example.com/favicon.png">
+    <input type="text" id="favicon_url" name="favicon_url" value="{{.FaviconURL}}" placeholder="https://example.com/favicon.png">
     <label for="og_image_url">default OG image URL (used when posts don't have their own)</label>
-    <input type="text" id="og_image_url" name="og_image_url" value="{{ og_image_url }}" placeholder="https://example.com/og.png">
+    <input type="text" id="og_image_url" name="og_image_url" value="{{.OGImageURL}}" placeholder="https://example.com/og.png">
     <label for="intro_content">intro content (markdown, shown on homepage — use &#123;&#123;latest_posts&#125;&#125; to embed recent posts)</label>
-    <textarea id="intro_content" name="intro_content" class="post-content">{{ intro_content }}</textarea>
+    <textarea id="intro_content" name="intro_content" class="post-content">{{.IntroContent}}</textarea>
     <div class="switch-row">
       <label class="switch">
-        <input type="checkbox" id="custom_css_toggle" {% if !custom_css.is_empty() %}checked{% endif %}>
+        <input type="checkbox" id="custom_css_toggle" {{if .CustomCSS}}checked{{end}}>
         <span class="switch-slider"></span>
       </label>
       <span class="switch-label">custom stylesheet</span>
     </div>
-    <div id="custom_css_section" {% if custom_css.is_empty() %}class="hidden"{% endif %}>
+    <div id="custom_css_section" {{if not .CustomCSS}}class="hidden"{{end}}>
       <label for="custom_css">custom CSS (overrides default styles)</label>
-      <textarea id="custom_css" name="custom_css" class="post-content">{% if custom_css.is_empty() %}{{ default_css }}{% else %}{{ custom_css }}{% endif %}</textarea>
+      <textarea id="custom_css" name="custom_css" class="post-content">{{if .CustomCSS}}{{.CustomCSS}}{{else}}{{.DefaultCSS}}{{end}}</textarea>
     </div>
     <label for="custom_header">custom header (markdown or HTML, shown above nav on all pages)</label>
-    <textarea id="custom_header" name="custom_header" class="nav-links-input">{{ custom_header }}</textarea>
+    <textarea id="custom_header" name="custom_header" class="nav-links-input">{{.CustomHeader}}</textarea>
     <label for="custom_footer">custom footer (markdown or HTML, shown at bottom of all pages)</label>
-    <textarea id="custom_footer" name="custom_footer" class="post-content">{{ custom_footer }}</textarea>
+    <textarea id="custom_footer" name="custom_footer" class="post-content">{{.CustomFooter}}</textarea>
     <button type="submit">save</button>
   </form>
   <h3>Data Export</h3>
@@ -48,9 +46,7 @@
       section.classList.toggle('hidden', !this.checked);
     });
     document.querySelector('form').addEventListener('submit', function() {
-      if (!toggle.checked) {
-        cssTextarea.value = '';
-      }
+      if (!toggle.checked) { cssTextarea.value = ''; }
     });
   </script>
-{% endblock %}
+{{end}}

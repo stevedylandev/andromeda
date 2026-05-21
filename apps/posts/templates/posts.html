@@ -1,28 +1,28 @@
-{% extends "base.html" %}
-{% block title %}Posts — {{ blog_title }}{% endblock %}
-{% block meta %}
-  {% if !og_image_url.is_empty() %}
-    <meta property="og:image" content="{{ og_image_url }}">
-  {% else %}
-    <meta property="og:image" content="{{ site_url }}/static/og.png">
-  {% endif %}
-  <meta property="og:url" content="{{ site_url }}/posts">
-{% endblock %}
-{% block content %}
+{{define "posts.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Posts — {{.BlogTitle}}{{end}}
+{{define "meta"}}
+  {{if .OGImageURL}}
+    <meta property="og:image" content="{{.OGImageURL}}">
+  {{else}}
+    <meta property="og:image" content="{{.SiteURL}}/static/og.png">
+  {{end}}
+  <meta property="og:url" content="{{.SiteURL}}/posts">
+{{end}}
+{{define "content"}}
   <h1>Posts</h1>
-  {% if posts.is_empty() %}
+  {{if not .Posts}}
     <p class="empty">no posts yet</p>
-  {% endif %}
+  {{end}}
   <div class="post-list">
-    {% for post in posts %}
-      <a href="/posts/{{ post.slug }}" class="post-item post-item-enhanced">
+    {{range .Posts}}
+      <a href="/posts/{{.Slug}}" class="post-item post-item-enhanced">
         <div class="post-item-info">
-          <span class="post-title">{{ post.display_title() }}</span>
+          <span class="post-title">{{.DisplayTitle}}</span>
         </div>
-        {% if post.published_date.is_some() %}
-          <time class="post-date">{{ post.published_date.as_deref().unwrap_or_default() }}</time>
-        {% endif %}
+        {{if .PublishedDate}}
+          <time class="post-date">{{.PublishedDateStr}}</time>
+        {{end}}
       </a>
-    {% endfor %}
+    {{end}}
   </div>
-{% endblock %}
+{{end}}

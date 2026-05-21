@@ -26,7 +26,7 @@ brew install stevedylandev/tap/sipp-so
 ### Cargo
 
 ```bash
-cargo install sipp-so
+# Build sipp CLI from source: cd apps/sipp && go build .
 ```
 
 ### Releases
@@ -61,7 +61,7 @@ SIPP_API_KEY=your-secret-key docker compose up -d
 ### Binary
 
 ```bash
-cargo build --release -p sipp
+cd apps/sipp && go build .
 ```
 
 The resulting binary is self-contained with all assets embedded. Copy it to your server with your environment variables configured and run it directly.

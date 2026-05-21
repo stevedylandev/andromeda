@@ -1,5 +1,5 @@
-{% extends "base.html" %}
-{% block title %}Easel — {{ date }}{% endblock %}
-{% block content %}
-  {% include "_artwork.html" %}
-{% endblock %}
+{{define "day.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}Easel — {{.Date}}{{end}}
+{{define "content"}}
+  {{template "artwork" .Artwork}}
+{{end}}

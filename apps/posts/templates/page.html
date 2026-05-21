@@ -1,18 +1,18 @@
-{% extends "base.html" %}
-{% block title %}{{ page.title }} — {{ blog_title }}{% endblock %}
-{% block meta %}
-  {% if !og_image_url.is_empty() %}
-    <meta property="og:image" content="{{ og_image_url }}">
-  {% else %}
-    <meta property="og:image" content="{{ site_url }}/static/og.png">
-  {% endif %}
-  <meta property="og:url" content="{{ site_url }}/{{ page.slug }}">
-{% endblock %}
-{% block content %}
+{{define "page.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.Page.Title}} — {{.BlogTitle}}{{end}}
+{{define "meta"}}
+  {{if .OGImageURL}}
+    <meta property="og:image" content="{{.OGImageURL}}">
+  {{else}}
+    <meta property="og:image" content="{{.SiteURL}}/static/og.png">
+  {{end}}
+  <meta property="og:url" content="{{.SiteURL}}/{{.Page.Slug}}">
+{{end}}
+{{define "content"}}
   <div class="page-header">
-    <h1>{{ page.title }}</h1>
+    <h1>{{.Page.Title}}</h1>
   </div>
   <article class="markdown-body">
-    {{ rendered_content|safe }}
+    {{.RenderedContent}}
   </article>
-{% endblock %}
+{{end}}

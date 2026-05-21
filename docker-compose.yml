@@ -11,8 +11,9 @@ services:
   jotts:
     image: ghcr.io/stevedylandev/andromeda/jotts:latest
     restart: unless-stopped
+    command: ["jotts", "server"]
     ports:
-      - "3030:3000"
+      - "3030:3030"
     volumes:
       - jotts_data:/data
     env_file: apps/jotts/.env
@@ -90,7 +91,7 @@ services:
     image: ghcr.io/stevedylandev/andromeda/easel:latest
     restart: unless-stopped
     ports:
-      - "4242:3000"
+      - "4242:4242"
     volumes:
       - easel_data:/data
     env_file: apps/easel/.env
@@ -105,7 +106,6 @@ services:
       - feeds_data:/data/feeds:ro
       - library_data:/data/library:ro
       - bookmarks_data:/data/bookmarks:ro
-      - parcels_data:/data/parcels:ro
       - easel_data:/data/easel:ro
     env_file: apps/backup/.env
     restart: unless-stopped
@@ -135,9 +135,6 @@ volumes:
   bookmarks_data:
     external: true
     name: bookmarks_bookmarks-data
-  parcels_data:
-    external: true
-    name: parcels_parcels_data
   easel_data:
     external: true
     name: easel_easel-data

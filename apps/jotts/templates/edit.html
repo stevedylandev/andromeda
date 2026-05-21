@@ -1,14 +1,32 @@
-{% extends "base.html" %}
-{% block title %}Jotts — {{ note.title }}{% endblock %}
-{% block content %}
-  {% if let Some(error) = error %}
-    <p class="error">{{ error }}</p>
-  {% endif %}
-  <form method="POST" action="/notes/{{ note.short_id }}" class="form">
-    <label for="title">title</label>
-    <input type="text" id="title" name="title" value="{{ note.title }}" required>
-    <label for="content">content</label>
-    <textarea id="content" name="content">{{ note.content }}</textarea>
-    <button type="submit">save</button>
-  </form>
-{% endblock %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jotts — {{.Note.Title}}</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="icon" href="/static/favicon.ico">
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <header class="header">
+      <a href="/" class="logo">jotts</a>
+      <nav class="links"><a href="/notes/new">new</a></nav>
+    </header>
+    <main>
+      {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+      <form method="POST" action="/notes/{{.Note.ShortID}}" class="form">
+        <label for="title">title</label>
+        <input type="text" id="title" name="title" value="{{.Note.Title}}" required>
+        <label for="content">content</label>
+        <textarea id="content" name="content">{{.Note.Content}}</textarea>
+        <button type="submit">save</button>
+      </form>
+    </main>
+  </body>
+</html>

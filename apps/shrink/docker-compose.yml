@@ -2,10 +2,10 @@ services:
   app:
     build:
       context: ../..
-      dockerfile: apps/shrink/Dockerfile
+      dockerfile: apps/shrink-go/Dockerfile
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:${PORT:-3000}"
     environment:
       - HOST=0.0.0.0
-      - PORT=3000
+      - PORT=${PORT:-3000}
     restart: unless-stopped
