@@ -1,80 +1,66 @@
-{% extends "admin_base.html" %}
-{% block title %}Admin — {% if post.is_some() %}Edit Post{% else %}New Post{% endif %}{% endblock %}
-{% block content %}
-  <h2>{% if post.is_some() %}Edit Post{% else %}New Post{% endif %}</h2>
-  {% if let Some(error) = error %}
-    <p class="error">{{ error }}</p>
-  {% endif %}
-  {% match post %}
-    {% when Some with (p) %}
-      <form method="POST" action="/admin/posts/{{ p.short_id }}" class="form post-form">
-        <textarea name="attributes" class="attributes-textarea">title: {{ p.title.as_deref().unwrap_or("") }}
-slug: {{ p.slug }}
-{%- if p.published_date.is_some() %}
-published_date: {{ p.published_date.as_deref().unwrap_or_default() }}
-{%- endif %}
-{%- if p.lang != "en" %}
-lang: {{ p.lang }}
-{%- endif %}
-{%- if p.tags.is_some() %}
-tags: {{ p.tags.as_deref().unwrap_or_default() }}
-{%- endif %}
-{%- if p.alias.is_some() %}
-alias: {{ p.alias.as_deref().unwrap_or_default() }}
-{%- endif %}
-{%- if p.meta_image.is_some() %}
-meta_image: {{ p.meta_image.as_deref().unwrap_or_default() }}
-{%- endif %}
-{%- if p.meta_description.is_some() %}
-description: {{ p.meta_description.as_deref().unwrap_or_default() }}
-{%- endif %}</textarea>
-        <details class="available-fields">
-          <summary>available fields</summary>
-          <div class="fields-list">
-            <span>title: My Post Title</span>
-            <span>slug: my-post-title</span>
-            <span>published_date: 2025-01-15 14:30:00</span>
-            <span>lang: en</span>
-            <span>tags: rust, web, tutorial</span>
-            <span>alias: /old/path</span>
-            <span>meta_image: https://example.com/image.jpg</span>
-            <span>description: A short summary of the post</span>
-          </div>
-        </details>
-        <label for="content">content</label>
-        <textarea id="content" name="content" class="post-content">{{ p.content }}</textarea>
-        <div class="form-actions">
-          {% if p.status == "published" %}
-            <button type="submit" name="action" value="publish">update</button>
-            <button type="submit" name="action" value="draft">unpublish</button>
-          {% else %}
-            <button type="submit" name="action" value="draft">save draft</button>
-            <button type="submit" name="action" value="publish">publish</button>
-          {% endif %}
+{{define "admin_post_form.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — {{if .Post}}Edit Post{{else}}New Post{{end}}{{end}}
+{{define "content"}}
+  <h2>{{if .Post}}Edit Post{{else}}New Post{{end}}</h2>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{$p := .Post}}
+  {{if $p}}
+    <form method="POST" action="/admin/posts/{{$p.ShortID}}" class="form post-form">
+      <textarea name="attributes" class="attributes-textarea">title: {{$p.TitleStr}}
+slug: {{$p.Slug}}
+{{if $p.PublishedDate}}published_date: {{$p.PublishedDateStr}}
+{{end}}{{if ne $p.Lang "en"}}lang: {{$p.Lang}}
+{{end}}{{if $p.Tags}}tags: {{$p.TagsStr}}
+{{end}}{{if $p.Alias}}alias: {{$p.AliasStr}}
+{{end}}{{if $p.MetaImage}}meta_image: {{$p.MetaImageStr}}
+{{end}}{{if $p.MetaDescription}}description: {{$p.MetaDescriptionStr}}{{end}}</textarea>
+      <details class="available-fields">
+        <summary>available fields</summary>
+        <div class="fields-list">
+          <span>title: My Post Title</span>
+          <span>slug: my-post-title</span>
+          <span>published_date: 2025-01-15 14:30:00</span>
+          <span>lang: en</span>
+          <span>tags: rust, web, tutorial</span>
+          <span>alias: /old/path</span>
+          <span>meta_image: https://example.com/image.jpg</span>
+          <span>description: A short summary of the post</span>
         </div>
-      </form>
-    {% when None %}
-      <form method="POST" action="/admin/posts" class="form post-form">
-        <textarea name="attributes" class="attributes-textarea">title: </textarea>
-        <details class="available-fields">
-          <summary>available fields</summary>
-          <div class="fields-list">
-            <span>title: My Post Title</span>
-            <span>slug: my-post-title</span>
-            <span>published_date: 2025-01-15 14:30:00</span>
-            <span>lang: en</span>
-            <span>tags: rust, web, tutorial</span>
-            <span>alias: /old/path</span>
-            <span>meta_image: https://example.com/image.jpg</span>
-            <span>description: A short summary of the post</span>
-          </div>
-        </details>
-        <label for="content">content</label>
-        <textarea id="content" name="content" class="post-content" placeholder="write markdown here..."></textarea>
-        <div class="form-actions">
+      </details>
+      <label for="content">content</label>
+      <textarea id="content" name="content" class="post-content">{{$p.Content}}</textarea>
+      <div class="form-actions">
+        {{if eq $p.Status "published"}}
+          <button type="submit" name="action" value="publish">update</button>
+          <button type="submit" name="action" value="draft">unpublish</button>
+        {{else}}
           <button type="submit" name="action" value="draft">save draft</button>
           <button type="submit" name="action" value="publish">publish</button>
+        {{end}}
+      </div>
+    </form>
+  {{else}}
+    <form method="POST" action="/admin/posts" class="form post-form">
+      <textarea name="attributes" class="attributes-textarea">title: </textarea>
+      <details class="available-fields">
+        <summary>available fields</summary>
+        <div class="fields-list">
+          <span>title: My Post Title</span>
+          <span>slug: my-post-title</span>
+          <span>published_date: 2025-01-15 14:30:00</span>
+          <span>lang: en</span>
+          <span>tags: rust, web, tutorial</span>
+          <span>alias: /old/path</span>
+          <span>meta_image: https://example.com/image.jpg</span>
+          <span>description: A short summary of the post</span>
         </div>
-      </form>
-  {% endmatch %}
-{% endblock %}
+      </details>
+      <label for="content">content</label>
+      <textarea id="content" name="content" class="post-content" placeholder="write markdown here..."></textarea>
+      <div class="form-actions">
+        <button type="submit" name="action" value="draft">save draft</button>
+        <button type="submit" name="action" value="publish">publish</button>
+      </div>
+    </form>
+  {{end}}
+{{end}}

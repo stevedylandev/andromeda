@@ -25,24 +25,15 @@ jobs:
       - name: Determine which apps to build
         id: filter
         run: |
-          ALL='["cellar","sipp","feeds","parcels","jotts","og","shrink","backup","posts","library","bookmarks","easel","bookmarks-go","cellar-go","easel-go","feeds-go","jotts-go","library-go","og-go","posts-go","shrink-go","sipp-go"]'
-
-          # Map cargo package names to directory names
-          pkg_to_dir() {
-            case "$1" in
-              sipp-so) echo "sipp" ;;
-              *) echo "$1" ;;
-            esac
-          }
+          ALL='["backup","bookmarks","cellar","easel","feeds","jotts","library","og","posts","shrink","sipp"]'
 
           # Tags: per-app (app/version) or bare (version)
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
 
             if [[ "$TAG" == */* ]]; then
-              PKG="${TAG%/*}"
+              APP="${TAG%/*}"
               VERSION="${TAG##*/}"
-              APP=$(pkg_to_dir "$PKG")
               echo "apps=[\"${APP}\"]" >> "$GITHUB_OUTPUT"
               echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
             else
@@ -55,13 +46,13 @@ jobs:
           changed=$(git diff --name-only HEAD~1 HEAD)
 
           # Workspace-level changes (shared deps, CI) rebuild all
-          if echo "$changed" | grep -qE '^(Cargo\.(toml|lock)|crates/|crates-go/|\.github/workflows/docker\.yml)'; then
+          if echo "$changed" | grep -qE '^(crates-go/|\.github/workflows/docker\.yml)'; then
             echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           apps=()
-          for app in cellar sipp feeds parcels jotts og shrink backup posts library bookmarks easel bookmarks-go cellar-go easel-go feeds-go jotts-go library-go og-go posts-go shrink-go sipp-go; do
+          for app in backup bookmarks cellar easel feeds jotts library og posts shrink sipp; do
             if echo "$changed" | grep -q "^apps/${app}/"; then
               apps+=("\"${app}\"")
             fi

@@ -1,78 +1,79 @@
 # Stack
 
-Every app in Andromeda is built on the same Rust stack. This page covers the core dependencies and how they fit together.
+Every app in Andromeda is built on the same Go stack. This page covers the core dependencies and how they fit together.
 
 ## Core Dependencies
 
-### Axum
+### net/http
 
-[Axum](https://github.com/tokio-rs/axum) is the web framework powering every app. It provides routing, request extraction, middleware, and response handling. All apps follow a similar pattern:
+The stdlib `net/http` package powers every app — no web framework. Routing is done with `http.ServeMux` (1.22+ method+pattern routes):
 
-```rust
-let app = Router::new()
-    .route("/", get(index))
-    .route("/api/items", post(create_item))
-    .with_state(app_state);
+```go
+mux := http.NewServeMux()
+mux.HandleFunc("GET /", index)
+mux.HandleFunc("POST /api/items", createItem)
 ```
 
-### SQLite (rusqlite)
+### SQLite (modernc.org/sqlite)
 
-[rusqlite](https://github.com/rusqlite/rusqlite) provides the storage layer. Each app creates its own SQLite database file, keeping data local and portable. No external database server needed.
+[modernc.org/sqlite](https://gitlab.com/cznic/sqlite) provides the storage layer — a pure-Go SQLite driver, no cgo required. Each app creates its own SQLite database file, keeping data local and portable. No external database server needed.
 
-### Askama
+### html/template
 
-[Askama](https://github.com/djc/askama) handles HTML templating with compile-time checked templates. Templates live in a `templates/` directory and are type-safe Rust structs:
+The stdlib `html/template` package handles HTML templating with context-aware escaping. Templates live in a `templates/` directory and are parsed at startup:
 
-```rust
-#[derive(Template)]
-#[template(path = "index.html")]
-struct IndexTemplate {
-    items: Vec<Item>,
-}
+```go
+tmpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
+tmpl.ExecuteTemplate(w, "index.html", IndexData{Items: items})
 ```
 
-### rust-embed
+### embed.FS
 
-[rust-embed](https://github.com/pyrossh/rust-embed) embeds static assets (CSS, fonts, images) directly into the binary at compile time. This is what makes each app a single, self-contained binary with no external file dependencies.
+The stdlib `embed` package embeds static assets (CSS, fonts, images) and templates directly into the binary at compile time. This is what makes each app a single, self-contained binary with no external file dependencies.
 
-### Tokio
+```go
+//go:embed static templates
+var assets embed.FS
+```
 
-[Tokio](https://tokio.rs) provides the async runtime that Axum runs on.
+## Shared Packages
 
-## Shared Crates
+Each is its own Go module under `crates-go/`, referenced via `replace` directives in each app's `go.mod`.
 
-### andromeda-auth
+### crates-go/auth
 
-The `andromeda-auth` crate provides session-based password authentication used across apps that require login. It handles:
+Provides session-based password authentication used across apps that require login. It handles:
 
-- Constant-time password verification
-- Session cookie management
-- Secure cookie configuration via `COOKIE_SECURE` env var
+- Constant-time password verification (bcrypt + plain)
+- Session cookie management with an in-memory store
+- Short-id and session-token generators
 
-### andromeda-db
+### crates-go/web
 
-The `andromeda-db` crate provides shared database types and utilities used across apps. It handles:
+HTTP helpers used across apps:
 
-- `Db` type alias (`Arc<Mutex<Connection>>`) for thread-safe SQLite access
-- `HasDb` trait for consistent database access across app states
-- `DbError` type with automatic conversion from rusqlite errors
-- Optional Axum integration (`axum` feature) for `IntoResponse` on errors
-- Optional session management (`session` feature)
+- `Render` — execute template + write response
+- `WriteJSON` / `DecodeJSON` — JSON I/O helpers
+- `EmbeddedHandler` — serve assets out of an `embed.FS`
+- redirect helpers
 
-### andromeda-darkmatter-css
+### crates-go/config
 
-The `andromeda-darkmatter-css` crate ships the canonical Darkmatter stylesheet and Commit Mono fonts as an embedded Axum router. Mount it once and every app inherits the shared aesthetic:
+Loads env vars from process environment and `.env` files.
+
+### crates-go/darkmatter
+
+Ships the canonical Darkmatter stylesheet and Commit Mono fonts as an embedded handler set. Call `Mount()` once on your mux and every app inherits the shared aesthetic:
 
 - `/assets/darkmatter.css` — reset, tokens, and shared component styles
 - `/assets/fonts/*` — Commit Mono 400/700
 - `/darkmatter` — live component gallery
 
-```rust
-use andromeda_darkmatter_css;
+```go
+import "github.com/stevedylandev/andromeda/crates-go/darkmatter"
 
-let app = Router::new()
-    .route("/", get(index))
-    .merge(andromeda_darkmatter_css::router());
+mux := http.NewServeMux()
+darkmatter.Mount(mux)
 ```
 
 Then reference `/assets/darkmatter.css` from your templates instead of duplicating the styles per app.
@@ -83,13 +84,14 @@ Every app follows a consistent structure:
 
 ```
 app/
-├── src/
-│   ├── main.rs        # Entry point, env vars, starts server
-│   ├── server.rs      # Axum routes and handlers
-│   ├── db.rs          # SQLite database layer
-│   └── auth.rs        # Authentication (if needed)
-├── templates/         # Askama HTML templates
+├── main.go            # Entry point, env vars, starts server
+├── app.go             # App state + dependency wiring
+├── routes.go          # Route registration
+├── handlers_*.go      # HTTP handlers
+├── db.go              # SQLite database layer
+├── templates/         # html/template files
 ├── static/            # Fonts, favicons, styles
+├── go.mod
 ├── Dockerfile
 └── docker-compose.yml
 ```

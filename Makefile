@@ -1,20 +1,20 @@
-GO_APPS := $(shell find apps -maxdepth 1 -type d -name '*-go' | sort)
+GO_APPS := $(shell find apps -maxdepth 2 -name 'go.mod' -exec dirname {} \; | sort)
 
 .PHONY: help go-test go-vet go-fmt go-check go-app-test go-app-vet go-app-fmt
 
 help:
 	@echo "Available targets:"
-	@echo "  make go-test              Run go test ./... in every apps/*-go module"
-	@echo "  make go-vet               Run go vet ./... in every apps/*-go module"
-	@echo "  make go-fmt               Run gofmt -w . in every apps/*-go module"
+	@echo "  make go-test              Run go test ./... in every Go app module"
+	@echo "  make go-vet               Run go vet ./... in every Go app module"
+	@echo "  make go-fmt               Run gofmt -w . in every Go app module"
 	@echo "  make go-check             Run go-fmt, go-test, and go-vet for all Go apps"
-	@echo "  make go-app-test APP=...  Run go test ./... in one Go app, e.g. APP=feeds-go"
+	@echo "  make go-app-test APP=...  Run go test ./... in one Go app, e.g. APP=feeds"
 	@echo "  make go-app-vet APP=...   Run go vet ./... in one Go app"
 	@echo "  make go-app-fmt APP=...   Run gofmt -w . in one Go app"
 
 ifndef APP
 go-app-test go-app-vet go-app-fmt:
-	@echo "APP is required, e.g. make $@ APP=feeds-go" >&2
+	@echo "APP is required, e.g. make $@ APP=feeds" >&2
 	@exit 1
 else
 go-app-test:

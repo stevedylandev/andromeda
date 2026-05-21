@@ -1,6 +1,6 @@
-{% extends "base.html" %}
-{% block title %}SHRINK{% endblock %}
-{% block content %}
+{{define "index.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}SHRINK{{end}}
+{{define "content"}}
 
 <div id="drop-zone">
     <p>DROP IMAGE HERE OR CLICK TO SELECT</p>
@@ -168,4 +168,4 @@ compressBtn.addEventListener('click', async () => {
 });
 </script>
 
-{% endblock %}
+{{end}}

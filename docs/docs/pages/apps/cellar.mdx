@@ -2,7 +2,7 @@
 
 ![demo of cellar](https://files.stevedylan.dev/cellar-demo.png)
 
-A simple, self-hosted wine collection app built with Rust.
+A simple, self-hosted wine collection app built in Go.
 
 - Single binary with embedded assets
 - Password authentication with session cookies
@@ -64,7 +64,7 @@ Or grab a prebuilt binary from the [releases page](https://github.com/stevedylan
 You can also build from source:
 
 ```bash
-cargo build --release -p cellar
+cd apps/cellar && go build .
 ```
 
 The resulting binary at `./target/release/cellar` is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.

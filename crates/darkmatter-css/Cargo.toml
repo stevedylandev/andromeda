@@ -1,8 +1,0 @@
-[package]
-name = "andromeda-darkmatter-css"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-axum = { workspace = true }
-rust-embed = { workspace = true }

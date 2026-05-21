@@ -1,22 +1,16 @@
 # Build from repo root: docker build -t shrink -f apps/shrink/Dockerfile .
-FROM lukemathwalker/cargo-chef:latest-rust-1-slim-bookworm AS chef
+FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-FROM chef AS builder
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json -p shrink
-COPY . .
-RUN cargo build --release -p shrink
+COPY crates-go/ ./crates-go/
+COPY apps/shrink/go.mod apps/shrink/go.sum ./apps/shrink/
+WORKDIR /app/apps/shrink
+RUN go mod download
+COPY apps/shrink/ ./
+RUN CGO_ENABLED=0 go build -o /shrink .
 
 FROM debian:bookworm-slim
-WORKDIR /app
-COPY --from=builder /app/target/release/shrink /usr/local/bin/shrink
-COPY --from=builder /app/apps/shrink/static /app/static
-EXPOSE 3000
+COPY --from=builder /shrink /usr/local/bin/shrink
 ENV HOST=0.0.0.0
+ENV PORT=3000
+EXPOSE 3000
 CMD ["shrink"]
