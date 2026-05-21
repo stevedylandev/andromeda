@@ -85,79 +85,79 @@
   color: var(--ansi7);
 }
 
-.chroma .chroma-c,
-.chroma .chroma-ch,
-.chroma .chroma-cm,
-.chroma .chroma-c1,
-.chroma .chroma-cs,
-.chroma .chroma-cp,
-.chroma .chroma-cpf { color: var(--ansi4); font-style: italic; }
+.chroma .c,
+.chroma .ch,
+.chroma .cm,
+.chroma .c1,
+.chroma .cs,
+.chroma .cp,
+.chroma .cpf { color: var(--ansi4); font-style: italic; }
 
-.chroma .chroma-k,
-.chroma .chroma-kc,
-.chroma .chroma-kd,
-.chroma .chroma-kn,
-.chroma .chroma-kp,
-.chroma .chroma-kr,
-.chroma .chroma-kt { color: var(--ansi3); }
+.chroma .k,
+.chroma .kc,
+.chroma .kd,
+.chroma .kn,
+.chroma .kp,
+.chroma .kr,
+.chroma .kt { color: var(--ansi3); }
 
-.chroma .chroma-s,
-.chroma .chroma-sa,
-.chroma .chroma-sb,
-.chroma .chroma-sc,
-.chroma .chroma-dl,
-.chroma .chroma-sd,
-.chroma .chroma-s2,
-.chroma .chroma-se,
-.chroma .chroma-sh,
-.chroma .chroma-si,
-.chroma .chroma-sx,
-.chroma .chroma-sr,
-.chroma .chroma-s1,
-.chroma .chroma-ss { color: var(--ansi2); }
+.chroma .s,
+.chroma .sa,
+.chroma .sb,
+.chroma .sc,
+.chroma .dl,
+.chroma .sd,
+.chroma .s2,
+.chroma .se,
+.chroma .sh,
+.chroma .si,
+.chroma .sx,
+.chroma .sr,
+.chroma .s1,
+.chroma .ss { color: var(--ansi2); }
 
-.chroma .chroma-m,
-.chroma .chroma-mb,
-.chroma .chroma-mf,
-.chroma .chroma-mh,
-.chroma .chroma-mi,
-.chroma .chroma-il,
-.chroma .chroma-mo { color: var(--ansi3); }
+.chroma .m,
+.chroma .mb,
+.chroma .mf,
+.chroma .mh,
+.chroma .mi,
+.chroma .il,
+.chroma .mo { color: var(--ansi3); }
 
-.chroma .chroma-nf,
-.chroma .chroma-fm { color: var(--ansi1); }
+.chroma .nf,
+.chroma .fm { color: var(--ansi1); }
 
-.chroma .chroma-nc,
-.chroma .chroma-nn,
-.chroma .chroma-no,
-.chroma .chroma-nd { color: var(--ansi1); }
+.chroma .nc,
+.chroma .nn,
+.chroma .no,
+.chroma .nd { color: var(--ansi1); }
 
-.chroma .chroma-nb,
-.chroma .chroma-bp { color: var(--ansi2); }
+.chroma .nb,
+.chroma .bp { color: var(--ansi2); }
 
-.chroma .chroma-n,
-.chroma .chroma-nv,
-.chroma .chroma-vc,
-.chroma .chroma-vg,
-.chroma .chroma-vi,
-.chroma .chroma-nx,
-.chroma .chroma-py { color: var(--ansi7); }
+.chroma .n,
+.chroma .nv,
+.chroma .vc,
+.chroma .vg,
+.chroma .vi,
+.chroma .nx,
+.chroma .py { color: var(--ansi7); }
 
-.chroma .chroma-o,
-.chroma .chroma-ow,
-.chroma .chroma-p { color: var(--ansi6); }
+.chroma .o,
+.chroma .ow,
+.chroma .p { color: var(--ansi6); }
 
-.chroma .chroma-nt { color: var(--ansi3); }
-.chroma .chroma-na { color: var(--ansi1); }
+.chroma .nt { color: var(--ansi3); }
+.chroma .na { color: var(--ansi1); }
 
-.chroma .chroma-err { color: var(--ansi3); background: transparent; }
+.chroma .err { color: var(--ansi3); background: transparent; }
 
-.chroma .chroma-gd { color: var(--ansi3); }
-.chroma .chroma-gi { color: var(--ansi1); }
-.chroma .chroma-gh { color: var(--ansi2); font-weight: bold; }
+.chroma .gd { color: var(--ansi3); }
+.chroma .gi { color: var(--ansi1); }
+.chroma .gh { color: var(--ansi2); font-weight: bold; }
 
-.chroma .chroma-ln,
-.chroma .chroma-lnt { color: var(--ansi5); }
+.chroma .ln,
+.chroma .lnt { color: var(--ansi5); }
 
 /* Viewer action row */
 
