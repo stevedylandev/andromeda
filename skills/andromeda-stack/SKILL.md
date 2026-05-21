@@ -1,6 +1,6 @@
 ---
 name: Andromeda Stack
-description: Scaffold a Go CRUD web app using net/http + html/template + modernc.org/sqlite + the shared andromeda crates-go packages (auth, web, config, sqlite, darkmatter). Use when the user wants to build a new Go web server with CRUD operations in the andromeda monorepo.
+description: Scaffold a Go CRUD web app using net/http + html/template + modernc.org/sqlite + the shared andromeda pkg packages (auth, web, config, sqlite, darkmatter). Use when the user wants to build a new Go web server with CRUD operations in the andromeda monorepo.
 ---
 
 # Go Andromeda Web App
@@ -9,25 +9,25 @@ description: Scaffold a Go CRUD web app using net/http + html/template + modernc
 
 Scaffold and build Go CRUD web apps in the andromeda workspace using the
 standard library `net/http` mux, `html/template`, `modernc.org/sqlite` (pure
-Go, no cgo) and the shared `crates-go/*` packages. Each app ships a single Go
+Go, no cgo) and the shared `pkg/*` packages. Each app ships a single Go
 binary with HTML pages, a JSON API, optional session or API key auth, embedded
 templates + static assets via `embed.FS`, and Docker deployment.
 
 Apps live under `apps/<name>/`. Each app is its own Go module. Shared packages
-live under `crates-go/` and are each their own module, wired in via local
+live under `pkg/` and are each their own module, wired in via local
 `replace` directives.
 
 Shared crates:
 
-- `crates-go/auth` — session `Store`, `RequireSession` / `RequireAPIKey` /
+- `pkg/auth` — session `Store`, `RequireSession` / `RequireAPIKey` /
   `RequireBearerOrSession` middleware, `SecureEqual`, `VerifyPassword`
   (bcrypt or plaintext), `GenerateSessionToken`, `GenerateShortID`.
-- `crates-go/web` — `Render`, `WriteJSON`, `WriteError`, `DecodeJSON`,
+- `pkg/web` — `Render`, `WriteJSON`, `WriteError`, `DecodeJSON`,
   `EmbeddedHandler`, `RedirectWithError`, `RedirectWithSuccess`, `PathInt64`.
-- `crates-go/config` — `LoadDotEnv`, `Getenv`, `GetenvInt`, `GetenvBool`.
-- `crates-go/sqlite` — `Open(path, schema)` opens SQLite with the project
+- `pkg/config` — `LoadDotEnv`, `Getenv`, `GetenvInt`, `GetenvBool`.
+- `pkg/sqlite` — `Open(path, schema)` opens SQLite with the project
   defaults (`PRAGMA foreign_keys=ON`, `SetMaxOpenConns(1)`).
-- `crates-go/darkmatter` — embedded shared CSS + fonts plus `Mount(mux,
+- `pkg/darkmatter` — embedded shared CSS + fonts plus `Mount(mux,
   "/assets")` to register routes on any `*http.ServeMux`.
 
 ## Project Structure
@@ -67,25 +67,25 @@ module github.com/stevedylandev/andromeda/apps/APP_NAME
 go 1.25
 
 require (
-	github.com/stevedylandev/andromeda/crates-go/auth v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/config v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/darkmatter v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/sqlite v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/web v0.0.0
+	github.com/stevedylandev/andromeda/pkg/auth v0.0.0
+	github.com/stevedylandev/andromeda/pkg/config v0.0.0
+	github.com/stevedylandev/andromeda/pkg/darkmatter v0.0.0
+	github.com/stevedylandev/andromeda/pkg/sqlite v0.0.0
+	github.com/stevedylandev/andromeda/pkg/web v0.0.0
 )
 
 replace (
-	github.com/stevedylandev/andromeda/crates-go/auth       => ../../crates-go/auth
-	github.com/stevedylandev/andromeda/crates-go/config     => ../../crates-go/config
-	github.com/stevedylandev/andromeda/crates-go/darkmatter => ../../crates-go/darkmatter
-	github.com/stevedylandev/andromeda/crates-go/sqlite     => ../../crates-go/sqlite
-	github.com/stevedylandev/andromeda/crates-go/web        => ../../crates-go/web
+	github.com/stevedylandev/andromeda/pkg/auth       => ../../pkg/auth
+	github.com/stevedylandev/andromeda/pkg/config     => ../../pkg/config
+	github.com/stevedylandev/andromeda/pkg/darkmatter => ../../pkg/darkmatter
+	github.com/stevedylandev/andromeda/pkg/sqlite     => ../../pkg/sqlite
+	github.com/stevedylandev/andromeda/pkg/web        => ../../pkg/web
 )
 ```
 
-Add `crates-go/tui` only if the app ships a TUI. Add `golang.org/x/crypto`,
+Add `pkg/tui` only if the app ships a TUI. Add `golang.org/x/crypto`,
 `yuin/goldmark`, etc. only when the specific app needs them. The Dockerfile
-must copy `crates-go/` into the build context for the replace directives.
+must copy `pkg/` into the build context for the replace directives.
 
 Do NOT add ORMs, web frameworks (gin, echo, chi), connection pools, or HTTP
 client libs unless explicitly requested. The stdlib `net/http` mux (with
@@ -105,8 +105,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/config"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/config"
 )
 
 func main() {
@@ -176,7 +176,7 @@ import (
 	"html/template"
 	"log/slog"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
 //go:embed templates/*.html static/*
@@ -215,9 +215,9 @@ package main
 import (
 	"net/http"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/darkmatter"
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/darkmatter"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 func (a *App) routes() *http.ServeMux {
@@ -263,7 +263,7 @@ Notes:
 
 ## db.go (or internal/store)
 
-Single-file module: schema, model, CRUD. `crates-go/sqlite.Open` handles the
+Single-file module: schema, model, CRUD. `pkg/sqlite.Open` handles the
 driver, pragmas, and schema bootstrap.
 
 ```go
@@ -273,8 +273,8 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/sqlite"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 type Item struct {
@@ -396,8 +396,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 func (a *App) loginGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -467,7 +467,7 @@ package main
 import (
 	"net/http"
 
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 func (a *App) apiListItems(w http.ResponseWriter, r *http.Request) {
@@ -514,7 +514,7 @@ func (a *App) apiGetItem(w http.ResponseWriter, r *http.Request) {
 
 ## Authentication
 
-`crates-go/auth` provides three middleware patterns. Pick based on app shape:
+`pkg/auth` provides three middleware patterns. Pick based on app shape:
 
 ### Session/cookie auth (web-facing apps)
 
@@ -631,7 +631,7 @@ Use `logger.Error("msg", "err", err)`, `logger.Warn(...)`, `logger.Info(...)`.
 
 ## Dockerfile
 
-Multi-stage, built from the repo root so `crates-go/` is available for the
+Multi-stage, built from the repo root so `pkg/` is available for the
 `replace` directives. Pure Go (`CGO_ENABLED=0`) because the SQLite driver is
 `modernc.org/sqlite`.
 
@@ -639,7 +639,7 @@ Multi-stage, built from the repo root so `crates-go/` is available for the
 # Build from repo root: docker build -t APP_NAME -f apps/APP_NAME/Dockerfile .
 FROM golang:1.25-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/APP_NAME/go.mod apps/APP_NAME/go.sum ./apps/APP_NAME/
 WORKDIR /app/apps/APP_NAME
 RUN go mod download
@@ -763,8 +763,8 @@ make go-app-vet  APP=APP_NAME
 make go-app-fmt  APP=APP_NAME
 ```
 
-The shared crates (`crates-go/web`, `crates-go/auth`, `crates-go/config`,
-`crates-go/sqlite`, `crates-go/darkmatter`) are each their own module — run
+The shared crates (`pkg/web`, `pkg/auth`, `pkg/config`,
+`pkg/sqlite`, `pkg/darkmatter`) are each their own module — run
 `go build ./...` inside any to check in isolation.
 
 ## Checklist
@@ -776,7 +776,7 @@ When scaffolding a new app:
 3. `main.go` — env load, DB open, sessions bootstrap, `App` build, `ListenAndServe`.
 4. `app.go` — `App` struct, `//go:embed`, page-data structs.
 5. `routes.go` — mux wiring, middleware, `/static/` + `darkmatter.Mount`.
-6. `db.go` — schema, model, CRUD via `crates-go/sqlite.Open`.
+6. `db.go` — schema, model, CRUD via `pkg/sqlite.Open`.
 7. `handlers_web.go` — login/logout + HTML CRUD pages.
 8. `handlers_api.go` — JSON CRUD endpoints behind `RequireAPIKey`.
 9. `templates/base.html` + per-page templates using `{{ define }}` blocks.
@@ -794,8 +794,8 @@ When scaffolding a new app:
 - No web frameworks (gin, echo, chi, fiber) — stdlib `net/http` mux is enough.
 - No ORMs — raw `database/sql` + `?` placeholders.
 - No connection pools — `sqlite.Open` sets `MaxOpenConns(1)` on purpose.
-- No cgo SQLite drivers — use `modernc.org/sqlite` via `crates-go/sqlite`.
-- No external CSS frameworks unless specified — use `crates-go/darkmatter`.
+- No cgo SQLite drivers — use `modernc.org/sqlite` via `pkg/sqlite`.
+- No external CSS frameworks unless specified — use `pkg/darkmatter`.
 - No JS frontend / build step — `html/template` rendered server-side.
 - No CLI / TUI deps (cobra, bubbletea) unless the app actually needs them.
-- No `replace` directives for anything outside `crates-go/`.
+- No `replace` directives for anything outside `pkg/`.
