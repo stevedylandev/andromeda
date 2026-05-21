@@ -30,6 +30,71 @@ import (
 //go:embed templates/*.html static/*
 var appFS embed.FS
 
+var siteStyle = chroma.MustNewStyle("site", chroma.StyleEntries{
+	chroma.Background:      "#c1c1c1 bg:#121113",
+	chroma.Comment:         "italic #888888",
+	chroma.CommentHashbang: "italic #888888",
+	chroma.CommentMultiline: "italic #888888",
+	chroma.CommentSingle:   "italic #888888",
+	chroma.CommentSpecial:  "italic #888888",
+	chroma.CommentPreproc:  "italic #888888",
+	chroma.Keyword:         "#e78a53",
+	chroma.KeywordConstant: "#e78a53",
+	chroma.KeywordDeclaration: "#e78a53",
+	chroma.KeywordNamespace: "#e78a53",
+	chroma.KeywordPseudo:   "#e78a53",
+	chroma.KeywordReserved: "#e78a53",
+	chroma.KeywordType:     "#e78a53",
+	chroma.LiteralString:           "#fbcb97",
+	chroma.LiteralStringAffix:      "#fbcb97",
+	chroma.LiteralStringBacktick:   "#fbcb97",
+	chroma.LiteralStringChar:       "#fbcb97",
+	chroma.LiteralStringDelimiter:  "#fbcb97",
+	chroma.LiteralStringDoc:        "#fbcb97",
+	chroma.LiteralStringDouble:     "#fbcb97",
+	chroma.LiteralStringEscape:     "#fbcb97",
+	chroma.LiteralStringHeredoc:    "#fbcb97",
+	chroma.LiteralStringInterpol:   "#fbcb97",
+	chroma.LiteralStringOther:      "#fbcb97",
+	chroma.LiteralStringRegex:      "#fbcb97",
+	chroma.LiteralStringSingle:     "#fbcb97",
+	chroma.LiteralStringSymbol:     "#fbcb97",
+	chroma.LiteralNumber:           "#e78a53",
+	chroma.LiteralNumberBin:        "#e78a53",
+	chroma.LiteralNumberFloat:      "#e78a53",
+	chroma.LiteralNumberHex:        "#e78a53",
+	chroma.LiteralNumberInteger:    "#e78a53",
+	chroma.LiteralNumberIntegerLong: "#e78a53",
+	chroma.LiteralNumberOct:        "#e78a53",
+	chroma.NameFunction:    "#5f8787",
+	chroma.NameFunctionMagic: "#5f8787",
+	chroma.NameClass:       "#5f8787",
+	chroma.NameNamespace:   "#5f8787",
+	chroma.NameConstant:    "#5f8787",
+	chroma.NameDecorator:   "#5f8787",
+	chroma.NameBuiltin:     "#fbcb97",
+	chroma.NameBuiltinPseudo: "#fbcb97",
+	chroma.NameAttribute:   "#5f8787",
+	chroma.NameTag:         "#e78a53",
+	chroma.NameVariable:    "#c1c1c1",
+	chroma.NameVariableClass: "#c1c1c1",
+	chroma.NameVariableGlobal: "#c1c1c1",
+	chroma.NameVariableInstance: "#c1c1c1",
+	chroma.NameOther:       "#c1c1c1",
+	chroma.Operator:        "#aaaaaa",
+	chroma.OperatorWord:    "#aaaaaa",
+	chroma.Punctuation:     "#aaaaaa",
+	chroma.GenericDeleted:  "#e78a53",
+	chroma.GenericInserted: "#5f8787",
+	chroma.GenericHeading:  "bold #fbcb97",
+	chroma.GenericSubheading: "bold #fbcb97",
+	chroma.GenericEmph:     "italic",
+	chroma.GenericStrong:   "bold",
+	chroma.Error:           "#e78a53",
+	chroma.LineNumbers:     "#999999",
+	chroma.LineNumbersTable: "#999999",
+})
+
 type Snippet = store.Snippet
 
 type App struct {
@@ -74,11 +139,11 @@ func highlight(name, content string) string {
 	if lexer == nil {
 		lexer = lexers.Fallback
 	}
-	style := styles.Get("monokai")
+	style := siteStyle
 	if style == nil {
 		style = styles.Fallback
 	}
-	formatter := html.New(html.Standalone(false), html.WithClasses(true))
+	formatter := html.New(html.Standalone(false), html.WithClasses(false))
 	iterator, err := lexer.Tokenise(nil, content)
 	if err != nil {
 		escaped := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;").Replace(content)
