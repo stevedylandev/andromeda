@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	sharedsqlite "github.com/stevedylandev/andromeda/crates-go/sqlite"
+	sharedsqlite "github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 func newTestDB(t *testing.T) *sql.DB {

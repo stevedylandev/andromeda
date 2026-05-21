@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
 const importMaxBytes = 50 * 1024 * 1024

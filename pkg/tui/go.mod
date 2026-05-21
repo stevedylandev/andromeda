@@ -1,4 +1,4 @@
-module github.com/stevedylandev/andromeda/crates-go/tui
+module github.com/stevedylandev/andromeda/pkg/tui
 
 go 1.25.0
 

@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/stevedylandev/andromeda/crates-go/darkmatter"
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/darkmatter"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 func (a *App) routes() *http.ServeMux {

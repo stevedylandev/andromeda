@@ -1,6 +1,6 @@
 package tui
 
-import sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
+import sharedtui "github.com/stevedylandev/andromeda/pkg/tui"
 
 const appName = "jotts"
 

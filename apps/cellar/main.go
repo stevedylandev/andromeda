@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/config"
-	"github.com/stevedylandev/andromeda/crates-go/sqlite"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/config"
+	"github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 func main() {

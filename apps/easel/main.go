@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stevedylandev/andromeda/crates-go/config"
-	"github.com/stevedylandev/andromeda/crates-go/sqlite"
+	"github.com/stevedylandev/andromeda/pkg/config"
+	"github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 func splitCommaTrim(s string) []string {

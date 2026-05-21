@@ -23,7 +23,7 @@ jobs:
 
           changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
-          if echo "$changed" | grep -qE '^(crates-go/|\.github/workflows/docker(-test)?\.yml)'; then
+          if echo "$changed" | grep -qE '^(pkg/|\.github/workflows/docker(-test)?\.yml)'; then
             echo "apps=${ALL}" >> "$GITHUB_OUTPUT"
             exit 0
           fi

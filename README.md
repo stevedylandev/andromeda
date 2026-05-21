@@ -23,14 +23,14 @@ SQLite.
 
 ## Shared packages
 
-Under `crates-go/`, each its own Go module:
+Under `pkg/`, each its own Go module:
 
 | Package | Description |
 |---|---|
-| `crates-go/web` | HTTP helpers (embedded assets, JSON, render, redirect) |
-| `crates-go/auth` | Sessions store, password/api-key verification, short-id |
-| `crates-go/config` | env + `.env` loading helpers |
-| `crates-go/darkmatter` | Embedded CSS + fonts, mountable on any `http.ServeMux` |
+| `pkg/web` | HTTP helpers (embedded assets, JSON, render, redirect) |
+| `pkg/auth` | Sessions store, password/api-key verification, short-id |
+| `pkg/config` | env + `.env` loading helpers |
+| `pkg/darkmatter` | Embedded CSS + fonts, mountable on any `http.ServeMux` |
 
 Each app references these via `replace` directives in its `go.mod`, so the
 source tree is fully self-contained.

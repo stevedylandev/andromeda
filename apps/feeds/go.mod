@@ -4,21 +4,21 @@ go 1.25.0
 
 require (
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/stevedylandev/andromeda/crates-go/auth v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/config v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/darkmatter v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/sqlite v0.0.0
-	github.com/stevedylandev/andromeda/crates-go/web v0.0.0
+	github.com/stevedylandev/andromeda/pkg/auth v0.0.0
+	github.com/stevedylandev/andromeda/pkg/config v0.0.0
+	github.com/stevedylandev/andromeda/pkg/darkmatter v0.0.0
+	github.com/stevedylandev/andromeda/pkg/sqlite v0.0.0
+	github.com/stevedylandev/andromeda/pkg/web v0.0.0
 	golang.org/x/crypto/x509roots/fallback v0.0.0-20260511143831-44decbfe70e2
 	golang.org/x/net v0.41.0
 )
 
 replace (
-	github.com/stevedylandev/andromeda/crates-go/auth => ../../crates-go/auth
-	github.com/stevedylandev/andromeda/crates-go/config => ../../crates-go/config
-	github.com/stevedylandev/andromeda/crates-go/darkmatter => ../../crates-go/darkmatter
-	github.com/stevedylandev/andromeda/crates-go/sqlite => ../../crates-go/sqlite
-	github.com/stevedylandev/andromeda/crates-go/web => ../../crates-go/web
+	github.com/stevedylandev/andromeda/pkg/auth => ../../pkg/auth
+	github.com/stevedylandev/andromeda/pkg/config => ../../pkg/config
+	github.com/stevedylandev/andromeda/pkg/darkmatter => ../../pkg/darkmatter
+	github.com/stevedylandev/andromeda/pkg/sqlite => ../../pkg/sqlite
+	github.com/stevedylandev/andromeda/pkg/web => ../../pkg/web
 )
 
 require (

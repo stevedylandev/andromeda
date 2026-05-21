@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	sharedsqlite "github.com/stevedylandev/andromeda/crates-go/sqlite"
+	sharedsqlite "github.com/stevedylandev/andromeda/pkg/sqlite"
 )
 
 func openLibraryTestDB(t *testing.T) *sql.DB {

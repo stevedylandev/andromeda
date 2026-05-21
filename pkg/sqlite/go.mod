@@ -1,4 +1,4 @@
-module github.com/stevedylandev/andromeda/crates-go/sqlite
+module github.com/stevedylandev/andromeda/pkg/sqlite
 
 go 1.24
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	poststorage "github.com/stevedylandev/andromeda/apps/posts/storage"
-	"github.com/stevedylandev/andromeda/crates-go/auth"
+	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
 //go:embed templates/*.html static/*

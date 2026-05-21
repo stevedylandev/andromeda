@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t bookmarks -f apps/bookmarks/Dockerfile .
 FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/bookmarks/go.mod apps/bookmarks/go.sum ./apps/bookmarks/
 WORKDIR /app/apps/bookmarks
 RUN go mod download

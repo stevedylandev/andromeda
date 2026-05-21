@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/stevedylandev/andromeda/crates-go/auth"
-	"github.com/stevedylandev/andromeda/crates-go/web"
+	"github.com/stevedylandev/andromeda/pkg/auth"
+	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
 func (a *App) loginGetHandler(w http.ResponseWriter, r *http.Request) {

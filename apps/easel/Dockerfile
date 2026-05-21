@@ -1,7 +1,7 @@
 # Build from repo root: docker build -t easel -f apps/easel/Dockerfile .
 FROM golang:1.24-bookworm AS builder
 WORKDIR /app
-COPY crates-go/ ./crates-go/
+COPY pkg/ ./pkg/
 COPY apps/easel/go.mod apps/easel/go.sum ./apps/easel/
 WORKDIR /app/apps/easel
 RUN go mod download

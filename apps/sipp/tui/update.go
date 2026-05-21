@@ -6,7 +6,7 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	sharedtui "github.com/stevedylandev/andromeda/crates-go/tui"
+	sharedtui "github.com/stevedylandev/andromeda/pkg/tui"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

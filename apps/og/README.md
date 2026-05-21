@@ -23,7 +23,7 @@ Then open `http://localhost:3000`.
 - `GET /` — search form
 - `POST /check` — inspect a URL (form field: `url`)
 - `GET /static/*` — embedded favicon, styles, etc.
-- `GET /assets/darkmatter.css` + `/assets/fonts/*` — served by `crates-go/darkmatter`
+- `GET /assets/darkmatter.css` + `/assets/fonts/*` — served by `pkg/darkmatter`
 
 ## Build
 
