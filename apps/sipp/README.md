@@ -1,20 +1,16 @@
-# sipp-go
+# sipp
 
-Go rewrite of [sipp](../sipp). Single binary with subcommands:
+Code sharing. Single binary with subcommands:
 
 - `sipp server [--host H] [--port P]` — web server (HTTP + admin + API +
   syntax highlight via `github.com/alecthomas/chroma/v2`).
-- `sipp tui` — interactive TUI.
+- `sipp tui` — interactive Bubble Tea TUI.
 - `sipp auth` — save remote URL + API key to config.
 - `sipp <file>` — upload a snippet to a remote instance via the JSON API.
 
-## Notes vs Rust version
+## Notes
 
-- TUI uses Bubble Tea (Rust uses `ratatui` + `crossterm`).
-- Syntax highlighting uses Chroma (replaces syntect). The darkmatter
-  `.tmTheme` is not reused; Chroma's `monokai` style ships by default.
-- Snippet schema and routes match the Rust app; existing SQLite files are
-  compatible.
+- Syntax highlighting uses Chroma with the `monokai` style by default.
 
 ## Quickstart
 

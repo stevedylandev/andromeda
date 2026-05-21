@@ -1,7 +1,7 @@
-# shrink-go
+# shrink
 
-Go rewrite of [shrink](../shrink). JPEG compression + resize via stdlib `image`
-plus `golang.org/x/image/draw` for Catmull-Rom scaling.
+JPEG compression + resize via stdlib `image` plus `golang.org/x/image/draw`
+for Catmull-Rom scaling.
 
 ## Quickstart
 
@@ -24,7 +24,7 @@ go run .
 - `GET /static/*` — embedded assets
 - `/assets/*` — darkmatter css/fonts
 
-## Notes vs Rust version
+## Notes
 
-JPEG EXIF metadata is preserved after recompression, with GPS data stripped to
-match the Rust implementation. The 20 MB upload limit is preserved.
+JPEG EXIF metadata is preserved after recompression, with GPS data stripped.
+Upload limit 20 MB.

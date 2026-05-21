@@ -1,7 +1,6 @@
-# library-go
+# library
 
-Go rewrite of [library](../library). Personal book tracker with Google Books
-search.
+Personal book tracker with Google Books search.
 
 ## Quickstart
 

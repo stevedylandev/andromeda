@@ -1,7 +1,7 @@
-# easel-go
+# easel
 
-Go rewrite of [easel](../easel). A daily painting from the Art Institute of
-Chicago, persisted to SQLite. Past days browsable; future days unavailable.
+Daily painting from the Art Institute of Chicago, persisted to SQLite. Past
+days browsable; future days unavailable.
 
 ## Routes
 

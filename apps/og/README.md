@@ -1,6 +1,6 @@
-# og-go
+# og
 
-Go rewrite of [og](../og). Open Graph tag inspector for any URL.
+Open Graph tag inspector for any URL.
 
 ## Quickstart
 

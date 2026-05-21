@@ -1,14 +1,13 @@
-# posts-go
+# posts
 
-Go rewrite of [posts](../posts). CMS blog with admin, pages, file uploads,
-markdown rendering, RSS, zip import/export.
+CMS blog with admin, pages, file uploads, markdown rendering, RSS, zip
+import/export.
 
-## Notes vs Rust version
+## Notes
 
 - Upload storage supports local filesystem (`UPLOADS_DIR`, default `uploads`)
   or Cloudflare R2 when `R2_BUCKET` and credentials are set.
-- Markdown: `github.com/yuin/goldmark` with GFM + Footnotes (replaces
-  pulldown-cmark).
+- Markdown: `github.com/yuin/goldmark` with GFM + Footnotes.
 - Zip via stdlib `archive/zip`. Upload limit 10 MB; import zip limit 50 MB.
 - API: `GET /api/posts` and `GET /api/posts/{slug}` (permissive CORS).
 

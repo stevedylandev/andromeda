@@ -1,7 +1,6 @@
-# bookmarks-go
+# bookmarks
 
-Go rewrite of [bookmarks](../bookmarks). Personal link saver organized by
-category.
+Personal link saver organized by category.
 
 ## Quickstart
 

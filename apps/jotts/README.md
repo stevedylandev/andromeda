@@ -1,20 +1,34 @@
-# jotts-go
+# jotts
 
-Go port of [jotts](../jotts): minimal markdown notes app.
+Minimal markdown notes. Single binary with subcommands:
+
+- `jotts` — launch TUI (default, no args).
+- `jotts tui [--remote URL --api-key KEY]` — TUI editor (Bubble Tea).
+- `jotts server` — HTTP server (web UI + JSON API).
+- `jotts auth` — save remote URL + API key to config.
+- `jotts <file.md>` — upload file as a new note via the JSON API.
 
 ## Stack
 
 - Go stdlib `net/http` + `html/template`
 - `modernc.org/sqlite` (pure-Go SQLite, no CGO)
-- `github.com/yuin/goldmark` (markdown rendering w/ strikethrough, tables, tasklists)
-- Bubble Tea/Lip Gloss/Glamour for the TUI editor
-- `github.com/pkg/browser` and `github.com/atotto/clipboard` for TUI browser/copy actions
+- `github.com/yuin/goldmark` (markdown w/ strikethrough, tables, tasklists)
+- Bubble Tea / Lip Gloss / Glamour for the TUI
+- `github.com/pkg/browser` and `github.com/atotto/clipboard` for TUI actions
 
 ## Quickstart
+
+Server:
 
 ```bash
 cp .env.example .env
 # edit .env with your password
+go run . server
+```
+
+TUI:
+
+```bash
 go run .
 ```
 
@@ -29,27 +43,6 @@ go run .
 | `COOKIE_SECURE` | HTTPS-only cookies | `false` |
 | `JOTTS_API_KEY` | API key for `/api/notes` (unset = API disabled) | _(unset)_ |
 
-## Structure
-
-```
-jotts-go/
-├── main.go           # entrypoint
-├── app.go            # App struct + page data types
-├── db.go             # SQLite schema + queries (notes, sessions)
-├── routes.go         # http.ServeMux routes
-├── middleware.go     # session + API key middleware, cookies
-├── handlers_web.go   # HTML form handlers
-├── handlers_api.go   # JSON API handlers
-├── markdown.go       # goldmark rendering
-├── web.go            # template render, JSON, embedded static
-├── util.go           # env, dotenv, short IDs, session tokens
-├── templates/        # html/template pages
-├── static/           # favicons, styles, og image
-├── assets/           # darkmatter.css + Commit Mono fonts
-├── Dockerfile
-└── docker-compose.yml
-```
-
 ## API
 
 All endpoints require `x-api-key: $JOTTS_API_KEY` header.
@@ -63,10 +56,10 @@ All endpoints require `x-api-key: $JOTTS_API_KEY` header.
 ## Build
 
 ```bash
-CGO_ENABLED=0 go build -o jotts-go .
+CGO_ENABLED=0 go build -o jotts .
 ```
 
-Single ~10MB self-contained binary with all assets embedded.
+Single self-contained binary with all assets embedded.
 
 ## Docker
 
