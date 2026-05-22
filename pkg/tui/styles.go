@@ -29,13 +29,13 @@ var (
 // Border returns the inactive pane border style using the given border.
 func Border(b lipgloss.Border) lipgloss.Style {
 	return lipgloss.NewStyle().
-		Border(b).
+		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("8"))
 }
 
 // BorderActive returns the focused pane border style using the given border.
 func BorderActive(b lipgloss.Border) lipgloss.Style {
 	return lipgloss.NewStyle().
-		Border(b).
+		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("3"))
 }
