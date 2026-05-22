@@ -26,7 +26,7 @@ func ansiStyle() ansi.StyleConfig {
 	return ansi.StyleConfig{
 		Document: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{BlockPrefix: "\n", BlockSuffix: "\n"},
-			Margin:         up(2),
+			Margin:         up(0),
 		},
 		BlockQuote: ansi.StyleBlock{
 			Indent:      up(1),

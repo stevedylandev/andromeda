@@ -53,6 +53,9 @@ func newModel(backend Backend, notes []Note, width, height int) Model {
 		ready:    true,
 	}
 	m.applyLayout()
+	if n, ok := m.list.Selected(); ok {
+		m.cont.SetNote(&n)
+	}
 	return m
 }
 

@@ -279,11 +279,11 @@ func (m *Model) applyLayout() {
 	if listW < 24 {
 		listW = 24
 	}
-	contentW := m.width - listW - 2
+	contentW := m.width - listW
 	if contentW < 20 {
 		contentW = 20
 	}
-	bodyH := m.height - 2
+	bodyH := m.height - 1
 	if bodyH < 5 {
 		bodyH = 5
 	}

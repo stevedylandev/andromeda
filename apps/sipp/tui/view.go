@@ -28,8 +28,8 @@ func (m Model) View() tea.View {
 	if listW < 24 {
 		listW = 24
 	}
-	contentW := m.width - listW - 2
-	bodyH := m.height - 2
+	contentW := m.width - listW
+	bodyH := m.height - 1
 
 	left := m.renderListPane(listW, bodyH)
 	right := m.renderRightPane(contentW, bodyH)

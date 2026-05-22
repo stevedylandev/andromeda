@@ -68,10 +68,7 @@ func (m Model) renderListPane(w, h int) string {
 	if m.state == stateList {
 		style = borderActive
 	}
-	return style.
-		Width(max(w-paneFrameWidth(), 1)).
-		Height(max(h-paneFrameHeight(), 1)).
-		Render(m.list.View())
+	return style.Width(w).Height(h).Render(m.list.View())
 }
 
 func (m Model) renderRightPane(w, h int) string {
@@ -91,10 +88,7 @@ func (m Model) renderContent(w, h int) string {
 		header = t
 	}
 	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), m.cont.View())
-	return style.
-		Width(max(w-paneFrameWidth(), 1)).
-		Height(max(h-paneFrameHeight(), 1)).
-		Render(inner)
+	return style.Width(w).Height(h).Render(inner)
 }
 
 func (m Model) renderForm(w, h int) string {
@@ -118,10 +112,7 @@ func (m Model) renderForm(w, h int) string {
 	}
 
 	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), titleField, body)
-	return borderActive.
-		Width(max(w-paneFrameWidth(), 1)).
-		Height(max(h-paneFrameHeight(), 1)).
-		Render(inner)
+	return borderActive.Width(w).Height(h).Render(inner)
 }
 
 func (m Model) renderFooter() string {
@@ -163,7 +154,7 @@ func splitWidths(total int) (int, int) {
 	if total < 44 {
 		return total / 2, total - (total / 2)
 	}
-	list := total * 30 / 100
+	list := total / 4
 	if list < 24 {
 		list = 24
 	}
