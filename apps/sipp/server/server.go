@@ -74,7 +74,7 @@ func highlight(name, content string) string {
 	if lexer == nil {
 		lexer = lexers.Fallback
 	}
-	style := styles.Get("evergarden")
+	style := styles.Get("darkmatter")
 	if style == nil {
 		style = styles.Fallback
 	}
