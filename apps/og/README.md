@@ -16,6 +16,12 @@ brew install stevedylandev/tap/og
 curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- og
 ```
 
+**PowerShell (Windows):**
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.ps1))) og
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=og%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

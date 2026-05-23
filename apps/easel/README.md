@@ -17,6 +17,12 @@ brew install stevedylandev/tap/easel
 curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- easel
 ```
 
+**PowerShell (Windows):**
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.ps1))) easel
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=easel%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**
