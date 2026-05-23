@@ -11,6 +11,12 @@ a feed parser.
 brew install stevedylandev/tap/feeds
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- feeds
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=feeds%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

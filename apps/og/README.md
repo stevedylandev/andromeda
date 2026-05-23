@@ -10,6 +10,12 @@ Open Graph tag inspector for any URL.
 brew install stevedylandev/tap/og
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- og
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=og%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

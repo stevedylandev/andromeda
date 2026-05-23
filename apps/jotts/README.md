@@ -16,6 +16,12 @@ Minimal markdown notes. Single binary with subcommands:
 brew install stevedylandev/tap/jotts
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- jotts
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=jotts%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

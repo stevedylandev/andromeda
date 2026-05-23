@@ -16,6 +16,12 @@ Code sharing. Single binary with subcommands:
 brew install stevedylandev/tap/sipp
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- sipp
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=sipp%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**
