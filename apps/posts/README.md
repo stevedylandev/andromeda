@@ -3,6 +3,24 @@
 CMS blog with admin, pages, file uploads, markdown rendering, RSS, zip
 import/export.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/posts
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=posts%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/posts
+go build .
+```
+
 ## Notes
 
 - Upload storage supports local filesystem (`UPLOADS_DIR`, default `uploads`)

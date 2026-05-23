@@ -8,6 +8,24 @@ Code sharing. Single binary with subcommands:
 - `sipp auth` — save remote URL + API key to config.
 - `sipp <file>` — upload a snippet to a remote instance via the JSON API.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/sipp
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=sipp%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/sipp
+go build .
+```
+
 ## Notes
 
 - Syntax highlighting uses Chroma with the `monokai` style by default.

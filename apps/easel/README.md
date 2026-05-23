@@ -3,6 +3,24 @@
 Daily painting from the Art Institute of Chicago, persisted to SQLite. Past
 days browsable; future days unavailable.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/easel
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=easel%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/easel
+go build .
+```
+
 ## Routes
 
 - `GET /` — today's artwork
