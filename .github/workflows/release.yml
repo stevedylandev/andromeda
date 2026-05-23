@@ -70,10 +70,14 @@ jobs:
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --skip=publish,announce,validate
+          # Builds binaries + archives + pushes brew formula. GH release
+          # itself is disabled via `release.disable` in app config; we
+          # create it below so it lands on the real prefixed tag.
+          args: release --clean --skip=announce,validate
           workdir: apps/${{ steps.parse.outputs.app }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           # Strip "app/" prefix so goreleaser parses as semver.
           GORELEASER_CURRENT_TAG: ${{ steps.parse.outputs.version }}
           GORELEASER_PREVIOUS_TAG: ${{ steps.prev.outputs.tag }}
