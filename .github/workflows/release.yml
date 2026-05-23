@@ -1,0 +1,93 @@
+name: Release
+
+# Tag scheme: <app>/vX.Y.Z  (e.g. sipp/v0.1.0)
+# The app dir must contain its own .goreleaser.yml.
+on:
+  push:
+    tags:
+      - "*/v*"
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    name: Release ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse app name from tag
+        id: parse
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          app="${tag%%/*}"
+          version="${tag#*/}"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Releasing $app $version"
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find previous tag for this app
+        id: prev
+        run: |
+          app="${{ steps.parse.outputs.app }}"
+          current="${GITHUB_REF_NAME}"
+          prev=$(git tag --list "${app}/v*" --sort=-v:refname | grep -v "^${current}$" | head -n1 || true)
+          if [ -n "$prev" ]; then
+            prev_ver="${prev#*/}"
+            echo "tag=$prev_ver" >> "$GITHUB_OUTPUT"
+            echo "Previous release: $prev_ver"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+            echo "No previous release for $app"
+          fi
+
+      - name: Verify app has goreleaser config
+        run: |
+          cfg="apps/${{ steps.parse.outputs.app }}/.goreleaser.yml"
+          if [ ! -f "$cfg" ]; then
+            echo "::error::No $cfg — app not configured for releases."
+            exit 1
+          fi
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25.x'
+          cache-dependency-path: |
+            apps/*/go.sum
+            pkg/*/go.sum
+
+      - name: Resolve replace directives
+        # GoReleaser archives need self-contained sources; replace dirs
+        # are fine for `go build` but tags must point at real versions
+        # or we keep local replaces working by running in-tree (which we do).
+        working-directory: apps/${{ steps.parse.outputs.app }}
+        run: go mod tidy
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean --skip=publish,announce
+          workdir: apps/${{ steps.parse.outputs.app }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Strip "app/" prefix so goreleaser parses as semver.
+          GORELEASER_CURRENT_TAG: ${{ steps.parse.outputs.version }}
+          GORELEASER_PREVIOUS_TAG: ${{ steps.prev.outputs.tag }}
+
+      - name: Create GitHub release and upload artifacts
+        working-directory: apps/${{ steps.parse.outputs.app }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          app="${{ steps.parse.outputs.app }}"
+          version="${{ steps.parse.outputs.version }}"
+          tag="${GITHUB_REF_NAME}"
+          assets=$(find dist -maxdepth 1 -type f \( -name '*.tar.gz' -o -name '*.zip' -o -name 'checksums.txt' \))
+          gh release create "$tag" \
+            --title "$app $version" \
+            --generate-notes \
+            $assets
