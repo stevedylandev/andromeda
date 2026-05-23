@@ -63,3 +63,24 @@ release:
   # using `gh release create`. GoReleaser OSS can't natively map a stripped
   # version back to a prefixed tag without the Pro `monorepo` feature.
   disable: true
+
+brews:
+  - name: sipp
+    repository:
+      owner: stevedylandev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    # Override URL — real release tag is `sipp/vX.Y.Z`, not `vX.Y.Z`.
+    url_template: "https://github.com/stevedylandev/andromeda/releases/download/sipp/v{{ .Version }}/{{ .ArtifactName }}"
+    homepage: "https://github.com/stevedylandev/andromeda"
+    description: "Code sharing CLI, server, and TUI"
+    license: "MIT"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "brew: sipp {{ .Tag }}"
+    directory: Formula
+    install: |
+      bin.install "sipp"
+    test: |
+      system "#{bin}/sipp", "--help"
