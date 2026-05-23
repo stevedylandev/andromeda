@@ -2,6 +2,24 @@
 
 Personal book tracker with Google Books search.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/library
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=library%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/library
+go build .
+```
+
 ## Quickstart
 
 ```bash

@@ -3,6 +3,24 @@
 Wine tasting log with optional Anthropic vision (label analysis) and per-wine
 RSS feed.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/cellar
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=cellar%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/cellar
+go build .
+```
+
 ## Notes
 
 - Anthropic `/v1/messages` called via stdlib `net/http` (no SDK).

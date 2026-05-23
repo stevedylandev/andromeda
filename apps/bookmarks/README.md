@@ -2,6 +2,24 @@
 
 Personal link saver organized by category.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/bookmarks
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=bookmarks%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/bookmarks
+go build .
+```
+
 ## Quickstart
 
 ```bash

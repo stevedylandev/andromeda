@@ -3,6 +3,24 @@
 JPEG compression + resize via stdlib `image` plus `golang.org/x/image/draw`
 for Catmull-Rom scaling.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/shrink
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=shrink%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/shrink
+go build .
+```
+
 ## Quickstart
 
 ```bash

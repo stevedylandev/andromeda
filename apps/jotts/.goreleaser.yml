@@ -1,0 +1,83 @@
+# GoReleaser config for jotts.
+# Triggered by tags shaped like `jotts/vX.Y.Z`.
+version: 2
+
+project_name: jotts
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: jotts
+    main: .
+    binary: jotts
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: jotts
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- if eq .Os "darwin" }}macos{{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "0.0.0-snapshot-{{.ShortCommit}}"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  # Disabled: workflow uploads artifacts to the real `jotts/vX.Y.Z` git tag
+  # using `gh release create`. GoReleaser OSS can't natively map a stripped
+  # version back to a prefixed tag without the Pro `monorepo` feature.
+  disable: true
+
+brews:
+  - name: jotts
+    repository:
+      owner: stevedylandev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    url_template: "https://github.com/stevedylandev/andromeda/releases/download/jotts/v{{ .Version }}/{{ .ArtifactName }}"
+    homepage: "https://github.com/stevedylandev/andromeda"
+    description: "Self-hosted markdown notes app"
+    license: "MIT"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "brew: jotts {{ .Tag }}"
+    directory: Formula
+    install: |
+      bin.install "jotts"

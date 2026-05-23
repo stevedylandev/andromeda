@@ -3,6 +3,24 @@
 Minimal RSS reader built on the Go standard library plus a SQLite driver and
 a feed parser.
 
+## Install
+
+**Homebrew:**
+
+```bash
+brew install stevedylandev/tap/feeds
+```
+
+**Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=feeds%2F) and drop the binary somewhere on your `$PATH`.
+
+**From source:**
+
+```bash
+git clone https://github.com/stevedylandev/andromeda
+cd andromeda/apps/feeds
+go build .
+```
+
 ## Stack
 
 - `net/http`
