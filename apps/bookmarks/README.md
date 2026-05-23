@@ -10,6 +10,12 @@ Personal link saver organized by category.
 brew install stevedylandev/tap/bookmarks
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- bookmarks
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=bookmarks%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

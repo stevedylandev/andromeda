@@ -11,6 +11,12 @@ for Catmull-Rom scaling.
 brew install stevedylandev/tap/shrink
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- shrink
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=shrink%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

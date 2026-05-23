@@ -11,6 +11,12 @@ days browsable; future days unavailable.
 brew install stevedylandev/tap/easel
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- easel
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=easel%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**

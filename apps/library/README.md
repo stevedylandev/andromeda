@@ -10,6 +10,12 @@ Personal book tracker with Google Books search.
 brew install stevedylandev/tap/library
 ```
 
+**Curl install (Linux/macOS):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedylandev/andromeda/main/install.sh | sh -s -- library
+```
+
 **Prebuilt binary:** Grab the right archive from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=library%2F) and drop the binary somewhere on your `$PATH`.
 
 **From source:**
