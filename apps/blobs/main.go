@@ -80,7 +80,7 @@ func main() {
 		MaxUploadBytes: maxUploadMB << 20,
 	}
 
-	addr := config.Getenv("BLOBS_HOST", "127.0.0.1") + ":" + config.Getenv("BLOBS_PORT", "3000")
+	addr := config.Getenv("BLOBS_HOST", "0.0.0.0") + ":" + config.Getenv("BLOBS_PORT", "3000")
 	logger.Info("blobs server running", "addr", addr)
 	if err := http.ListenAndServe(addr, app.routes()); err != nil {
 		log.Fatal(err)
