@@ -1,88 +1,62 @@
+// blobs — S3 browser, CLI uploader, and TUI.
+//
+//	blobs                              launch the interactive TUI
+//	blobs tui [-b BUCKET]              launch the TUI (alias)
+//	blobs auth                         interactive client config writer
+//	blobs server [--host H] [--port P] run the web server
+//	blobs [-b BUCKET] <file>           upload a file and print its URL
+//	blobs --help
 package main
 
 import (
-	"log"
-	"log/slog"
-	"net/http"
+	"fmt"
 	"os"
-	"time"
-
-	"github.com/stevedylandev/andromeda/pkg/auth"
-	"github.com/stevedylandev/andromeda/pkg/config"
 )
 
+const usage = `blobs — S3 browser, CLI, and TUI
+
+usage:
+  blobs                              launch interactive TUI
+  blobs tui [-b BUCKET] [--prefix P] launch TUI
+  blobs auth                         write client config to ~/.config/blobs/config.toml
+  blobs server [--host H] [--port P] run the web server
+  blobs [-b BUCKET] [--prefix P] [--key K] <file>
+                                     upload FILE, print URL to stdout
+  blobs --help
+
+env:
+  BLOBS_DEFAULT_BUCKET   bucket used when -b is omitted
+  S3_ENDPOINT            S3 endpoint URL
+  S3_REGION              region (default "auto")
+  S3_ACCESS_KEY_ID       access key
+  S3_SECRET_ACCESS_KEY   secret key
+  R2_ACCOUNT_ID          shortcut: derives endpoint for Cloudflare R2
+  BLOBS_PUBLIC_URLS      bucket=url,bucket=url public URL map
+  BLOBS_PRESIGN_TTL_SECONDS  presigned URL lifetime (default 3600)
+  BLOBS_PREVIEW          override preview backend: kitty|iterm|chafa|none
+`
+
 func main() {
-	config.LoadDotEnv(".env")
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
-
-	dbPath := config.Getenv("BLOBS_DB_PATH", "blobs.sqlite")
-	db, err := openDB(dbPath)
-	if err != nil {
-		log.Fatal(err)
+	args := os.Args[1:]
+	if len(args) == 0 {
+		runTUI(nil)
+		return
 	}
-	defer db.Close()
-
-	sessions := &auth.Store{
-		DB:           db,
-		CookieName:   "blobs_session",
-		CookieSecure: config.GetenvBool("BLOBS_COOKIE_SECURE", false),
-	}
-	if err := sessions.EnsureSchema(); err != nil {
-		log.Fatal(err)
-	}
-	sessions.PruneExpired()
-	go func() {
-		ticker := time.NewTicker(time.Hour)
-		defer ticker.Stop()
-		for range ticker.C {
-			sessions.PruneExpired()
+	switch args[0] {
+	case "-h", "--help", "help":
+		fmt.Print(usage)
+	case "server":
+		runServer(args[1:])
+	case "tui":
+		runTUI(args[1:])
+	case "auth":
+		runAuth(args[1:])
+	default:
+		if _, err := os.Stat(args[0]); err == nil {
+			runUpload(args)
+			return
 		}
-	}()
-
-	password := os.Getenv("BLOBS_PASSWORD")
-	if password == "" {
-		logger.Warn("BLOBS_PASSWORD not set, using default 'changeme'")
-		password = "changeme"
-	}
-
-	endpoint := config.Getenv("S3_ENDPOINT", "")
-	if endpoint == "" {
-		if accountID := config.Getenv("R2_ACCOUNT_ID", ""); accountID != "" {
-			endpoint = "https://" + accountID + ".r2.cloudflarestorage.com"
-		}
-	}
-	accessKey := config.Getenv("S3_ACCESS_KEY_ID", config.Getenv("R2_ACCESS_KEY_ID", ""))
-	secretKey := config.Getenv("S3_SECRET_ACCESS_KEY", config.Getenv("R2_SECRET_ACCESS_KEY", ""))
-	region := config.Getenv("S3_REGION", "auto")
-	publicURLs := parsePublicURLs(os.Getenv("BLOBS_PUBLIC_URLS"))
-	presignTTL := time.Duration(config.GetenvInt("BLOBS_PRESIGN_TTL_SECONDS", 3600)) * time.Second
-
-	client, err := NewS3Client(endpoint, region, accessKey, secretKey, publicURLs, presignTTL)
-	if err != nil {
-		log.Fatalf("configure S3: %v", err)
-	}
-	logger.Info("S3 client ready", "endpoint", endpoint, "region", region, "public_buckets", len(publicURLs))
-
-	tmpl, err := buildTemplates()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	maxUploadMB := int64(config.GetenvInt("BLOBS_MAX_UPLOAD_MB", 100))
-	app := &App{
-		DB:             db,
-		Log:            logger,
-		Templates:      tmpl,
-		Sessions:       sessions,
-		S3:             client,
-		Password:       password,
-		CookieSecure:   sessions.CookieSecure,
-		MaxUploadBytes: maxUploadMB << 20,
-	}
-
-	addr := config.Getenv("HOST", "127.0.0.1") + ":" + config.Getenv("PORT", "3000")
-	logger.Info("blobs server running", "addr", addr)
-	if err := http.ListenAndServe(addr, app.routes()); err != nil {
-		log.Fatal(err)
+		// no file at args[0] — treat as TUI flags
+		runTUI(args)
 	}
 }
