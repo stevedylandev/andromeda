@@ -1,5 +1,5 @@
 # Build from repo root: docker build -t blobs -f apps/blobs/Dockerfile .
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.25-bookworm AS builder
 WORKDIR /app
 COPY pkg/ ./pkg/
 COPY apps/blobs/go.mod apps/blobs/go.sum ./apps/blobs/
@@ -16,4 +16,4 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 ENV BLOBS_DB_PATH=/data/blobs.sqlite
 EXPOSE 3000
-CMD ["blobs"]
+CMD ["blobs", "server"]
