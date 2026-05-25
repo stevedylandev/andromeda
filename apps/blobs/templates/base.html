@@ -1,0 +1,26 @@
+{{define "base.html"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{block "title" .}}blobs{{end}}</title>
+  <link rel="icon" href="/static/favicon.svg">
+  <meta name="theme-color" content="#121113" />
+  <link rel="stylesheet" href="/assets/darkmatter.css">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="header">
+    <a href="/buckets" class="logo">BLOBS</a>
+    <nav class="links">
+      <a href="/buckets">buckets</a>
+      <form method="POST" action="/logout" class="inline-form">
+        <button type="submit" class="link-button">logout</button>
+      </form>
+    </nav>
+  </header>
+  <main>
+    {{block "content" .}}{{end}}
+  </main>
+</body>
+</html>{{end}}

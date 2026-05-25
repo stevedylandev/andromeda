@@ -1,0 +1,69 @@
+{{define "detail.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.Name}}{{end}}
+{{define "content"}}
+  <nav class="crumbs">
+    <a href="/buckets">buckets</a>
+    {{range .Crumbs}}<span class="crumb-sep">/</span><a href="{{.Href}}">{{.Label}}</a>{{end}}
+    <span class="crumb-sep">/</span>
+    <span>{{.Name}}</span>
+  </nav>
+
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+  <h2>{{.Name}}</h2>
+
+  {{if .IsImage}}
+    <div class="detail-preview">
+      <img src="{{.PreviewSrc}}" alt="{{.Name}}">
+    </div>
+  {{end}}
+
+  <dl class="detail-meta">
+    <dt>key</dt><dd><code>{{.Key}}</code></dd>
+    <dt>type</dt><dd>{{.ContentType}}</dd>
+    <dt>size</dt><dd>{{.SizeHuman}} ({{.Size}} bytes)</dd>
+    <dt>modified</dt><dd>{{.LastModified}}</dd>
+    <dt>etag</dt><dd><code>{{.ETag}}</code></dd>
+  </dl>
+
+  <section class="detail-links">
+    <h3>links</h3>
+    {{if .PresignedURL}}
+      <div class="link-row">
+        <a href="{{.PresignedURL}}" target="_blank" rel="noopener">presigned download</a>
+        <button type="button" class="link-button"
+          onclick="navigator.clipboard.writeText('{{.PresignedURL}}');this.textContent='copied!'">
+          copy
+        </button>
+      </div>
+    {{end}}
+    {{if .HasPublic}}
+      <div class="link-row">
+        <a href="{{.PublicURL}}" target="_blank" rel="noopener">public url</a>
+        <button type="button" class="link-button"
+          onclick="navigator.clipboard.writeText('{{.PublicURL}}');this.textContent='copied!'">
+          copy
+        </button>
+      </div>
+    {{else}}
+      <p class="empty">no public url configured for this bucket (set BLOBS_PUBLIC_URLS)</p>
+    {{end}}
+  </section>
+
+  <section class="detail-actions">
+    <h3>actions</h3>
+    <form method="POST" action="/b/{{.Bucket}}/replace" enctype="multipart/form-data" class="form">
+      <input type="hidden" name="key" value="{{.Key}}">
+      <label for="file">replace file (keeps same key)</label>
+      <input type="file" id="file" name="file" required>
+      <button type="submit">replace</button>
+    </form>
+
+    <form method="POST" action="/b/{{.Bucket}}/delete" class="form"
+          onsubmit="return confirm('Delete {{.Name}}?');">
+      <input type="hidden" name="key" value="{{.Key}}">
+      <input type="hidden" name="returnTo" value="{{.ParentHref}}">
+      <button type="submit" class="danger">delete</button>
+    </form>
+  </section>
+{{end}}

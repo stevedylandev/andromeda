@@ -1,0 +1,80 @@
+# GoReleaser config for blobs.
+# Triggered by tags shaped like `blobs/vX.Y.Z`.
+version: 2
+
+project_name: blobs
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: blobs
+    main: .
+    binary: blobs
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: blobs
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- if eq .Os "darwin" }}macos{{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64{{- else }}{{ .Arch }}{{ end }}
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "0.0.0-snapshot-{{.ShortCommit}}"
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  disable: true
+
+brews:
+  - name: blobs
+    repository:
+      owner: stevedylandev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    url_template: "https://github.com/stevedylandev/andromeda/releases/download/blobs/v{{ .Version }}/{{ .ArtifactName }}"
+    homepage: "https://github.com/stevedylandev/andromeda"
+    description: "Self-hosted browser for S3-compatible blob storage (R2, AWS, Minio, B2)"
+    license: "MIT"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "brew: blobs {{ .Tag }}"
+    directory: Formula
+    install: |
+      bin.install "blobs"

@@ -96,6 +96,15 @@ services:
       - easel_data:/data
     env_file: apps/easel/.env
 
+  blobs:
+    image: ghcr.io/stevedylandev/andromeda/blobs:latest
+    restart: unless-stopped
+    ports:
+      - "3838:3000"
+    volumes:
+      - blobs_data:/data
+    env_file: apps/blobs/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
@@ -107,6 +116,7 @@ services:
       - library_data:/data/library:ro
       - bookmarks_data:/data/bookmarks:ro
       - easel_data:/data/easel:ro
+      - blobs_data:/data/blobs:ro
     env_file: apps/backup/.env
     restart: unless-stopped
 
@@ -138,3 +148,6 @@ volumes:
   easel_data:
     external: true
     name: easel_easel-data
+  blobs_data:
+    external: true
+    name: blobs_blobs-data
