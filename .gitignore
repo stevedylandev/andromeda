@@ -18,6 +18,7 @@ docs/node_modules
 *.out
 coverage.*
 vendor/
+apps/blobs/blobs
 apps/bookmarks/bookmarks
 apps/cellar/cellar
 apps/easel/easel

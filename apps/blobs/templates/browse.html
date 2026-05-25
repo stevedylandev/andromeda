@@ -1,0 +1,89 @@
+{{define "browse.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.Bucket}}/{{.Prefix}}{{end}}
+{{define "content"}}
+  <nav class="crumbs">
+    <a href="/buckets">buckets</a>
+    {{range .Crumbs}}<span class="crumb-sep">/</span><a href="{{.Href}}">{{.Label}}</a>{{end}}
+    <span class="crumb-sep">/</span>
+  </nav>
+
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+
+  <div class="search-row">
+    <input type="search" id="filter" placeholder="filter folders + files in this view…" autocomplete="off">
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+
+  <div class="actions-row">
+    <form method="POST" action="/b/{{.Bucket}}/upload" enctype="multipart/form-data" class="form inline-actions">
+      <input type="hidden" name="prefix" value="{{.Prefix}}">
+      <label for="file">upload (max {{.MaxUploadMB}}MB, multiple allowed)</label>
+      <input type="file" id="file" name="file" multiple required>
+      <button type="submit">upload</button>
+    </form>
+
+    <form method="POST" action="/b/{{.Bucket}}/mkdir" class="form inline-actions">
+      <input type="hidden" name="prefix" value="{{.Prefix}}">
+      <label for="name">new folder</label>
+      <input type="text" id="name" name="name" placeholder="folder-name" required>
+      <button type="submit">create</button>
+    </form>
+  </div>
+
+  {{if and (not .Folders) (not .Files) (not .ParentHref)}}
+    <p class="empty">empty bucket</p>
+  {{end}}
+
+  <div class="admin-list" id="entry-list">
+    {{if .ParentHref}}
+      <a href="{{.ParentHref}}" class="admin-list-item" data-parent="1">
+        <div class="admin-list-info">
+          <span class="admin-list-title">../</span>
+        </div>
+      </a>
+    {{end}}
+    {{range .Folders}}
+      <a href="{{.Href}}" class="admin-list-item" data-name="{{.Name}}">
+        <div class="admin-list-info">
+          <span class="admin-list-title">{{.Name}}/</span>
+        </div>
+      </a>
+    {{end}}
+    {{range .Files}}
+      <a href="{{.DetailHref}}" class="admin-list-item" data-name="{{.Name}}">
+        {{if .IsImage}}<img src="{{.PreviewSrc}}" class="file-thumbnail" alt="{{.Name}}" loading="lazy">{{end}}
+        <div class="admin-list-info">
+          <span class="admin-list-title">{{.Name}}</span>
+          <div class="admin-list-meta">
+            <span class="admin-list-date">{{.SizeHuman}}</span>
+            <span class="admin-list-date">{{.LastModified}}</span>
+          </div>
+        </div>
+      </a>
+    {{end}}
+  </div>
+
+  <script>
+    (function () {
+      var input = document.getElementById('filter');
+      var list = document.getElementById('entry-list');
+      var count = document.getElementById('filter-count');
+      if (!input || !list) return;
+      var items = list.querySelectorAll('.admin-list-item[data-name]');
+      var total = items.length;
+      function apply() {
+        var q = input.value.trim().toLowerCase();
+        var shown = 0;
+        items.forEach(function (el) {
+          var name = (el.getAttribute('data-name') || '').toLowerCase();
+          var match = q === '' || name.indexOf(q) !== -1;
+          el.style.display = match ? '' : 'none';
+          if (match) shown++;
+        });
+        count.textContent = q ? shown + ' / ' + total : '';
+      }
+      input.addEventListener('input', apply);
+    })();
+  </script>
+{{end}}

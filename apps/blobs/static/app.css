@@ -1,0 +1,173 @@
+/* blobs — app-specific styles.
+ * Shared reset / tokens / components come from /assets/darkmatter.css.
+ */
+
+body {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-list-title,
+.admin-list-meta,
+.admin-list-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-list-item {
+  min-width: 0;
+}
+
+code {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-bottom: 1rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.crumbs a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.crumbs a:hover {
+  opacity: 0.7;
+}
+
+.crumb-sep {
+  opacity: 0.5;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.search-row input[type="search"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.filter-count {
+  font-size: 12px;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.inline-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 240px;
+}
+
+.file-thumbnail {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border: 1px solid #333;
+}
+
+.admin-list-item img.file-thumbnail {
+  margin-right: 0.75rem;
+}
+
+.detail-preview {
+  margin: 1rem 0;
+  border: 1px solid #333;
+  padding: 0.5rem;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.detail-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 60vh;
+  height: auto;
+}
+
+.detail-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  margin: 1rem 0;
+  font-size: 13px;
+}
+
+.detail-meta dt {
+  opacity: 0.5;
+  text-transform: lowercase;
+}
+
+.detail-meta dd {
+  margin: 0;
+  word-break: break-all;
+}
+
+.detail-meta code {
+  font-size: 12px;
+  background: #1e1c1f;
+  padding: 1px 4px;
+}
+
+.detail-links,
+.detail-actions {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+
+.detail-links h3,
+.detail-actions h3 {
+  font-size: 14px;
+  margin-bottom: 0.75rem;
+  opacity: 0.7;
+  text-transform: lowercase;
+}
+
+.link-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.link-row a {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.detail-actions .form {
+  margin-bottom: 1rem;
+}
+
+button.danger,
+.link-button.danger {
+  opacity: 0.8;
+}

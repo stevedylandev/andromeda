@@ -19,7 +19,7 @@ jobs:
       - name: Determine which apps to build
         id: filter
         run: |
-          ALL='["backup","bookmarks","cellar","easel","feeds","jotts","library","og","posts","shrink","sipp"]'
+          ALL='["backup","blobs","bookmarks","cellar","easel","feeds","jotts","library","og","posts","shrink","sipp"]'
 
           changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
@@ -29,7 +29,7 @@ jobs:
           fi
 
           apps=()
-          for app in backup bookmarks cellar easel feeds jotts library og posts shrink sipp; do
+          for app in backup blobs bookmarks cellar easel feeds jotts library og posts shrink sipp; do
             if echo "$changed" | grep -q "^apps/${app}/"; then
               apps+=("\"${app}\"")
             fi

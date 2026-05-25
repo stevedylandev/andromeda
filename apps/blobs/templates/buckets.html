@@ -1,0 +1,24 @@
+{{define "buckets.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}blobs — buckets{{end}}
+{{define "content"}}
+  <div class="admin-toolbar">
+    <h2>buckets</h2>
+  </div>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  {{if not .Buckets}}
+    <p class="empty">no buckets visible to these credentials</p>
+  {{else}}
+    <div class="admin-list">
+      {{range .Buckets}}
+        <a href="/b/{{.Name}}/browse/" class="admin-list-item">
+          <div class="admin-list-info">
+            <span class="admin-list-title">{{.Name}}/</span>
+            <div class="admin-list-meta">
+              <span class="admin-list-date">{{.CreationDate}}</span>
+            </div>
+          </div>
+        </a>
+      {{end}}
+    </div>
+  {{end}}
+{{end}}
