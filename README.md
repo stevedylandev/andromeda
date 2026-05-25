@@ -20,6 +20,7 @@ SQLite.
 | [**Bookmarks**](apps/bookmarks) | Minimal link saver with categories and JSON API | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DZfr5P?referralCode=JGcIp6) |
 | [**Library**](apps/library) | Minimal book tracker with Google Books search | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tepdeI?referralCode=JGcIp6) |
 | [**Easel**](apps/easel) | Daily public-domain painting from the Art Institute of Chicago | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/0DpuRE?referralCode=JGcIp6) |
+| [**Blobs**](apps/blobs) | Minimal web browser for S3-compatible blob storage | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/3CH6O6?referralCode=JGcIp6) |
 
 ## Shared packages
 

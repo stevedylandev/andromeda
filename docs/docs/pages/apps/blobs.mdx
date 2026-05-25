@@ -1,0 +1,77 @@
+# Blobs
+
+Single-owner web browser for S3-compatible blob storage. Built for Cloudflare R2 but works with any S3-compatible endpoint (AWS S3, MinIO, Backblaze B2, etc).
+
+- Single Go binary with embedded assets
+- Password authentication with session cookies
+- Lists every bucket the credentials can see
+- Folder/file navigation with breadcrumbs
+- Inline image thumbnails in folder view
+- File detail page with metadata, presigned download link, and optional static public URL
+- Upload (multi-file), replace, delete, and create folder actions
+- SQLite for session storage
+
+## Configure
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `BLOBS_PASSWORD` | Password for admin login | `changeme` |
+| `BLOBS_DB_PATH` | SQLite database file path | `blobs.sqlite` |
+| `HOST` | Server bind address | `127.0.0.1` |
+| `PORT` | Server port | `3000` |
+| `BLOBS_COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+| `BLOBS_MAX_UPLOAD_MB` | Single-shot upload cap in MB | `100` |
+| `BLOBS_PRESIGN_TTL_SECONDS` | Presigned download URL lifetime in seconds | `3600` |
+| `S3_ENDPOINT` | Generic S3 endpoint (omit for R2 shortcut) | _(unset)_ |
+| `S3_REGION` | S3 region | `auto` |
+| `S3_ACCESS_KEY_ID` | Access key ID | _(unset)_ |
+| `S3_SECRET_ACCESS_KEY` | Secret access key | _(unset)_ |
+| `R2_ACCOUNT_ID` | Cloudflare account ID (enables R2 endpoint shortcut) | _(unset)_ |
+| `R2_ACCESS_KEY_ID` | R2 access key ID (fallback for `S3_ACCESS_KEY_ID`) | _(unset)_ |
+| `R2_SECRET_ACCESS_KEY` | R2 secret access key (fallback for `S3_SECRET_ACCESS_KEY`) | _(unset)_ |
+| `BLOBS_PUBLIC_URLS` | Per-bucket public URL prefixes (`bucket=url,bucket=url`) | _(unset)_ |
+
+Pick one credential style: generic S3 (`S3_ENDPOINT` + `S3_ACCESS_KEY_ID` + `S3_SECRET_ACCESS_KEY`) or Cloudflare R2 (`R2_ACCOUNT_ID` + `S3_ACCESS_KEY_ID` + `S3_SECRET_ACCESS_KEY`). When a bucket appears in `BLOBS_PUBLIC_URLS`, the detail page surfaces a permanent public URL alongside the presigned link.
+
+## Deploy
+
+### Railway
+
+The easiest way to deploy Blobs is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough of the process. Blobs requires `BLOBS_PASSWORD` and either the `S3_*` or `R2_*` credentials to be set during the configure step.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/3CH6O6?referralCode=JGcIp6)
+
+### Docker
+
+```bash
+cd apps/blobs
+cp .env.example .env
+# Edit .env with your password and S3/R2 credentials
+docker compose up -d
+```
+
+This will start Blobs on port `3000` with a persistent volume for the SQLite session database.
+
+### Binary
+
+Install with Homebrew:
+
+```bash
+brew install stevedylandev/tap/blobs
+```
+
+Or grab a prebuilt binary from the [releases page](https://github.com/stevedylandev/andromeda/releases?q=blobs&expanded=true).
+
+You can also build from source:
+
+```bash
+cd apps/blobs && go build .
+```
+
+The resulting binary is self-contained with all assets embedded. Copy it to your server with a configured `.env` file and run it directly.
+
+## Use
+
+Log in at `/login` with your configured password. The buckets page lists every bucket your credentials can see. Click into a bucket to browse folders and files, upload new objects, replace or delete existing ones, and create folder markers. The file detail page surfaces metadata plus a presigned download URL (expires after `BLOBS_PRESIGN_TTL_SECONDS`) and, if configured via `BLOBS_PUBLIC_URLS`, a permanent public URL.
