@@ -18,10 +18,18 @@ type listingLoadedMsg struct {
 }
 
 type previewLoadedMsg struct {
+	Seq     int
 	Bucket  string
 	Key     string
 	Content string // pre-rendered ANSI (image) or text
 	Err     error
+}
+
+type previewDebounceMsg struct {
+	Seq    int
+	Bucket string
+	Key    string
+	W, H   int
 }
 
 type deletedMsg struct {

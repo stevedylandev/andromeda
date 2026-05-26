@@ -42,15 +42,22 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmd := setItemsFromListing(&m.browseList, msg.Prefix, msg.Folders, msg.Files)
 		return m, tea.Batch(cmd, m.maybePreviewCmd())
 
+	case previewDebounceMsg:
+		if msg.Seq != m.previewSeq || msg.Bucket != m.currentBucket {
+			return m, nil
+		}
+		return m, loadPreviewCmd(m.s3, m.previewProto, msg.Seq, msg.Bucket, msg.Key, msg.W, msg.H)
+
 	case previewLoadedMsg:
+		if msg.Seq != m.previewSeq || msg.Bucket != m.currentBucket {
+			return m, nil
+		}
 		if msg.Err != nil {
 			m.preview.SetContent("preview error: " + msg.Err.Error())
 			return m, nil
 		}
-		if msg.Bucket == m.currentBucket {
-			m.preview.SetContent(msg.Content)
-			m.preview.GotoTop()
-		}
+		m.preview.SetContent(msg.Content)
+		m.preview.GotoTop()
 		return m, nil
 
 	case deletedMsg:
@@ -288,7 +295,7 @@ func (m tuiModel) handleBrowseKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m tuiModel) maybePreviewCmd() tea.Cmd {
+func (m *tuiModel) maybePreviewCmd() tea.Cmd {
 	if !m.showPreview {
 		return nil
 	}
@@ -297,7 +304,6 @@ func (m tuiModel) maybePreviewCmd() tea.Cmd {
 		m.preview.SetContent("")
 		return nil
 	}
-	w := m.preview.Width()
-	h := m.preview.Height()
-	return loadPreviewCmd(m.s3, m.previewProto, m.currentBucket, f.Key, w, h)
+	m.previewSeq++
+	return debouncePreviewCmd(m.previewSeq, m.currentBucket, f.Key, m.preview.Width(), m.preview.Height())
 }

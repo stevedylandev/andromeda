@@ -35,37 +35,45 @@ func loadListingCmd(s3 *S3Client, bucket, prefix string) tea.Cmd {
 
 const previewMaxBytes = 5 << 20
 
-func loadPreviewCmd(s3 *S3Client, proto preview.Protocol, bucket, key string, w, h int) tea.Cmd {
+func loadPreviewCmd(s3 *S3Client, proto preview.Protocol, seq int, bucket, key string, w, h int) tea.Cmd {
 	return func() tea.Msg {
 		if !isImageName(key) {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Content: previewMetaText(key, 0, "")}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Content: previewMetaText(key, 0, "")}
 		}
 		if proto == preview.ProtoNone {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Content: previewMetaText(key, 0, "no preview backend")}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Content: previewMetaText(key, 0, "no preview backend (install chafa)")}
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 		body, meta, err := s3.Get(ctx, bucket, key)
 		if err != nil {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Err: err}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Err: err}
 		}
 		defer body.Close()
 		if meta != nil && meta.Size > previewMaxBytes {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Content: previewMetaText(key, meta.Size, "too large to preview")}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Content: previewMetaText(key, meta.Size, "too large to preview")}
 		}
 		buf, err := io.ReadAll(io.LimitReader(body, previewMaxBytes+1))
 		if err != nil {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Err: err}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Err: err}
 		}
 		if len(buf) > previewMaxBytes {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Content: previewMetaText(key, int64(len(buf)), "too large to preview")}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Content: previewMetaText(key, int64(len(buf)), "too large to preview")}
 		}
 		rendered, rerr := preview.Render(proto, buf, w, h)
 		if rerr != nil {
-			return previewLoadedMsg{Bucket: bucket, Key: key, Content: previewMetaText(key, int64(len(buf)), "render: "+rerr.Error())}
+			return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Content: previewMetaText(key, int64(len(buf)), "render: "+rerr.Error())}
 		}
-		return previewLoadedMsg{Bucket: bucket, Key: key, Content: rendered}
+		return previewLoadedMsg{Seq: seq, Bucket: bucket, Key: key, Content: rendered}
 	}
+}
+
+const previewDebounce = 150 * time.Millisecond
+
+func debouncePreviewCmd(seq int, bucket, key string, w, h int) tea.Cmd {
+	return tea.Tick(previewDebounce, func(time.Time) tea.Msg {
+		return previewDebounceMsg{Seq: seq, Bucket: bucket, Key: key, W: w, H: h}
+	})
 }
 
 func previewMetaText(key string, size int64, note string) string {

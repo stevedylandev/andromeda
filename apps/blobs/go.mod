@@ -10,12 +10,14 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.41.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.16
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.101.0
+	github.com/charmbracelet/x/mosaic v0.0.0-20260525135217-abeec2b8bf0b
 	github.com/stevedylandev/andromeda/pkg/auth v0.0.0
 	github.com/stevedylandev/andromeda/pkg/config v0.0.0
 	github.com/stevedylandev/andromeda/pkg/darkmatter v0.0.0
 	github.com/stevedylandev/andromeda/pkg/sqlite v0.0.0
 	github.com/stevedylandev/andromeda/pkg/tui v0.0.0
 	github.com/stevedylandev/andromeda/pkg/web v0.0.0
+	golang.org/x/image v0.41.0
 	golang.org/x/term v0.36.0
 )
 

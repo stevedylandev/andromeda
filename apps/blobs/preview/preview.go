@@ -1,116 +1,81 @@
-// Package preview renders images inline in supported terminals.
-//
-// Detection cascade: kitty/ghostty graphics → iTerm2 inline images →
-// chafa fallback → metadata-only text.
+// Package preview renders images as half-block ANSI text suitable for
+// embedding in a Bubble Tea viewport. Uses charmbracelet/x/mosaic.
 package preview
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	"github.com/charmbracelet/x/mosaic"
+	_ "golang.org/x/image/webp"
 )
 
+// Protocol is kept for API compatibility with the rest of the TUI.
+// Only two states matter now: available or not.
 type Protocol int
 
 const (
 	ProtoNone Protocol = iota
-	ProtoKitty
-	ProtoITerm
-	ProtoChafa
+	ProtoMosaic
 )
 
-// Detect inspects env vars to pick a preview protocol.
-// Order: explicit BLOBS_PREVIEW override → kitty/ghostty → iTerm2/wezterm → chafa binary.
-func Detect() Protocol {
-	if v := strings.ToLower(os.Getenv("BLOBS_PREVIEW")); v != "" {
-		switch v {
-		case "kitty":
-			return ProtoKitty
-		case "iterm", "iterm2":
-			return ProtoITerm
-		case "chafa":
-			if _, err := exec.LookPath("chafa"); err == nil {
-				return ProtoChafa
-			}
-		case "none", "off":
-			return ProtoNone
-		}
-	}
-	if os.Getenv("KITTY_WINDOW_ID") != "" || os.Getenv("GHOSTTY_RESOURCES_DIR") != "" {
-		return ProtoKitty
-	}
-	switch strings.ToLower(os.Getenv("TERM_PROGRAM")) {
-	case "iterm.app", "wezterm":
-		return ProtoITerm
-	}
-	if strings.HasPrefix(os.Getenv("TERM"), "xterm-kitty") {
-		return ProtoKitty
-	}
-	if _, err := exec.LookPath("chafa"); err == nil {
-		return ProtoChafa
-	}
-	return ProtoNone
-}
+// Detect always returns ProtoMosaic — mosaic is pure Go and has no
+// terminal/runtime requirements beyond truecolor support.
+func Detect() Protocol { return ProtoMosaic }
 
-// Render returns a string to print into a TUI viewport / pane.
-// w, h are character cell dimensions of the target pane.
-func Render(p Protocol, img []byte, w, h int) (string, error) {
-	switch p {
-	case ProtoKitty:
-		return kittyEscape(img), nil
-	case ProtoITerm:
-		return itermEscape(img), nil
-	case ProtoChafa:
-		return chafaRender(img, w, h)
-	default:
-		return "", fmt.Errorf("no preview protocol available")
+// Render decodes img and returns a half-block ANSI rendering sized to
+// cols x rows character cells.
+func Render(p Protocol, img []byte, cols, rows int) (string, error) {
+	if p != ProtoMosaic {
+		return "", fmt.Errorf("preview disabled")
 	}
-}
-
-func kittyEscape(img []byte) string {
-	enc := base64.StdEncoding.EncodeToString(img)
-	const chunk = 4096
-	var b strings.Builder
-	for i := 0; i < len(enc); i += chunk {
-		end := i + chunk
-		if end > len(enc) {
-			end = len(enc)
-		}
-		more := 1
-		if end == len(enc) {
-			more = 0
-		}
-		if i == 0 {
-			fmt.Fprintf(&b, "\x1b_Ga=T,f=100,m=%d;%s\x1b\\", more, enc[i:end])
-		} else {
-			fmt.Fprintf(&b, "\x1b_Gm=%d;%s\x1b\\", more, enc[i:end])
-		}
+	if cols <= 0 {
+		cols = 40
 	}
-	return b.String()
-}
-
-func itermEscape(img []byte) string {
-	enc := base64.StdEncoding.EncodeToString(img)
-	return fmt.Sprintf("\x1b]1337;File=inline=1;preserveAspectRatio=1:%s\x07", enc)
-}
-
-func chafaRender(img []byte, w, h int) (string, error) {
-	if w <= 0 {
-		w = 40
+	if rows <= 0 {
+		rows = 20
 	}
-	if h <= 0 {
-		h = 20
-	}
-	size := fmt.Sprintf("%dx%d", w, h)
-	cmd := exec.Command("chafa", "--size", size, "--format", "symbols", "-")
-	cmd.Stdin = bytes.NewReader(img)
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	if err := cmd.Run(); err != nil {
+	decoded, _, err := image.Decode(bytes.NewReader(img))
+	if err != nil {
 		return "", err
 	}
-	return out.String(), nil
+	fitCols, fitRows := fitAspect(decoded.Bounds().Dx(), decoded.Bounds().Dy(), cols, rows)
+	// mosaic's Width/Height are pixel dims; it emits one cell per 2 pixels.
+	m := mosaic.New().
+		Width(fitCols).
+		Height(fitRows).
+		Symbol(mosaic.All).
+		Dither(true)
+	return m.Render(decoded), nil
+}
+
+// fitAspect returns the largest (cols, rows) inside the maxCols x maxRows
+// box that preserves the image's aspect ratio. Assumes terminal cells are
+// roughly 1:2 (width:height), so one row covers about 2 image-units of
+// vertical space per 1 image-unit horizontal per column.
+func fitAspect(imgW, imgH, maxCols, maxRows int) (int, int) {
+	if imgW <= 0 || imgH <= 0 {
+		return maxCols, maxRows
+	}
+	const cellAspect = 2.0 // cell height / cell width
+	imgAspect := float64(imgW) / float64(imgH)
+	// rows of "image pixels" per cell column to keep aspect:
+	// cols/rows = imgAspect * cellAspect
+	cols := maxCols
+	rows := int(float64(cols) / imgAspect / cellAspect)
+	if rows > maxRows {
+		rows = maxRows
+		cols = int(float64(rows) * imgAspect * cellAspect)
+	}
+	if cols < 1 {
+		cols = 1
+	}
+	if rows < 1 {
+		rows = 1
+	}
+	return cols, rows
 }

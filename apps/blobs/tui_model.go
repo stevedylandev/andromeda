@@ -39,6 +39,7 @@ type tuiModel struct {
 	preview      viewport.Model
 	previewProto preview.Protocol
 	showPreview  bool
+	previewSeq   int
 
 	currentBucket string
 	currentPrefix string
