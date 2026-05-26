@@ -1,27 +1,48 @@
 # blobs
 
-Single-owner web browser for S3-compatible blob storage. Built for Cloudflare R2 but works with any S3-compatible endpoint (AWS S3, MinIO, Backblaze B2, etc).
+Self-hosted browser, CLI, and TUI for S3-compatible blob storage. Built for Cloudflare R2 but works with any S3-compatible endpoint (AWS S3, MinIO, Backblaze B2, etc).
+
+Single binary, three modes:
+
+- `blobs server` — web UI (password-protected, session cookies)
+- `blobs` (no args) — Yazi-style TUI for browsing buckets, copying URLs, opening files, previewing images inline
+- `blobs <file>` — one-shot upload that prints the resulting URL to stdout
 
 Features:
 
-- Password login + session cookie auth
 - Lists every bucket the credentials can see
-- Folder/file navigation with breadcrumbs
-- Inline image thumbnails in folder view
-- File detail page: metadata, presigned download link, optional static public URL
-- Upload (multi-file), replace, delete, create folder
+- Folder/file navigation with breadcrumbs (web) or two-pane preview (TUI)
+- Inline image previews via Kitty/Ghostty/iTerm2 graphics protocols (or `chafa` fallback)
+- Presigned download URLs + optional permanent public URL map
+- Upload (multi-file in web, single-file in CLI), replace, delete, create folder
 
-## Quick start
+## Quick start (server)
 
 ```sh
 cp .env.example .env
 # edit .env — set BLOBS_PASSWORD and either:
 #   S3_ENDPOINT + S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY  (generic)
 #   R2_ACCOUNT_ID + S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY  (R2)
-go run .
+go run . server
 ```
 
 Visit `http://127.0.0.1:3000` and log in.
+
+## CLI / TUI
+
+The same binary also speaks directly to S3 (no server required):
+
+```sh
+blobs auth                          # interactive: writes ~/.config/blobs/config.toml
+blobs                               # TUI — bucket picker then folder browse
+blobs -b my-bucket                  # TUI — jump straight into my-bucket
+blobs ./photo.png                   # upload to BLOBS_DEFAULT_BUCKET, print URL
+blobs -b my-bucket --prefix imgs/ ./photo.png
+```
+
+The TUI auto-detects Kitty/Ghostty/iTerm2 graphics protocols for inline image previews and falls back to `chafa` when available. Override with `BLOBS_PREVIEW={kitty|iterm|chafa|none}`.
+
+Key bindings in browse view: `enter`/`l` open, `h`/`esc` back, `y` copy URL (public if mapped, else presigned), `Y` force public, `K` copy S3 key, `o` open in browser, `u` upload, `d` delete, `r` refresh, `b` jump to buckets, `space` toggle preview, `?` help, `q` quit.
 
 ## Configuration
 
