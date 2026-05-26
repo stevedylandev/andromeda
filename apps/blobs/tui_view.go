@@ -27,10 +27,15 @@ func (m tuiModel) View() tea.View {
 		return tea.View{Content: "loading...", AltScreen: true}
 	}
 
+	bodyH := m.height - 2
+	if bodyH < 5 {
+		bodyH = 5
+	}
+
 	var body string
 	switch m.state {
 	case stateBuckets:
-		body = paneBorderActive.Width(m.width - paneFrameW()).Height(m.height - 2 - paneFrameH()).Render(m.bucketsList.View())
+		body = paneBorderActive.Width(m.width).Height(bodyH).Render(m.bucketsList.View())
 	case stateBrowse:
 		body = m.renderBrowse()
 	}
@@ -78,16 +83,19 @@ func (m tuiModel) View() tea.View {
 
 func (m tuiModel) renderBrowse() string {
 	bodyH := m.height - 2
+	if bodyH < 5 {
+		bodyH = 5
+	}
 	if !m.showPreview {
-		return paneBorderActive.Width(m.width - paneFrameW()).Height(bodyH - paneFrameH()).Render(m.browseList.View())
+		return paneBorderActive.Width(m.width).Height(bodyH).Render(m.browseList.View())
 	}
 	listW := m.width / 2
 	previewW := m.width - listW
-	left := paneBorderActive.Width(listW - paneFrameW()).Height(bodyH - paneFrameH()).Render(m.browseList.View())
+	left := paneBorderActive.Width(listW).Height(bodyH).Render(m.browseList.View())
 	header := tuiTitleStyle.Render("preview")
 	previewBody := m.preview.View()
 	inner := lipgloss.JoinVertical(lipgloss.Left, header, previewBody)
-	right := paneBorder.Width(previewW - paneFrameW()).Height(bodyH - paneFrameH()).Render(inner)
+	right := paneBorder.Width(previewW).Height(bodyH).Render(inner)
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 }
 

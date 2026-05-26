@@ -179,7 +179,7 @@ func (m *tuiModel) applyLayout() {
 		if m.showPreview {
 			pw := m.width - listW
 			m.preview.SetWidth(max(pw-fw, 1))
-			m.preview.SetHeight(max(bodyH-fh, 1))
+			m.preview.SetHeight(max(bodyH-fh-1, 1))
 		}
 	}
 }
