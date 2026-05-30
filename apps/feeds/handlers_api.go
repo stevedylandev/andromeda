@@ -55,11 +55,11 @@ func (a *App) createSubscriptionAPI(w http.ResponseWriter, r *http.Request) {
 	}
 	sub, err := a.createSubscription(r.Context(), body, false)
 	if err != nil {
-		status := http.StatusBadRequest
 		if isAlreadySubscribedError(err) {
-			status = http.StatusConflict
+			w.WriteHeader(http.StatusNoContent)
+			return
 		}
-		web.WriteError(w, status, err.Error())
+		web.WriteError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	web.WriteJSON(w, http.StatusCreated, map[string]any{"subscription": toSubscriptionView(*sub)})
