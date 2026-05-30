@@ -96,7 +96,14 @@ func (m tuiModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKey(msg)
 	}
 
-	return m, nil
+	var cmd tea.Cmd
+	switch m.state {
+	case stateBuckets:
+		m.bucketsList, cmd = m.bucketsList.Update(msg)
+	case stateBrowse:
+		m.browseList, cmd = m.browseList.Update(msg)
+	}
+	return m, cmd
 }
 
 func (m tuiModel) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
