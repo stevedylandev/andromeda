@@ -1,7 +1,0 @@
-- [ ] Add current weather to /now posts
-  - General flow
-    - Creating a new post with attribute `weather` and value `{conditions},{temperature},{city},{state}`
-    - If no value is given, create value using default location with fresh API call
-  - Store as new column in db called `weather`
-    - `"{conditions},{temperature},{city},{state}"`
-  - Customize the conditions mapping vs literal placement
