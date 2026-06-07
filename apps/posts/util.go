@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"regexp"
 )
 
 type parsedAttributes struct {
@@ -357,37 +357,50 @@ func titleFromFilename(name string) string {
 	return strings.ToUpper(cleaned[:1]) + cleaned[1:]
 }
 
+var weatherClient = &http.Client{Timeout: 10 * time.Second}
+
+var qualifierRE = regexp.MustCompile(`(?i)^(slight chance|chance|isolated|scattered|patchy|areas)\s+(of\s+)?`)
+
 func getWeather(location string) string {
 	if location == "" {
 		return ""
 	}
 	// Fetch Points data using lat,long
 	pointURL := fmt.Sprintf("https://api.weather.gov/points/%s", location)
-	resp, err := http.Get(pointURL)
+	resp, err := weatherClient.Get(pointURL)
 	if err != nil {
 		fmt.Printf("Error fetching pointUrl: %s", err.Error())
 		return ""
 	}
 	defer resp.Body.Close()
 	var weatherPoint WeatherPointResponse
-	json.NewDecoder(resp.Body).Decode(&weatherPoint)
+	if err := json.NewDecoder(resp.Body).Decode(&weatherPoint); err != nil {
+		fmt.Printf("Error decoding pointUrl: %s", err.Error())
+		return ""
+	}
 	forecastURL := weatherPoint.Properties.ForecastHourly
 	city := weatherPoint.Properties.RelativeLocation.Properties.City
 	state := weatherPoint.Properties.RelativeLocation.Properties.State
 
 	// Forcast using points data
-	forecastResp, err := http.Get(forecastURL)
+	forecastResp, err := weatherClient.Get(forecastURL)
 	if err != nil {
 		fmt.Printf("Error fetching forecast: %s", err.Error())
 		return ""
 	}
-	defer resp.Body.Close()
+	defer forecastResp.Body.Close()
 	var weatherForecast WeatherForecastResponse
-	json.NewDecoder(forecastResp.Body).Decode(&weatherForecast)
-	temp := strconv.Itoa(weatherForecast.Properties.Periods[0].Temperature)
-	conditions := weatherForecast.Properties.Periods[0].ShortForecast
-	var qualifierRE = regexp.MustCompile(`(?i)^(slight chance|chance|isolated|scattered|patchy|areas)\s+(of\s+)?`)
-	formattedConditions := strings.TrimSpace(qualifierRE.ReplaceAllString(conditions, ""))
+	if err := json.NewDecoder(forecastResp.Body).Decode(&weatherForecast); err != nil {
+		fmt.Printf("Error decoding forecast: %s", err.Error())
+		return ""
+	}
+	if len(weatherForecast.Properties.Periods) == 0 {
+		fmt.Printf("Error: no forecast periods returned for %q", location)
+		return ""
+	}
+	period := weatherForecast.Properties.Periods[0]
+	temp := strconv.Itoa(period.Temperature)
+	formattedConditions := strings.TrimSpace(qualifierRE.ReplaceAllString(period.ShortForecast, ""))
 	weather := fmt.Sprintf("%s,%s,%s,%s", formattedConditions, temp, city, state)
 	return weather
 }
