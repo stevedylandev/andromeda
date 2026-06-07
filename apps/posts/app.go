@@ -38,6 +38,7 @@ type Post struct {
 	MetaImage       *string
 	Lang            string
 	Tags            *string
+	Weather         *string
 	Content         string
 	Status          string
 	CreatedAt       string
@@ -251,6 +252,7 @@ type postPageData struct {
 	SiteURL         string
 	HeaderHTML      template.HTML
 	FooterHTML      template.HTML
+	Weather 				Weather
 }
 
 type pagePageData struct {
@@ -305,6 +307,7 @@ type adminSettingsPageData struct {
 	OGImageURL      string
 	CustomHeader    string
 	CustomFooter    string
+	DefaultLocation string
 	Success         bool
 }
 

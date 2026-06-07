@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"fmt"
 )
 
 func (a *App) site() siteContext {
@@ -95,13 +96,22 @@ func (a *App) publicPost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
+	var weather Weather
+	if post.Weather != nil {
+		w, err := formatWeather(*post.Weather)
+		if err != nil {
+			fmt.Printf("Problem formatting weather: %s", err.Error())
+		} else {
+			weather = w
+		}
+	}
 	ctx := a.site()
 	rendered := renderMarkdown(post.Content)
 	a.renderPage(w, "post.html", postPageData{
 		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Post: *post,
 		RenderedContent: template.HTML(rendered),
 		FaviconURL:      ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
-		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
+		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML, Weather: weather,
 	})
 }
 

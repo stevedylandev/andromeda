@@ -13,7 +13,8 @@ slug: {{$p.Slug}}
 {{end}}{{if $p.Tags}}tags: {{$p.TagsStr}}
 {{end}}{{if $p.Alias}}alias: {{$p.AliasStr}}
 {{end}}{{if $p.MetaImage}}meta_image: {{$p.MetaImageStr}}
-{{end}}{{if $p.MetaDescription}}description: {{$p.MetaDescriptionStr}}{{end}}</textarea>
+{{end}}{{if $p.MetaDescription}}description: {{$p.MetaDescriptionStr}}
+{{end}}{{if $p.Weather}}weather: {{$p.Weather}}{{end}}</textarea>
       <details class="available-fields">
         <summary>available fields</summary>
         <div class="fields-list">
@@ -25,6 +26,7 @@ slug: {{$p.Slug}}
           <span>alias: /old/path</span>
           <span>meta_image: https://example.com/image.jpg</span>
           <span>description: A short summary of the post</span>
+          <span>weather: Conditions,Degrees,City,State<span>
         </div>
       </details>
       <label for="content">content</label>
@@ -53,6 +55,7 @@ slug: {{$p.Slug}}
           <span>alias: /old/path</span>
           <span>meta_image: https://example.com/image.jpg</span>
           <span>description: A short summary of the post</span>
+          <span>weather: Conditions,Degrees,City,State<span>
         </div>
       </details>
       <label for="content">content</label>
