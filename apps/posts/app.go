@@ -252,6 +252,7 @@ type postPageData struct {
 	SiteURL         string
 	HeaderHTML      template.HTML
 	FooterHTML      template.HTML
+	Weather 				Weather
 }
 
 type pagePageData struct {

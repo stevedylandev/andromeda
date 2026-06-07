@@ -79,7 +79,6 @@ textarea.attributes-textarea {
 
 .post-date {
   font-size: 12px;
-  opacity: 0.5;
 }
 
 .post-excerpt {
@@ -92,6 +91,18 @@ textarea.attributes-textarea {
   display: flex;
   gap: 0.4rem;
   flex-wrap: wrap;
+}
+
+.post-weather {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+.post-weather svg {
+  height: 16px;
 }
 
 /* Post header (public single) */

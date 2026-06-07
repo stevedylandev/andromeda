@@ -152,6 +152,14 @@ func (a *App) adminUpdatePost(w http.ResponseWriter, r *http.Request) {
 	if t := strings.TrimSpace(attrs.PublishedDate); t != "" {
 		pubDate = &t
 	}
+		defaultLocation, err := getSetting(a.DB, "default_location")
+	if err != nil {
+		defaultLocation = ""
+	}
+	weather := getWeather(defaultLocation)
+	if newWeather := strings.TrimSpace(attrs.Weather); newWeather != "" {
+		weather = newWeather
+	}
 	in := PostInput{
 		Title: optStr(title), Slug: slug, Content: r.FormValue("content"),
 		Status: status, Alias: optStr(attrs.Alias),
@@ -159,6 +167,7 @@ func (a *App) adminUpdatePost(w http.ResponseWriter, r *http.Request) {
 		MetaDescription: optStr(attrs.MetaDescription),
 		MetaImage:       optStr(attrs.MetaImage),
 		Lang:            lang, Tags: optStr(attrs.Tags),
+		Weather:				 optStr(weather),
 	}
 	if _, err := updatePost(a.DB, shortID, in); err != nil {
 		a.Log.Error("update post", "err", err)
