@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"regexp"
 )
 
 type parsedAttributes struct {
@@ -385,8 +386,9 @@ func getWeather(location string) string {
 	json.NewDecoder(forecastResp.Body).Decode(&weatherForecast)
 	temp := strconv.Itoa(weatherForecast.Properties.Periods[0].Temperature)
 	conditions := weatherForecast.Properties.Periods[0].ShortForecast
-
-	weather := fmt.Sprintf("%s,%s,%s,%s", conditions, temp, city, state)
+	var qualifierRE = regexp.MustCompile(`(?i)^(slight chance|chance|isolated|scattered|patchy|areas)\s+(of\s+)?`)
+	formattedConditions := strings.TrimSpace(qualifierRE.ReplaceAllString(conditions, ""))
+	weather := fmt.Sprintf("%s,%s,%s,%s", formattedConditions, temp, city, state)
 	return weather
 }
 
