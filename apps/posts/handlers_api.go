@@ -22,6 +22,7 @@ type apiPostSummary struct {
 	Content         string  `json:"content"`
 	CreatedAt       string  `json:"created_at"`
 	UpdatedAt       string  `json:"updated_at"`
+	Weather         *string  `json:"weather"`
 }
 
 type apiPostDetail struct {
@@ -38,6 +39,7 @@ type apiPostDetail struct {
 	Content         string  `json:"content"`
 	CreatedAt       string  `json:"created_at"`
 	UpdatedAt       string  `json:"updated_at"`
+	Weather         *string  `json:"weather"`
 }
 
 func toSummary(p Post) apiPostSummary {
@@ -46,7 +48,7 @@ func toSummary(p Post) apiPostSummary {
 		PublishedDate: p.PublishedDate, MetaDescription: p.MetaDescription,
 		MetaImage: p.MetaImage, CanonicalURL: p.CanonicalURL,
 		Lang: p.Lang, Tags: p.Tags, Content: p.Content,
-		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
+		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt, Weather: p.Weather,
 	}
 }
 
@@ -56,7 +58,7 @@ func toDetail(p Post) apiPostDetail {
 		Alias: p.Alias, CanonicalURL: p.CanonicalURL,
 		PublishedDate: p.PublishedDate, MetaDescription: p.MetaDescription,
 		MetaImage: p.MetaImage, Lang: p.Lang, Tags: p.Tags,
-		Content: p.Content, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
+		Content: p.Content, CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt, Weather: p.Weather,
 	}
 }
 
