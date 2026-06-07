@@ -38,6 +38,7 @@ type Post struct {
 	MetaImage       *string
 	Lang            string
 	Tags            *string
+	Weather         *string
 	Content         string
 	Status          string
 	CreatedAt       string
@@ -305,6 +306,7 @@ type adminSettingsPageData struct {
 	OGImageURL      string
 	CustomHeader    string
 	CustomFooter    string
+	DefaultLocation string
 	Success         bool
 }
 

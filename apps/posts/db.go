@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"fmt"
 
 	"github.com/stevedylandev/andromeda/pkg/auth"
 )
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS posts (
     meta_image      TEXT,
     lang            TEXT NOT NULL DEFAULT 'en',
     tags            TEXT,
+		weather					TEXT,
     content         TEXT NOT NULL,
     status          TEXT NOT NULL DEFAULT 'draft',
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
@@ -69,6 +71,7 @@ var defaultSettings = [][2]string{
 	{"custom_footer", `<div>
 <a href="/feed.xml" class="rss-link" title="RSS Feed"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path fill="currentColor" d="M104.08 151.92A67.52 67.52 0 0 1 124 200a4 4 0 0 1-8 0a60 60 0 0 0-60-60a4 4 0 0 1 0-8a67.52 67.52 0 0 1 48.08 19.92M56 84a4 4 0 0 0 0 8a108 108 0 0 1 108 108a4 4 0 0 0 8 0A116 116 0 0 0 56 84m116 0A162.92 162.92 0 0 0 56 36a4 4 0 0 0 0 8a155 155 0 0 1 110.31 45.69A155 155 0 0 1 212 200a4 4 0 0 0 8 0a162.92 162.92 0 0 0-48-116M60 188a8 8 0 1 0 8 8a8 8 0 0 0-8-8"/></svg></a>
 </div>`},
+	{"default_location", ""},
 }
 
 func seedDefaultSettings(db *sql.DB) {
@@ -77,13 +80,13 @@ func seedDefaultSettings(db *sql.DB) {
 	}
 }
 
-const postCols = `id, short_id, title, slug, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, content, status, created_at, updated_at`
+const postCols = `id, short_id, title, slug, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, weather, content, status, created_at, updated_at`
 
 func scanPost(s interface{ Scan(...any) error }) (*Post, error) {
 	var p Post
-	var title, alias, canonicalURL, publishedDate, metaDesc, metaImage, tags sql.NullString
+	var title, alias, canonicalURL, publishedDate, metaDesc, metaImage, tags, weather sql.NullString
 	err := s.Scan(&p.ID, &p.ShortID, &title, &p.Slug, &alias, &canonicalURL,
-		&publishedDate, &metaDesc, &metaImage, &p.Lang, &tags, &p.Content,
+		&publishedDate, &metaDesc, &metaImage, &p.Lang, &tags, &weather, &p.Content,
 		&p.Status, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
@@ -119,6 +122,10 @@ func scanPost(s interface{ Scan(...any) error }) (*Post, error) {
 		v := tags.String
 		p.Tags = &v
 	}
+	if weather.Valid {
+		v := weather.String
+		p.Weather = &v
+	}
 	return &p, nil
 }
 
@@ -134,6 +141,7 @@ type PostInput struct {
 	MetaImage       *string
 	Lang            string
 	Tags            *string
+	Weather         *string
 }
 
 func nullable(p *string) any {
@@ -150,11 +158,11 @@ func createPost(db *sql.DB, in PostInput) (*Post, error) {
 	}
 	in.PublishedDate = normalizePubDatePtr(in.PublishedDate)
 	res, err := db.Exec(
-		`INSERT INTO posts (short_id, title, slug, content, status, alias, canonical_url, published_date, meta_description, meta_image, lang, tags)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO posts (short_id, title, slug, content, status, alias, canonical_url, published_date, meta_description, meta_image, lang, tags, weather)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		shortID, nullable(in.Title), in.Slug, in.Content, in.Status,
 		nullable(in.Alias), nullable(in.CanonicalURL), nullable(in.PublishedDate),
-		nullable(in.MetaDescription), nullable(in.MetaImage), in.Lang, nullable(in.Tags),
+		nullable(in.MetaDescription), nullable(in.MetaImage), in.Lang, nullable(in.Tags), nullable(in.Weather),
 	)
 	if err != nil {
 		return nil, err
@@ -214,11 +222,11 @@ func updatePost(db *sql.DB, shortID string, in PostInput) (*Post, error) {
 	res, err := db.Exec(
 		`UPDATE posts SET title = ?, slug = ?, content = ?, status = ?, alias = ?, canonical_url = ?,
 		 published_date = CASE WHEN ? = 'published' THEN COALESCE(?, published_date, strftime('%Y-%m-%dT%H:%M:%SZ','now')) ELSE ? END,
-		 meta_description = ?, meta_image = ?, lang = ?, tags = ?,
+		 meta_description = ?, meta_image = ?, lang = ?, tags = ?, weather = ?,
 		 updated_at = strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE short_id = ?`,
 		nullable(in.Title), in.Slug, in.Content, in.Status, nullable(in.Alias), nullable(in.CanonicalURL),
 		in.Status, nullable(in.PublishedDate), nullable(in.PublishedDate),
-		nullable(in.MetaDescription), nullable(in.MetaImage), in.Lang, nullable(in.Tags), shortID,
+		nullable(in.MetaDescription), nullable(in.MetaImage), in.Lang, nullable(in.Tags), nullable(in.Weather), shortID,
 	)
 	if err != nil {
 		return nil, err
@@ -471,6 +479,21 @@ func migrateTimestamps(db *sql.DB) error {
 	return nil
 }
 
+// migrateWeather updates tables to have new optional weather column
+func migrateWeather(db *sql.DB) error {
+	var count int
+	if err := db.QueryRow(
+		`SELECT COUNT(*) FROM pragma_table_info('posts') WHERE name = 'weather'`,
+	).Scan(&count); err != nil {
+		return err
+	}
+	if count == 0 {
+		_, err := db.Exec(`ALTER TABLE posts ADD COLUMN weather TEXT`)
+		return err
+	}
+	return nil
+}
+
 func normalizePubDatePtr(p *string) *string {
 	if p == nil {
 		return nil
@@ -479,6 +502,16 @@ func normalizePubDatePtr(p *string) *string {
 		return &v
 	}
 	return p
+}
+
+func runMigrations(db *sql.DB) error {
+    if err := migrateTimestamps(db); err != nil {
+        return fmt.Errorf("migrate timestamps: %w", err)
+    }
+    if err := migrateWeather(db); err != nil {
+        return fmt.Errorf("add weather column: %w", err)
+    }
+    return nil
 }
 
 func _useStrings() {

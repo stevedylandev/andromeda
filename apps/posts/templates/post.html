@@ -31,6 +31,9 @@
     {{if .Post.PublishedDate}}
       <time class="post-date">{{.Post.PublishedDateStr}}</time>
     {{end}}
+    {{if .Post.Weather}}
+      <p class="post-description">{{.Post.Weather}}</p>
+    {{end}}
     {{if .Post.Tags}}
       <div class="post-tags">
         {{range .Post.TagList}}

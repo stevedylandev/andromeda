@@ -23,8 +23,8 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	if err := migrateTimestamps(db); err != nil {
-		log.Fatalf("migrate timestamps: %v", err)
+	if err := runMigrations(db); err != nil {
+		log.Fatalf("migrations: %v", err)
 	}
 	seedDefaultSettings(db)
 

@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"strings"
 	"time"
+	"encoding/json"
+	"strconv"
 )
 
 type parsedAttributes struct {
@@ -15,6 +19,30 @@ type parsedAttributes struct {
 	Lang            string
 	Tags            string
 	Status          string
+	Weather         string
+}
+
+type WeatherPointResponse struct {
+	Properties struct {
+		ForecastHourly   string `json:"forecastHourly"`
+		RelativeLocation struct {
+			Properties struct {
+				City  string `json:"city"`
+				State string `json:"state"`
+			} `json:"properties"`
+		} `json:"relativeLocation"`
+	} `json:"properties"`
+}
+
+type Period struct {
+    Temperature  int    `json:"temperature"`
+    ShortForecast string `json:"shortForecast"`
+}
+
+type WeatherForecastResponse struct {
+    Properties struct {
+        Periods []Period `json:"periods"`
+    } `json:"properties"`
 }
 
 func parseAttributes(text string) parsedAttributes {
@@ -45,6 +73,8 @@ func parseAttributes(text string) parsedAttributes {
 			a.Tags = value
 		case "status":
 			a.Status = value
+		case "weather":
+			a.Weather = value
 		}
 	}
 	return a
@@ -317,3 +347,35 @@ func titleFromFilename(name string) string {
 	}
 	return strings.ToUpper(cleaned[:1]) + cleaned[1:]
 }
+
+func getWeather(location string) string {
+	// Fetch Points data using lat,long
+	pointURL := fmt.Sprintf("https://api.weather.gov/points/%s", location)
+	resp, err := http.Get(pointURL)
+	if err != nil {
+		fmt.Printf("Error fetching pointUrl: %s", err.Error())
+		return ""
+	}
+	defer resp.Body.Close()
+	var weatherPoint WeatherPointResponse
+	json.NewDecoder(resp.Body).Decode(&weatherPoint)
+	forecastURL := weatherPoint.Properties.ForecastHourly
+	city := weatherPoint.Properties.RelativeLocation.Properties.City
+	state := weatherPoint.Properties.RelativeLocation.Properties.State
+
+	// Forcast using points data
+	forecastResp, err := http.Get(forecastURL)
+	if err != nil {
+		fmt.Printf("Error fetching forecast: %s", err.Error())
+		return ""
+	}
+	defer resp.Body.Close()
+	var weatherForecast WeatherForecastResponse
+	json.NewDecoder(forecastResp.Body).Decode(&weatherForecast)
+	temp := strconv.Itoa(weatherForecast.Properties.Periods[0].Temperature)
+	conditions := weatherForecast.Properties.Periods[0].ShortForecast
+
+	weather := fmt.Sprintf("%s,%s,%s,%s", conditions, temp, city,state)
+	return weather
+}
+

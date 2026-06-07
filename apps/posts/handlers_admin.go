@@ -77,6 +77,14 @@ func (a *App) adminCreatePost(w http.ResponseWriter, r *http.Request) {
 	if l := strings.TrimSpace(attrs.Lang); l != "" {
 		lang = l
 	}
+	defaultLocation, err := getSetting(a.DB, "default_location")
+	if err != nil {
+		defaultLocation = ""
+	}
+	weather := getWeather(defaultLocation)
+	if newWeather := strings.TrimSpace(attrs.Weather); newWeather != "" {
+		weather = newWeather
+	}
 	pub := strings.TrimSpace(attrs.PublishedDate)
 	if pub == "" {
 		pub = nowDatetime()
@@ -88,6 +96,7 @@ func (a *App) adminCreatePost(w http.ResponseWriter, r *http.Request) {
 		MetaDescription: optStr(attrs.MetaDescription),
 		MetaImage:       optStr(attrs.MetaImage),
 		Lang:            lang, Tags: optStr(attrs.Tags),
+		Weather: 				 optStr(weather),
 	}
 	if _, err := createPost(a.DB, in); err != nil {
 		a.Log.Error("create post", "err", err)
@@ -263,6 +272,7 @@ func (a *App) adminGetSettings(w http.ResponseWriter, r *http.Request) {
 		OGImageURL:      get("og_image_url"),
 		CustomHeader:    get("custom_header"),
 		CustomFooter:    get("custom_footer"),
+		DefaultLocation: get("default_location"),
 		Success:         r.URL.Query().Get("success") == "true",
 	})
 }
@@ -281,6 +291,7 @@ func (a *App) adminPostSettings(w http.ResponseWriter, r *http.Request) {
 	_ = setSetting(a.DB, "og_image_url", strings.TrimSpace(r.FormValue("og_image_url")))
 	_ = setSetting(a.DB, "custom_header", r.FormValue("custom_header"))
 	_ = setSetting(a.DB, "custom_footer", r.FormValue("custom_footer"))
+	_ = setSetting(a.DB, "default_location", r.FormValue("default_location"))
 	http.Redirect(w, r, "/admin/settings?success=true", http.StatusSeeOther)
 }
 
