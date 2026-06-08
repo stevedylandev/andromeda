@@ -359,7 +359,8 @@ func titleFromFilename(name string) string {
 
 var weatherClient = &http.Client{Timeout: 10 * time.Second}
 
-var qualifierRE = regexp.MustCompile(`(?i)^(slight chance|chance|isolated|scattered|patchy|areas)\s+(of\s+)?`)
+var qualifierRE = regexp.MustCompile(`(?i)^(slight chance|chance|isolated|scattered|numerous|widespread|patchy|areas|periods|occasional|frequent)\s+(of\s+)?`)
+var trailingQualifierRE = regexp.MustCompile(`(?i)\s+(likely)$`)
 
 func getWeather(location string) string {
 	if location == "" {
@@ -400,7 +401,8 @@ func getWeather(location string) string {
 	}
 	period := weatherForecast.Properties.Periods[0]
 	temp := strconv.Itoa(period.Temperature)
-	formattedConditions := strings.TrimSpace(qualifierRE.ReplaceAllString(period.ShortForecast, ""))
+	stripped := qualifierRE.ReplaceAllString(period.ShortForecast, "")
+	formattedConditions := strings.TrimSpace(trailingQualifierRE.ReplaceAllString(stripped, ""))
 	weather := fmt.Sprintf("%s,%s,%s,%s", formattedConditions, temp, city, state)
 	return weather
 }
