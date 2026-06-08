@@ -50,13 +50,11 @@ snapshot:
   version_template: "0.0.0-snapshot-{{.ShortCommit}}"
 
 changelog:
-  use: github
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
+  # Disabled: the workflow's `gh release create --generate-notes` produces the
+  # real notes on the prefixed `<app>/vX.Y.Z` tag. GoReleaser's GitHub compare
+  # API uses the stripped version (e.g. v0.4.0), which 404s since the real tag
+  # is prefixed (e.g. posts/v0.4.0).
+  disable: true
 
 release:
   # Disabled: workflow uploads artifacts to the real `sipp/vX.Y.Z` git tag
