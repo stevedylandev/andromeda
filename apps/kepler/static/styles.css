@@ -177,10 +177,11 @@ h3:first-child { margin-top: 0; }
 
     .blob-code .line-num { min-width: 2.5rem; padding: 0 0.4rem 0 0.25rem; }
     .blob-code .line-code { padding-left: 0.75rem; }
-    .diff-hunk td.diff-num { min-width: 1.75rem; padding: 0 0.2rem 0 0.25rem; }
-    td.diff-marker { padding: 0 0.2rem 0 0.4rem; }
-    .diff-hunk pre, .blob-code pre { font-size: 12px; }
-    .blob-code .line-num a { font-size: 12px; }
+    .diff-hunk td.diff-num { min-width: 1.75rem; padding: 0 0.2rem 0 0.25rem; font-size: 13px; }
+    td.diff-marker { padding: 0 0.2rem 0 0.4rem; font-size: 13px; }
+    .diff-hunk pre, .blob-code pre { font-size: 13px; }
+    .blob-code .line-num a { font-size: 13px; }
+    .blob-code .line-code pre { font-size: 13px; }
 
     h1 { font-size: 16px; }
 }
