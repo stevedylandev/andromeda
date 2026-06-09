@@ -90,6 +90,17 @@ a:hover { opacity: 0.7; }
 
 main { display: block; }
 
+.footer {
+    text-align: right;
+    border-top: 1px solid var(--border);
+    margin-top: 3rem;
+    padding: 1rem 0;
+    color: var(--fg-dim);
+    font-size: 13px;
+}
+.footer a { color: var(--fg-dim); text-decoration: underline; }
+.footer a:hover { color: var(--fg); }
+
 h1 { font-weight: 700; font-size: 18px; margin-bottom: 0.75rem; }
 h2 { font-weight: 700; font-size: 15px; margin-bottom: 0.5rem; }
 h3 { font-weight: 700; font-size: 14px; margin: 1.25rem 0 0.5rem; }
