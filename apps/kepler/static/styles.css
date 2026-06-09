@@ -143,6 +143,7 @@ h3:first-child { margin-top: 0; }
 .hash a:hover { color: var(--fg); opacity: 1; }
 .date { white-space: nowrap; color: var(--fg-dim); }
 .author { color: var(--fg-dim); white-space: nowrap; }
+.ref-name { overflow-wrap: anywhere; word-break: break-word; }
 .subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .size { color: var(--fg-dim); text-align: right; white-space: nowrap; font-size: 12px; }
 

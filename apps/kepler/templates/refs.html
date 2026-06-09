@@ -12,7 +12,7 @@
     <tbody>
         {{range .Branches}}
         <tr>
-            <td><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
+            <td class="ref-name"><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
             <td class="hash">{{shortSHA .SHA}}</td>
             <td class="author desktop">{{.Author}}</td>
             <td class="date">{{timeAgo .Time}}</td>
@@ -31,7 +31,7 @@
     <tbody>
         {{range .Tags}}
         <tr>
-            <td><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
+            <td class="ref-name"><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
             <td class="hash">{{shortSHA .SHA}}</td>
             <td class="author desktop">{{.Author}}</td>
             <td class="date">{{timeAgo .Time}}</td>
