@@ -54,7 +54,7 @@ func (a *App) repoHandler(w http.ResponseWriter, r *http.Request) {
 	if c, err := resolveRef(repo, summary.DefaultRef); err == nil {
 		if tree, err := c.Tree(); err == nil {
 			if src, ok := findReadme(tree); ok {
-				rawBase := "/r/" + summary.Name + "/raw/" + summary.DefaultRef + "/"
+				rawBase := "/" + summary.Name + "/raw/" + summary.DefaultRef + "/"
 				if html, err := renderMarkdown(src, rawBase); err == nil {
 					data.ReadmeHTML = html
 					data.HasReadme = true
@@ -266,7 +266,7 @@ func (a *App) atomHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func makeBreadcrumbs(repoName, ref, subPath string) []Breadcrumb {
-	out := []Breadcrumb{{Name: repoName, Href: "/r/" + repoName + "/tree/" + ref}}
+	out := []Breadcrumb{{Name: repoName, Href: "/" + repoName + "/tree/" + ref}}
 	if subPath == "" {
 		return out
 	}
@@ -278,7 +278,7 @@ func makeBreadcrumbs(repoName, ref, subPath string) []Breadcrumb {
 		} else {
 			acc = acc + "/" + p
 		}
-		out = append(out, Breadcrumb{Name: p, Href: "/r/" + repoName + "/tree/" + ref + "/" + acc})
+		out = append(out, Breadcrumb{Name: p, Href: "/" + repoName + "/tree/" + ref + "/" + acc})
 	}
 	return out
 }

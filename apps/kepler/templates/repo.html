@@ -1,14 +1,14 @@
 {{define "repo.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}{{.Repo.Name}} — {{.SiteName}}{{end}}
 {{define "tabs"}}
-<a href="/r/{{.Repo.Name}}" class="tab active">home</a>
-<a href="/r/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab">log</a>
-<a href="/r/{{.Repo.Name}}/refs" class="tab">refs</a>
+<a href="/{{.Repo.Name}}" class="tab active">home</a>
+<a href="/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab">log</a>
+<a href="/{{.Repo.Name}}/refs" class="tab">refs</a>
 {{end}}
 {{define "content"}}
 {{if .HasLatest}}
 <div class="last-commit">
-    <span class="hash"><a href="/r/{{.Repo.Name}}/commit/{{.LatestCommit.SHA}}">{{.LatestCommit.ShortSHA}}</a></span>
+    <span class="hash"><a href="/{{.Repo.Name}}/commit/{{.LatestCommit.SHA}}">{{.LatestCommit.ShortSHA}}</a></span>
     <span class="subject">{{.LatestCommit.Subject}}</span>
     <span class="author">{{.LatestCommit.Author}}</span>
     <span class="date">{{timeAgo .LatestCommit.When}}</span>
@@ -20,11 +20,11 @@
         {{if .Entries}}
         {{range .Entries}}
         {{if .IsDir}}
-        <a class="tree-entry" href="/r/{{$.Repo.Name}}/tree/{{$.DefaultRef}}/{{.Path}}">
+        <a class="tree-entry" href="/{{$.Repo.Name}}/tree/{{$.DefaultRef}}/{{.Path}}">
             <span class="name">{{.Name}}/</span>
         </a>
         {{else}}
-        <a class="tree-entry" href="/r/{{$.Repo.Name}}/blob/{{$.DefaultRef}}/{{.Path}}">
+        <a class="tree-entry" href="/{{$.Repo.Name}}/blob/{{$.DefaultRef}}/{{.Path}}">
             <span class="name">{{.Name}}</span>
             <span class="size">{{humanSize .Size}}</span>
         </a>

@@ -1,9 +1,9 @@
 {{define "tree.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}{{.Repo.Name}} / {{.Path}} — {{.SiteName}}{{end}}
 {{define "tabs"}}
-<a href="/r/{{.Repo.Name}}" class="tab">home</a>
-<a href="/r/{{.Repo.Name}}/log/{{.Ref}}" class="tab">log</a>
-<a href="/r/{{.Repo.Name}}/refs" class="tab">refs</a>
+<a href="/{{.Repo.Name}}" class="tab">home</a>
+<a href="/{{.Repo.Name}}/log/{{.Ref}}" class="tab">log</a>
+<a href="/{{.Repo.Name}}/refs" class="tab">refs</a>
 {{end}}
 {{define "content"}}
 <nav class="breadcrumbs">
@@ -16,9 +16,9 @@
         <tr>
             <td>
                 {{if .IsDir}}
-                <a href="/r/{{$.Repo.Name}}/tree/{{$.Ref}}/{{.Path}}">{{.Name}}/</a>
+                <a href="/{{$.Repo.Name}}/tree/{{$.Ref}}/{{.Path}}">{{.Name}}/</a>
                 {{else}}
-                <a href="/r/{{$.Repo.Name}}/blob/{{$.Ref}}/{{.Path}}">{{.Name}}</a>
+                <a href="/{{$.Repo.Name}}/blob/{{$.Ref}}/{{.Path}}">{{.Name}}</a>
                 {{end}}
             </td>
             <td class="size">{{if not .IsDir}}{{humanSize .Size}}{{end}}</td>

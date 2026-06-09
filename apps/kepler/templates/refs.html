@@ -1,9 +1,9 @@
 {{define "refs.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}refs — {{.Repo.Name}} — {{.SiteName}}{{end}}
 {{define "tabs"}}
-<a href="/r/{{.Repo.Name}}" class="tab">home</a>
-<a href="/r/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab">log</a>
-<a href="/r/{{.Repo.Name}}/refs" class="tab active">refs</a>
+<a href="/{{.Repo.Name}}" class="tab">home</a>
+<a href="/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab">log</a>
+<a href="/{{.Repo.Name}}/refs" class="tab active">refs</a>
 {{end}}
 {{define "content"}}
 <h3>Branches</h3>
@@ -12,11 +12,11 @@
     <tbody>
         {{range .Branches}}
         <tr>
-            <td><a href="/r/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
+            <td><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
             <td class="hash">{{shortSHA .SHA}}</td>
             <td class="author">{{.Author}}</td>
             <td class="date">{{timeAgo .Time}}</td>
-            <td><a href="/r/{{$.Repo.Name}}/log/{{.Name}}">log</a></td>
+            <td><a href="/{{$.Repo.Name}}/log/{{.Name}}">log</a></td>
         </tr>
         {{end}}
     </tbody>
@@ -31,11 +31,11 @@
     <tbody>
         {{range .Tags}}
         <tr>
-            <td><a href="/r/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
+            <td><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
             <td class="hash">{{shortSHA .SHA}}</td>
             <td class="author">{{.Author}}</td>
             <td class="date">{{timeAgo .Time}}</td>
-            <td><a href="/r/{{$.Repo.Name}}/archive/{{.Name}}.tar.gz">tar.gz</a></td>
+            <td><a href="/{{$.Repo.Name}}/archive/{{.Name}}.tar.gz">tar.gz</a></td>
         </tr>
         {{end}}
     </tbody>

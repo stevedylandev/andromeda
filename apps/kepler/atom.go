@@ -39,11 +39,11 @@ func buildAtomFeed(siteName, repoName, baseURL string, commits []CommitInfo) ([]
 	feed := atomFeed{
 		XMLNS:   "http://www.w3.org/2005/Atom",
 		Title:   fmt.Sprintf("%s / %s — commits", siteName, repoName),
-		ID:      baseURL + "/r/" + repoName,
+		ID:      baseURL + "/" + repoName,
 		Updated: time.Now().UTC().Format(time.RFC3339),
 		Link: []atomLink{
-			{Href: baseURL + "/r/" + repoName},
-			{Rel: "self", Href: baseURL + "/r/" + repoName + "/atom.xml"},
+			{Href: baseURL + "/" + repoName},
+			{Rel: "self", Href: baseURL + "/" + repoName + "/atom.xml"},
 		},
 	}
 	if len(commits) > 0 {
@@ -52,9 +52,9 @@ func buildAtomFeed(siteName, repoName, baseURL string, commits []CommitInfo) ([]
 	for _, c := range commits {
 		feed.Entries = append(feed.Entries, atomEntry{
 			Title:   c.Subject,
-			ID:      baseURL + "/r/" + repoName + "/commit/" + c.SHA,
+			ID:      baseURL + "/" + repoName + "/commit/" + c.SHA,
 			Updated: c.When.UTC().Format(time.RFC3339),
-			Link:    atomLink{Href: baseURL + "/r/" + repoName + "/commit/" + c.SHA},
+			Link:    atomLink{Href: baseURL + "/" + repoName + "/commit/" + c.SHA},
 			Author:  atomAuthor{Name: c.Author, Email: c.Email},
 			Summary: c.Body,
 		})

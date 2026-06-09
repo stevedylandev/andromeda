@@ -30,16 +30,16 @@ func (a *App) routes() *http.ServeMux {
 	})
 
 	mux.HandleFunc("GET /{$}", a.indexHandler)
-	mux.HandleFunc("GET /r/{repo}", a.repoHandler)
-	mux.HandleFunc("GET /r/{repo}/refs", a.refsHandler)
-	mux.HandleFunc("GET /r/{repo}/atom.xml", a.atomHandler)
-	mux.HandleFunc("GET /r/{repo}/log/{ref}", a.logHandler)
-	mux.HandleFunc("GET /r/{repo}/commit/{sha}", a.commitHandler)
-	mux.HandleFunc("GET /r/{repo}/tree/{ref}", a.treeHandler)
-	mux.HandleFunc("GET /r/{repo}/tree/{ref}/{path...}", a.treeHandler)
-	mux.HandleFunc("GET /r/{repo}/blob/{ref}/{path...}", a.blobHandler)
-	mux.HandleFunc("GET /r/{repo}/raw/{ref}/{path...}", a.rawHandler)
-	mux.HandleFunc("GET /r/{repo}/archive/{name}", a.archiveHandler)
+	mux.HandleFunc("GET /{repo}", a.repoHandler)
+	mux.HandleFunc("GET /{repo}/refs", a.refsHandler)
+	mux.HandleFunc("GET /{repo}/atom.xml", a.atomHandler)
+	mux.HandleFunc("GET /{repo}/log/{ref}", a.logHandler)
+	mux.HandleFunc("GET /{repo}/commit/{sha}", a.commitHandler)
+	mux.HandleFunc("GET /{repo}/tree/{ref}", a.treeHandler)
+	mux.HandleFunc("GET /{repo}/tree/{ref}/{path...}", a.treeHandler)
+	mux.HandleFunc("GET /{repo}/blob/{ref}/{path...}", a.blobHandler)
+	mux.HandleFunc("GET /{repo}/raw/{ref}/{path...}", a.rawHandler)
+	mux.HandleFunc("GET /{repo}/archive/{name}", a.archiveHandler)
 
 	return mux
 }

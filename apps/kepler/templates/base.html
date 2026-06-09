@@ -14,7 +14,7 @@
         <nav class="repo-nav">
             <span class="repo-name">
                 <a href="/">{{.SiteName}}</a>
-                {{if .RepoName}}<span class="sep">/</span><a href="/r/{{.RepoName}}">{{.RepoName}}</a>{{end}}
+                {{if .RepoName}}<span class="sep">/</span><a href="/{{.RepoName}}">{{.RepoName}}</a>{{end}}
             </span>
             {{block "tabs" .}}{{end}}
         </nav>

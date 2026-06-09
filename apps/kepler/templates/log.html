@@ -1,9 +1,9 @@
 {{define "log.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}log — {{.Repo.Name}} — {{.SiteName}}{{end}}
 {{define "tabs"}}
-<a href="/r/{{.Repo.Name}}" class="tab">home</a>
-<a href="/r/{{.Repo.Name}}/log/{{.Ref}}" class="tab active">log</a>
-<a href="/r/{{.Repo.Name}}/refs" class="tab">refs</a>
+<a href="/{{.Repo.Name}}" class="tab">home</a>
+<a href="/{{.Repo.Name}}/log/{{.Ref}}" class="tab active">log</a>
+<a href="/{{.Repo.Name}}/refs" class="tab">refs</a>
 {{end}}
 {{define "content"}}
 <table class="log-list">
@@ -18,7 +18,7 @@
     <tbody>
         {{range .Commits}}
         <tr>
-            <td class="hash"><a href="/r/{{$.Repo.Name}}/commit/{{.SHA}}">{{.ShortSHA}}</a></td>
+            <td class="hash"><a href="/{{$.Repo.Name}}/commit/{{.SHA}}">{{.ShortSHA}}</a></td>
             <td class="subject">{{.Subject}}</td>
             <td class="author desktop">{{.Author}}</td>
             <td class="date">{{timeAgo .When}}</td>
@@ -28,7 +28,7 @@
 </table>
 
 <div class="pagination">
-    {{if .HasPrev}}<a href="/r/{{.Repo.Name}}/log/{{.Ref}}?page={{.PrevPage}}">&larr; Newer</a>{{end}}
-    {{if .HasNext}}<a href="/r/{{.Repo.Name}}/log/{{.Ref}}?page={{.NextPage}}">Older &rarr;</a>{{end}}
+    {{if .HasPrev}}<a href="/{{.Repo.Name}}/log/{{.Ref}}?page={{.PrevPage}}">&larr; Newer</a>{{end}}
+    {{if .HasNext}}<a href="/{{.Repo.Name}}/log/{{.Ref}}?page={{.NextPage}}">Older &rarr;</a>{{end}}
 </div>
 {{end}}

@@ -1,9 +1,9 @@
 {{define "blob.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}{{.Path}} — {{.Repo.Name}} — {{.SiteName}}{{end}}
 {{define "tabs"}}
-<a href="/r/{{.Repo.Name}}" class="tab">home</a>
-<a href="/r/{{.Repo.Name}}/log/{{.Ref}}" class="tab">log</a>
-<a href="/r/{{.Repo.Name}}/refs" class="tab">refs</a>
+<a href="/{{.Repo.Name}}" class="tab">home</a>
+<a href="/{{.Repo.Name}}/log/{{.Ref}}" class="tab">log</a>
+<a href="/{{.Repo.Name}}/refs" class="tab">refs</a>
 {{end}}
 {{define "content"}}
 <nav class="breadcrumbs">
@@ -14,10 +14,10 @@
     <header class="file-header">
         <span class="file-name">{{.Path}}</span>
         <span class="file-meta">{{humanSize .Size}}</span>
-        <a href="/r/{{.Repo.Name}}/raw/{{.Ref}}/{{.Path}}">raw</a>
+        <a href="/{{.Repo.Name}}/raw/{{.Ref}}/{{.Path}}">raw</a>
     </header>
     {{if .Binary}}
-    <p class="empty">Binary file — <a href="/r/{{.Repo.Name}}/raw/{{.Ref}}/{{.Path}}">download raw</a>.</p>
+    <p class="empty">Binary file — <a href="/{{.Repo.Name}}/raw/{{.Ref}}/{{.Path}}">download raw</a>.</p>
     {{else}}
     <div class="blob-view">{{.HighlightedHTML}}</div>
     {{end}}

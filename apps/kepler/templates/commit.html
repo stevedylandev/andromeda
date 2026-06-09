@@ -1,9 +1,9 @@
 {{define "commit.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}{{.Commit.ShortSHA}} — {{.Repo.Name}} — {{.SiteName}}{{end}}
 {{define "tabs"}}
-<a href="/r/{{.Repo.Name}}" class="tab">home</a>
-<a href="/r/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab active">log</a>
-<a href="/r/{{.Repo.Name}}/refs" class="tab">refs</a>
+<a href="/{{.Repo.Name}}" class="tab">home</a>
+<a href="/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab active">log</a>
+<a href="/{{.Repo.Name}}/refs" class="tab">refs</a>
 {{end}}
 {{define "content"}}
 <article class="commit-info">
