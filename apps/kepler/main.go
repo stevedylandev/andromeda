@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/stevedylandev/andromeda/pkg/config"
 )
@@ -15,6 +16,7 @@ func main() {
 
 	root := config.Getenv("KEPLER_REPO_ROOT", "./repos")
 	siteName := config.Getenv("KEPLER_SITE_NAME", "kepler")
+	baseURL := config.Getenv("KEPLER_BASE_URL", "http://localhost:4747")
 
 	tmpl, err := buildTemplates()
 	if err != nil {
@@ -26,6 +28,7 @@ func main() {
 		Templates: tmpl,
 		RepoRoot:  root,
 		SiteName:  siteName,
+		BaseURL:   strings.TrimRight(baseURL, "/"),
 	}
 
 	addr := config.Getenv("HOST", "127.0.0.1") + ":" + config.Getenv("PORT", "4747")

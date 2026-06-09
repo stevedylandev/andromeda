@@ -15,11 +15,13 @@ type App struct {
 	Templates map[string]*template.Template
 	RepoRoot  string
 	SiteName  string
+	BaseURL   string
 }
 
 type pageBase struct {
 	SiteName string
 	RepoName string
+	BaseURL  string
 }
 
 type indexPageData struct {

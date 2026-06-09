@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#121113">
     <title>{{block "title" .}}{{.SiteName}}{{end}}</title>
+    <meta name="description" content="Read-only web view for on-disk git repositories">
+    <meta property="og:url" content="{{.BaseURL}}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{.SiteName}}">
+    <meta property="og:description" content="Read-only web view for on-disk git repositories">
+    <meta property="og:image" content="{{.BaseURL}}/assets/og.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+    <link rel="manifest" href="/assets/site.webmanifest">
     <link rel="preload" href="/assets/fonts/CommitMono-400-Regular.otf" as="font" type="font/otf" crossorigin>
     <link rel="preload" href="/assets/fonts/CommitMono-700-Regular.otf" as="font" type="font/otf" crossorigin>
     <link rel="stylesheet" href="/assets/kepler.css">

@@ -32,6 +32,7 @@ Then open <http://127.0.0.1:4747>.
 | `PORT` | `4747` | |
 | `KEPLER_REPO_ROOT` | `./repos` | dir of bare repos (`*.git/`) or normal repos |
 | `KEPLER_SITE_NAME` | `kepler` | shown in header + feed |
+| `KEPLER_BASE_URL` | `http://localhost:4747` | public URL for Open Graph / social meta tags |
 
 ## Repo discovery
 

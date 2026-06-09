@@ -11,7 +11,7 @@ import (
 const commitsPerPage = 30
 
 func (a *App) base(repoName string) pageBase {
-	return pageBase{SiteName: a.SiteName, RepoName: repoName}
+	return pageBase{SiteName: a.SiteName, RepoName: repoName, BaseURL: a.BaseURL}
 }
 
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {

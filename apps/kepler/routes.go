@@ -1,7 +1,9 @@
 package main
 
 import (
+	"mime"
 	"net/http"
+	"path"
 )
 
 func (a *App) routes() *http.ServeMux {
@@ -26,6 +28,21 @@ func (a *App) routes() *http.ServeMux {
 		w.Header().Set("Content-Type", "font/otf")
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		_, _ = w.Write(data)
+	})
+	mux.HandleFunc("GET /assets/{name}", func(w http.ResponseWriter, r *http.Request) {
+		name := r.PathValue("name")
+		data, err := appFS.ReadFile("static/" + name)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		ct := mime.TypeByExtension(path.Ext(name))
+		if ct == "" {
+			ct = http.DetectContentType(data)
+		}
+		w.Header().Set("Content-Type", ct)
+		w.Header().Set("Cache-Control", "public, max-age=86400")
 		_, _ = w.Write(data)
 	})
 
