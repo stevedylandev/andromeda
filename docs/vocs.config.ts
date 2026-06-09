@@ -65,6 +65,10 @@ export default defineConfig({
           link: '/apps/jotts',
         },
         {
+          text: 'Kepler',
+          link: '/apps/kepler',
+        },
+        {
           text: 'Library',
           link: '/apps/library',
         },
