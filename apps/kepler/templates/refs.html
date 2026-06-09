@@ -14,7 +14,7 @@
         <tr>
             <td><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
             <td class="hash">{{shortSHA .SHA}}</td>
-            <td class="author">{{.Author}}</td>
+            <td class="author desktop">{{.Author}}</td>
             <td class="date">{{timeAgo .Time}}</td>
             <td><a href="/{{$.Repo.Name}}/log/{{.Name}}">log</a></td>
         </tr>
@@ -33,7 +33,7 @@
         <tr>
             <td><a href="/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
             <td class="hash">{{shortSHA .SHA}}</td>
-            <td class="author">{{.Author}}</td>
+            <td class="author desktop">{{.Author}}</td>
             <td class="date">{{timeAgo .Time}}</td>
             <td><a href="/{{$.Repo.Name}}/archive/{{.Name}}.tar.gz">tar.gz</a></td>
         </tr>

@@ -133,6 +133,11 @@ h3:first-child { margin-top: 0; }
 @media (max-width: 720px) {
     .container { padding: 0 0.75rem 3rem; }
 
+    .repo-list, .log-list, .ref-list { font-size: 12px; }
+    .repo-list td, .log-list td, .ref-list td,
+    .repo-list th, .log-list th, .ref-list th { padding: 0.4rem 0.3rem; }
+    .log-list .subject, .repo-list .subject { white-space: normal; }
+
     .repo-nav { flex-wrap: wrap; gap: 0.25rem; }
     .repo-name { flex: 1 1 100%; font-size: 15px; padding: 0.25rem 0; gap: 0.5rem; }
     .repo-nav .tab:first-of-type { margin-left: 0; }
