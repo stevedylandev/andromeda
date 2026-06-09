@@ -14,6 +14,7 @@
     <header class="file-header">
         <span class="file-name">{{.Path}}</span>
         <span class="file-meta">{{humanSize .Size}}</span>
+        {{if not .Binary}}<button type="button" class="copy-btn" data-raw="/{{.Repo.Name}}/raw/{{.Ref}}/{{.Path}}">copy</button>{{end}}
         <a href="/{{.Repo.Name}}/raw/{{.Ref}}/{{.Path}}">raw</a>
     </header>
     {{if .Binary}}
@@ -22,4 +23,20 @@
     <div class="blob-view">{{.HighlightedHTML}}</div>
     {{end}}
 </div>
+<script>
+document.querySelectorAll(".copy-btn").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+        try {
+            var res = await fetch(btn.dataset.raw);
+            var text = await res.text();
+            await navigator.clipboard.writeText(text);
+            var prev = btn.textContent;
+            btn.textContent = "copied";
+            setTimeout(function () { btn.textContent = prev; }, 1500);
+        } catch (e) {
+            btn.textContent = "failed";
+        }
+    });
+});
+</script>
 {{end}}

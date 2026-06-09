@@ -84,7 +84,6 @@ a:hover { opacity: 0.7; }
 .tab.active {
     color: var(--fg);
     border-color: var(--border);
-    border-radius: 4px 4px 0 0;
     background: var(--bg);
 }
 .repo-nav .tab:first-of-type { margin-left: auto; }
@@ -178,7 +177,6 @@ h3:first-child { margin-top: 0; }
     align-items: center;
     gap: 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 4px;
     padding: 0.4rem 0.75rem;
     font-size: 13px;
     overflow: hidden;
@@ -200,7 +198,6 @@ h3:first-child { margin-top: 0; }
     display: flex;
     align-items: baseline;
     padding: 0.25rem 0.5rem;
-    border-radius: 4px;
 }
 .tree-entry:hover { opacity: 1; background: var(--bg-alt); }
 .file-tree .name { white-space: nowrap; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -214,7 +211,7 @@ h3:first-child { margin-top: 0; }
 
 /* --- File / blob view --- */
 
-.file-view { border: 1px solid var(--border); border-radius: 4px; }
+.file-view { border: 1px solid var(--border);  }
 .file-header {
     display: flex;
     gap: 0.75rem;
@@ -225,6 +222,15 @@ h3:first-child { margin-top: 0; }
 }
 .file-name { font-weight: 700; flex: 1; }
 .file-meta { color: var(--fg-dim); font-size: 12px; }
+.copy-btn {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: var(--link);
+    cursor: pointer;
+}
 
 .blob-view { overflow: auto hidden; }
 .blob-code { margin: 0; border-collapse: collapse; border-spacing: 0; width: 100%; }
@@ -268,7 +274,6 @@ tr:target .line-code { background: var(--bg-alt); }
 .commit-info .body {
     background: var(--bg-alt);
     padding: 0.5rem 0.75rem;
-    border-radius: 4px;
     font-size: 13px;
     margin: 0 0 1rem 0;
     white-space: pre-wrap;
@@ -290,7 +295,7 @@ tr:target .line-code { background: var(--bg-alt); }
 
 /* --- Diff --- */
 
-.diff-file { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; overflow-x: auto; }
+.diff-file { border: 1px solid var(--border);  margin-bottom: 1rem; overflow-x: auto; }
 .diff-header {
     display: flex;
     align-items: center;
@@ -355,9 +360,6 @@ td.diff-marker {
     color: var(--fg-dim);
 }
 .pagination a + a { border-left: none; }
-.pagination a:first-child { border-radius: 4px 0 0 4px; }
-.pagination a:last-child { border-radius: 0 4px 4px 0; }
-.pagination a:only-child { border-radius: 4px; }
 .pagination a:hover { color: var(--fg); opacity: 1; }
 
 /* --- Readme --- */
@@ -371,10 +373,9 @@ td.diff-marker {
     margin: 0.75rem 0;
     overflow-x: auto;
     font-size: 13px;
-    border-radius: 4px;
 }
 .readme p { margin: 0.5rem 0; }
-.readme code { background: var(--bg-alt); padding: 1px 4px; font-size: 13px; border-radius: 3px; }
+.readme code { background: var(--bg-alt); padding: 1px 4px; font-size: 13px;  }
 .readme pre code { background: transparent; padding: 0; }
 .readme blockquote { border-left: 2px solid var(--border); margin: 0.75rem 0; padding-left: 0.75rem; color: var(--fg-dim); }
 .readme table { border-collapse: collapse; margin: 0.75rem 0; }
