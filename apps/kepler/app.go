@@ -11,11 +11,13 @@ import (
 var appFS embed.FS
 
 type App struct {
-	Log       *slog.Logger
-	Templates map[string]*template.Template
-	RepoRoot  string
-	SiteName  string
-	BaseURL   string
+	Log          *slog.Logger
+	Templates    map[string]*template.Template
+	RepoRoot     string
+	SiteName     string
+	BaseURL      string
+	CloneBaseURL string
+	CloneSSHHost string
 }
 
 type pageBase struct {
@@ -31,17 +33,19 @@ type indexPageData struct {
 
 type repoPageData struct {
 	pageBase
-	Repo         RepoSummary
-	Ref          string
-	ReadmeHTML   template.HTML
-	HasReadme    bool
-	Branches     []RefInfo
-	Tags         []RefInfo
-	Commits      []CommitInfo
-	DefaultRef   string
-	LatestCommit CommitInfo
-	HasLatest    bool
-	Entries      []TreeEntry
+	Repo          RepoSummary
+	Ref           string
+	ReadmeHTML    template.HTML
+	HasReadme     bool
+	Branches      []RefInfo
+	Tags          []RefInfo
+	Commits       []CommitInfo
+	DefaultRef    string
+	LatestCommit  CommitInfo
+	HasLatest     bool
+	Entries       []TreeEntry
+	CloneHTTPSURL string
+	CloneSSHURL   string
 }
 
 type treePageData struct {
@@ -56,13 +60,13 @@ type treePageData struct {
 
 type blobPageData struct {
 	pageBase
-	Repo        RepoSummary
-	Ref         string
-	DefaultRef  string
-	Path        string
-	Breadcrumbs []Breadcrumb
-	Binary      bool
-	Size        int64
+	Repo            RepoSummary
+	Ref             string
+	DefaultRef      string
+	Path            string
+	Breadcrumbs     []Breadcrumb
+	Binary          bool
+	Size            int64
 	HighlightedHTML template.HTML
 }
 

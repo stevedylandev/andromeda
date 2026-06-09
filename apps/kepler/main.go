@@ -17,6 +17,8 @@ func main() {
 	root := config.Getenv("KEPLER_REPO_ROOT", "./repos")
 	siteName := config.Getenv("KEPLER_SITE_NAME", "kepler")
 	baseURL := config.Getenv("KEPLER_BASE_URL", "http://localhost:4747")
+	cloneBaseURL := config.Getenv("KEPLER_CLONE_BASE_URL", "")
+	cloneSSHHost := config.Getenv("KEPLER_CLONE_SSH_HOST", "")
 
 	tmpl, err := buildTemplates()
 	if err != nil {
@@ -24,11 +26,13 @@ func main() {
 	}
 
 	app := &App{
-		Log:       logger,
-		Templates: tmpl,
-		RepoRoot:  root,
-		SiteName:  siteName,
-		BaseURL:   strings.TrimRight(baseURL, "/"),
+		Log:          logger,
+		Templates:    tmpl,
+		RepoRoot:     root,
+		SiteName:     siteName,
+		BaseURL:      strings.TrimRight(baseURL, "/"),
+		CloneBaseURL: strings.TrimRight(cloneBaseURL, "/"),
+		CloneSSHHost: strings.TrimSpace(cloneSSHHost),
 	}
 
 	addr := config.Getenv("HOST", "127.0.0.1") + ":" + config.Getenv("PORT", "4747")

@@ -53,6 +53,13 @@ func (a *App) repoHandler(w http.ResponseWriter, r *http.Request) {
 		Entries:      entries,
 	}
 
+	if a.CloneBaseURL != "" {
+		data.CloneHTTPSURL = a.CloneBaseURL + "/" + summary.Name + ".git"
+	}
+	if a.CloneSSHHost != "" {
+		data.CloneSSHURL = a.CloneSSHHost + ":" + summary.Name + ".git"
+	}
+
 	if c, err := resolveRef(repo, summary.DefaultRef); err == nil {
 		if tree, err := c.Tree(); err == nil {
 			if src, ok := findReadme(tree); ok {

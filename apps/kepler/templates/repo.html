@@ -6,12 +6,37 @@
 <a href="/{{.Repo.Name}}/refs" class="tab">refs</a>
 {{end}}
 {{define "content"}}
-{{if .HasLatest}}
-<div class="last-commit">
-    <span class="hash"><a href="/{{.Repo.Name}}/commit/{{.LatestCommit.SHA}}">{{.LatestCommit.ShortSHA}}</a></span>
-    <span class="subject">{{.LatestCommit.Subject}}</span>
-    <span class="author">{{.LatestCommit.Author}}</span>
-    <span class="date">{{timeAgo .LatestCommit.When}}</span>
+{{if or .HasLatest .CloneHTTPSURL .CloneSSHURL}}
+<div class="repo-head">
+    {{if .HasLatest}}
+    <div class="last-commit">
+        <span class="hash"><a href="/{{.Repo.Name}}/commit/{{.LatestCommit.SHA}}">{{.LatestCommit.ShortSHA}}</a></span>
+        <span class="subject">{{.LatestCommit.Subject}}</span>
+        <span class="author">{{.LatestCommit.Author}}</span>
+        <span class="date">{{timeAgo .LatestCommit.When}}</span>
+    </div>
+    {{end}}
+    {{if or .CloneHTTPSURL .CloneSSHURL}}
+    <div class="clone-dropdown">
+        <button type="button" class="clone-toggle" aria-expanded="false">Clone</button>
+        <div class="clone-menu" hidden>
+            {{if .CloneHTTPSURL}}
+            <div class="clone-option">
+                <span class="clone-label">HTTPS</span>
+                <code class="clone-url">{{.CloneHTTPSURL}}</code>
+                <button type="button" class="copy-btn clone-copy" data-clone="{{.CloneHTTPSURL}}">copy</button>
+            </div>
+            {{end}}
+            {{if .CloneSSHURL}}
+            <div class="clone-option">
+                <span class="clone-label">SSH</span>
+                <code class="clone-url">{{.CloneSSHURL}}</code>
+                <button type="button" class="copy-btn clone-copy" data-clone="{{.CloneSSHURL}}">copy</button>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
 </div>
 {{end}}
 
@@ -43,4 +68,34 @@
         {{end}}
     </section>
 </div>
+<script>
+document.querySelectorAll(".clone-dropdown").forEach(function (dd) {
+    var toggle = dd.querySelector(".clone-toggle");
+    var menu = dd.querySelector(".clone-menu");
+    toggle.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var open = menu.hidden;
+        menu.hidden = !open;
+        toggle.setAttribute("aria-expanded", String(open));
+    });
+    document.addEventListener("click", function (e) {
+        if (!dd.contains(e.target)) {
+            menu.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+        }
+    });
+});
+document.querySelectorAll(".clone-copy").forEach(function (btn) {
+    btn.addEventListener("click", async function () {
+        try {
+            await navigator.clipboard.writeText(btn.dataset.clone);
+            var prev = btn.textContent;
+            btn.textContent = "copied";
+            setTimeout(function () { btn.textContent = prev; }, 1500);
+        } catch (e) {
+            btn.textContent = "failed";
+        }
+    });
+});
+</script>
 {{end}}
