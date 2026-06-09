@@ -30,8 +30,11 @@ func (a *App) routes() *http.ServeMux {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		_, _ = w.Write(data)
 	})
-	mux.HandleFunc("GET /assets/{name}", func(w http.ResponseWriter, r *http.Request) {
-		name := r.PathValue("name")
+	// Static icon/manifest assets. Registered as explicit literal paths so
+	// they stay more specific than the "/{repo}/..." routes (a wildcard
+	// "/assets/{name}" would be ambiguous against "/{repo}/refs" etc.).
+	staticAsset := func(w http.ResponseWriter, r *http.Request) {
+		name := path.Base(r.URL.Path)
 		data, err := appFS.ReadFile("static/" + name)
 		if err != nil {
 			http.NotFound(w, r)
@@ -44,7 +47,14 @@ func (a *App) routes() *http.ServeMux {
 		w.Header().Set("Content-Type", ct)
 		w.Header().Set("Cache-Control", "public, max-age=86400")
 		_, _ = w.Write(data)
-	})
+	}
+	for _, name := range []string{
+		"og.png", "favicon.ico", "favicon-16x16.png", "favicon-32x32.png",
+		"apple-touch-icon.png", "android-chrome-192x192.png",
+		"android-chrome-512x512.png", "site.webmanifest",
+	} {
+		mux.HandleFunc("GET /assets/"+name, staticAsset)
+	}
 
 	mux.HandleFunc("GET /{$}", a.indexHandler)
 	mux.HandleFunc("GET /{repo}", a.repoHandler)

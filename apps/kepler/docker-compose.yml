@@ -10,6 +10,7 @@ services:
       - PORT=${PORT:-4747}
       - KEPLER_REPO_ROOT=/data/repos
       - KEPLER_SITE_NAME=${KEPLER_SITE_NAME:-kepler}
+      - KEPLER_BASE_URL=${KEPLER_BASE_URL:-http://localhost:4747}
     volumes:
       - ${KEPLER_REPO_ROOT:-./repos}:/data/repos:ro
     restart: unless-stopped
