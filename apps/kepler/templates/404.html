@@ -1,0 +1,8 @@
+{{define "404.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}not found — {{.SiteName}}{{end}}
+{{define "content"}}
+<div class="error-page">
+    <h1>Not found</h1>
+    <p class="empty">The requested resource does not exist.</p>
+</div>
+{{end}}

@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/kepler/Dockerfile
+    ports:
+      - "${PORT:-4747}:${PORT:-4747}"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=${PORT:-4747}
+      - KEPLER_REPO_ROOT=/data/repos
+      - KEPLER_SITE_NAME=${KEPLER_SITE_NAME:-kepler}
+    volumes:
+      - ${KEPLER_REPO_ROOT:-./repos}:/data/repos:ro
+    restart: unless-stopped

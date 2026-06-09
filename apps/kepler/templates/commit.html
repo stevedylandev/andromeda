@@ -1,0 +1,48 @@
+{{define "commit.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}{{.Commit.ShortSHA}} — {{.Repo.Name}} — {{.SiteName}}{{end}}
+{{define "tabs"}}
+<a href="/r/{{.Repo.Name}}" class="tab">home</a>
+<a href="/r/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab active">log</a>
+<a href="/r/{{.Repo.Name}}/refs" class="tab">refs</a>
+{{end}}
+{{define "content"}}
+<article class="commit-info">
+    <div class="commit-title">
+        <span class="subject">{{.Commit.Subject}}</span>
+        <span class="commit-hash">{{.Commit.ShortSHA}}</span>
+    </div>
+    {{if .Commit.Body}}<pre class="body">{{.Commit.Body}}</pre>{{end}}
+    <div class="commit-subtitle">
+        <span class="commit-meta">{{.Commit.Author}} · {{.Commit.When.Format "2006-01-02 15:04"}}</span>
+        <span class="commit-stats">{{.Stats.Files}} file(s) · <span class="add">+{{.Stats.Added}}</span> <span class="del">−{{.Stats.Removed}}</span></span>
+    </div>
+</article>
+
+{{range .Files}}
+<section class="diff-file">
+    <header class="diff-header">
+        <span class="name">{{if .From}}{{.From}}{{end}}{{if and .From .To (ne .From .To)}} → {{end}}{{if and .To (ne .From .To)}}{{.To}}{{end}}{{if and .From (not .To)}} (deleted){{end}}{{if and .To (not .From)}} (added){{end}}</span>
+        <span class="diff-header-stats"><span class="add">+{{.Added}}</span> <span class="del">−{{.Removed}}</span></span>
+    </header>
+    {{if .IsBin}}
+    <p class="empty">Binary file — no preview.</p>
+    {{else}}
+    <table class="diff-hunk">
+        <tbody>
+        {{range $hi, $h := .Hunks}}
+            {{if $hi}}<tr class="diff-sep-row"><td colspan="4"><div class="diff-sep"></div></td></tr>{{end}}
+            {{range $h.Lines}}
+            <tr class="diff-{{if eq .Kind "ctx"}}context{{else}}{{.Kind}}{{end}}">
+                <td class="diff-num">{{if .OldNum}}{{.OldNum}}{{end}}</td>
+                <td class="diff-num">{{if .NewNum}}{{.NewNum}}{{end}}</td>
+                <td class="diff-marker">{{if eq .Kind "add"}}+{{else if eq .Kind "del"}}-{{else}} {{end}}</td>
+                <td class="diff-code"><pre>{{.Text}}</pre></td>
+            </tr>
+            {{end}}
+        {{end}}
+        </tbody>
+    </table>
+    {{end}}
+</section>
+{{end}}
+{{end}}

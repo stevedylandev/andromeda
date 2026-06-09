@@ -105,6 +105,15 @@ services:
       - blobs_data:/data
     env_file: apps/blobs/.env
 
+  kepler:
+    image: ghcr.io/stevedylandev/andromeda/kepler:latest
+    restart: unless-stopped
+    ports:
+      - "4747:4747"
+    volumes:
+      - kepler_repos:/data/repos:ro
+    env_file: apps/kepler/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
@@ -151,3 +160,6 @@ volumes:
   blobs_data:
     external: true
     name: blobs_blobs-data
+  kepler_repos:
+    external: true
+    name: kepler_repos

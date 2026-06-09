@@ -1,0 +1,351 @@
+/* Adapted from darkmatter: colors, font, reset. No global table rules. */
+
+@font-face {
+    font-family: "Commit Mono";
+    src: url("/assets/fonts/CommitMono-400-Regular.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+}
+@font-face {
+    font-family: "Commit Mono";
+    src: url("/assets/fonts/CommitMono-700-Regular.otf") format("opentype");
+    font-weight: 700;
+    font-style: normal;
+    font-display: block;
+}
+
+:root {
+    --bg: #121113;
+    --bg-alt: #1e1c1f;
+    --fg: #ffffff;
+    --fg-dim: #888;
+    --border: #333;
+    --link: #ffffff;
+    --add-bg: #14241a;
+    --add-fg: #7ee787;
+    --del-bg: #2a1818;
+    --del-fg: #ff8585;
+    --mono: "Commit Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: var(--mono);
+    -webkit-tap-highlight-color: transparent;
+}
+* { scrollbar-width: none; -ms-overflow-style: none; }
+
+html { background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.6; }
+html::-webkit-scrollbar { display: none; }
+
+body { min-height: 100vh; padding: 0; }
+
+a { color: var(--link); text-decoration: none; touch-action: manipulation; }
+a:hover { opacity: 0.7; }
+
+.container { max-width: 1400px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+.dim { color: var(--fg-dim); }
+.empty { color: var(--fg-dim); font-style: italic; padding: 0.5rem 0; }
+
+/* --- Top nav --- */
+
+.repo-nav {
+    border-bottom: 1px solid var(--border);
+    margin: 1rem 0;
+    padding: 0.25rem 0 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+.repo-name {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: -1px;
+    padding: 0.5rem 0;
+}
+.repo-name a { color: var(--fg); }
+.repo-name .sep { color: var(--fg-dim); font-weight: 400; }
+
+.tab {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    color: var(--fg-dim);
+    border: 1px solid transparent;
+    border-bottom: none;
+    margin-bottom: -1px;
+    font-size: 13px;
+}
+.tab:hover { color: var(--fg); opacity: 1; }
+.tab.active {
+    color: var(--fg);
+    border-color: var(--border);
+    border-radius: 4px 4px 0 0;
+    background: var(--bg);
+}
+.repo-nav .tab:first-of-type { margin-left: auto; }
+
+main { display: block; }
+
+h1 { font-weight: 700; font-size: 18px; margin-bottom: 0.75rem; }
+h2 { font-weight: 700; font-size: 15px; margin-bottom: 0.5rem; }
+h3 { font-weight: 700; font-size: 14px; margin: 1.25rem 0 0.5rem; }
+h3:first-child { margin-top: 0; }
+
+/* --- Generic list tables (repo/log/ref) --- */
+
+.repo-list, .log-list, .ref-list {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    font-size: 13px;
+}
+.repo-list th, .log-list th, .ref-list th {
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    color: var(--fg-dim);
+    font-weight: 400;
+    font-size: 12px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+}
+.repo-list td, .log-list td, .ref-list td {
+    padding: 0.35rem 0.5rem;
+    vertical-align: top;
+}
+.repo-list tbody tr:hover,
+.log-list tbody tr:hover,
+.ref-list tbody tr:hover { background: var(--bg-alt); }
+
+.hash { white-space: nowrap; }
+.hash a { color: var(--fg-dim); }
+.hash a:hover { color: var(--fg); opacity: 1; }
+.date { white-space: nowrap; color: var(--fg-dim); }
+.author { color: var(--fg-dim); white-space: nowrap; }
+.subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.size { color: var(--fg-dim); text-align: right; white-space: nowrap; font-size: 12px; }
+
+@media (max-width: 720px) { .desktop { display: none; } }
+
+/* --- Breadcrumbs --- */
+
+.breadcrumbs { font-size: 13px; margin-bottom: 1rem; color: var(--fg-dim); }
+.breadcrumbs a { color: var(--fg); }
+
+/* --- Last commit bar --- */
+
+.last-commit {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem 0.75rem;
+    font-size: 13px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+.last-commit .subject { flex: 1; }
+
+/* --- Repo home grid --- */
+
+.repo-home { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 720px) { .repo-home { grid-template-columns: 1fr; } }
+
+.content-view { min-width: 0; }
+
+/* --- File tree --- */
+
+.file-tree { font-size: 13px; }
+.tree-entry {
+    display: flex;
+    align-items: baseline;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+.tree-entry:hover { opacity: 1; background: var(--bg-alt); }
+.file-tree .name { white-space: nowrap; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.file-tree .size { white-space: nowrap; margin-left: 0.5rem; }
+
+/* --- Tree page directory listing --- */
+
+.tree-list { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tree-list td { padding: 0.3rem 0.5rem; vertical-align: top; }
+.tree-list tr:hover { background: var(--bg-alt); }
+
+/* --- File / blob view --- */
+
+.file-view { border: 1px solid var(--border); border-radius: 4px; }
+.file-header {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+.file-name { font-weight: 700; flex: 1; }
+.file-meta { color: var(--fg-dim); font-size: 12px; }
+
+.blob-view { overflow: auto hidden; }
+.blob-code { margin: 0; border-collapse: collapse; border-spacing: 0; width: 100%; }
+.blob-code td { padding: 0; vertical-align: top; line-height: 0; border: 0; }
+.blob-code tr:first-child td { padding-top: 0.5rem; }
+.blob-code tr:last-child td { padding-bottom: 0.75rem; }
+.blob-code pre {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre;
+    display: inline;
+}
+.blob-code .line-num {
+    width: 1%;
+    min-width: 4rem;
+    padding: 0 0.75rem 0 0.5rem;
+    text-align: right;
+    user-select: none;
+    vertical-align: top;
+}
+.line-num a {
+    color: var(--fg-dim);
+    opacity: 0.5;
+    font-size: 13px;
+    line-height: 1.5;
+    display: inline-block;
+}
+.line-num a:hover { opacity: 1; }
+.blob-code .line-code { width: 100%; padding-left: 1.5rem; }
+tr:target .line-num,
+tr:target .line-code { background: var(--bg-alt); }
+
+/* --- Commit view --- */
+
+.commit-info { margin-bottom: 1.5rem; }
+.commit-title { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.75rem; }
+.commit-title .subject { font-weight: 700; font-size: 16px; flex: 1; white-space: normal; overflow: visible; }
+.commit-hash { color: var(--fg-dim); white-space: nowrap; font-size: 13px; }
+.commit-info .body {
+    background: var(--bg-alt);
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 13px;
+    margin: 0 0 1rem 0;
+    white-space: pre-wrap;
+}
+.commit-subtitle {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 13px;
+    color: var(--fg-dim);
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+}
+.commit-meta { flex: 1; }
+.commit-stats { white-space: nowrap; }
+
+.add { color: var(--add-fg); }
+.del { color: var(--del-fg); }
+
+/* --- Diff --- */
+
+.diff-file { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 1rem; overflow-x: auto; }
+.diff-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    font-size: 13px;
+    background: var(--bg-alt);
+}
+.diff-header .name { flex: 1; }
+.diff-header-stats { margin-left: auto; font-size: 13px; white-space: nowrap; color: var(--fg-dim); }
+
+.diff-hunk { margin: 0; border: none; width: 100%; border-collapse: collapse; }
+.diff-hunk td { border: none; padding: 0; vertical-align: top; }
+.diff-hunk tr:first-child td { padding-top: 0.5rem; }
+.diff-hunk tr:last-child td { padding-bottom: 0.5rem; }
+.diff-hunk pre {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre;
+    padding: 0 0.75rem;
+}
+.diff-hunk td.diff-num {
+    width: 1%;
+    min-width: 2.5rem;
+    padding: 0 0.25rem 0 0.5rem;
+    text-align: right;
+    color: var(--fg-dim);
+    opacity: 0.6;
+    user-select: none;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+.diff-add .diff-num { color: var(--add-fg); opacity: 0.7; }
+.diff-del .diff-num { color: var(--del-fg); opacity: 0.7; }
+
+td.diff-marker {
+    width: 1%;
+    padding: 0 0.25rem 0 0.75rem;
+    font-size: 13px;
+    line-height: 1.5;
+    user-select: none;
+    white-space: pre;
+}
+.diff-add .diff-marker { color: var(--add-fg); opacity: 0.8; }
+.diff-del .diff-marker { color: var(--del-fg); opacity: 0.8; }
+.diff-context .diff-marker { color: transparent; }
+.diff-add td { background: var(--add-bg); }
+.diff-del td { background: var(--del-bg); }
+.diff-sep { margin: 0.25rem 0; border-top: 1px dashed var(--border); }
+.diff-sep-row td { padding: 0; }
+
+/* --- Pagination --- */
+
+.pagination { display: flex; justify-content: center; padding: 0.75rem 0; font-size: 13px; gap: 0; }
+.pagination a {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    color: var(--fg-dim);
+}
+.pagination a + a { border-left: none; }
+.pagination a:first-child { border-radius: 4px 0 0 4px; }
+.pagination a:last-child { border-radius: 0 4px 4px 0; }
+.pagination a:only-child { border-radius: 4px; }
+.pagination a:hover { color: var(--fg); opacity: 1; }
+
+/* --- Readme --- */
+
+.readme { font-size: 14px; line-height: 1.6; max-width: 900px; min-width: 0; overflow-wrap: break-word; }
+.readme img, .readme video, .readme svg { max-width: 100%; height: auto; }
+.readme h1, .readme h2, .readme h3, .readme h4 { margin-top: 1.25rem; }
+.readme pre {
+    background: var(--bg-alt);
+    padding: 0.75rem;
+    overflow-x: auto;
+    font-size: 13px;
+    border-radius: 4px;
+}
+.readme code { background: var(--bg-alt); padding: 1px 4px; font-size: 13px; border-radius: 3px; }
+.readme pre code { background: transparent; padding: 0; }
+.readme blockquote { border-left: 2px solid var(--border); margin: 0.75rem 0; padding-left: 0.75rem; color: var(--fg-dim); }
+.readme table { border-collapse: collapse; margin: 0.75rem 0; }
+.readme th, .readme td { border: 1px solid var(--border); padding: 0.25rem 0.5rem; }
+.readme a { color: var(--fg); text-decoration: underline; }
+
+/* --- Error page --- */
+
+.error-page { text-align: center; padding: 4rem 1rem; }

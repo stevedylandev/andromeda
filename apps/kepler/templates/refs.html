@@ -1,0 +1,46 @@
+{{define "refs.html"}}{{template "base.html" .}}{{end}}
+{{define "title"}}refs — {{.Repo.Name}} — {{.SiteName}}{{end}}
+{{define "tabs"}}
+<a href="/r/{{.Repo.Name}}" class="tab">home</a>
+<a href="/r/{{.Repo.Name}}/log/{{.DefaultRef}}" class="tab">log</a>
+<a href="/r/{{.Repo.Name}}/refs" class="tab active">refs</a>
+{{end}}
+{{define "content"}}
+<h3>Branches</h3>
+{{if .Branches}}
+<table class="ref-list">
+    <tbody>
+        {{range .Branches}}
+        <tr>
+            <td><a href="/r/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
+            <td class="hash">{{shortSHA .SHA}}</td>
+            <td class="author">{{.Author}}</td>
+            <td class="date">{{timeAgo .Time}}</td>
+            <td><a href="/r/{{$.Repo.Name}}/log/{{.Name}}">log</a></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p class="empty">No branches.</p>
+{{end}}
+
+<h3>Tags</h3>
+{{if .Tags}}
+<table class="ref-list">
+    <tbody>
+        {{range .Tags}}
+        <tr>
+            <td><a href="/r/{{$.Repo.Name}}/tree/{{.Name}}">{{.Name}}</a></td>
+            <td class="hash">{{shortSHA .SHA}}</td>
+            <td class="author">{{.Author}}</td>
+            <td class="date">{{timeAgo .Time}}</td>
+            <td><a href="/r/{{$.Repo.Name}}/archive/{{.Name}}.tar.gz">tar.gz</a></td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p class="empty">No tags.</p>
+{{end}}
+{{end}}
