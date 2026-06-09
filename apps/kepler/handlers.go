@@ -54,7 +54,8 @@ func (a *App) repoHandler(w http.ResponseWriter, r *http.Request) {
 	if c, err := resolveRef(repo, summary.DefaultRef); err == nil {
 		if tree, err := c.Tree(); err == nil {
 			if src, ok := findReadme(tree); ok {
-				if html, err := renderMarkdown(src); err == nil {
+				rawBase := "/r/" + summary.Name + "/raw/" + summary.DefaultRef + "/"
+				if html, err := renderMarkdown(src, rawBase); err == nil {
 					data.ReadmeHTML = html
 					data.HasReadme = true
 				}

@@ -1,14 +1,8 @@
 {{define "index.html"}}{{template "base.html" .}}{{end}}
 {{define "title"}}{{.SiteName}}{{end}}
-{{define "tabs"}}<a href="/" class="tab active">repositories</a>{{end}}
 {{define "content"}}
 {{if .Repos}}
 <table class="repo-list">
-    <thead>
-        <tr>
-            <th>Repository</th>
-        </tr>
-    </thead>
     <tbody>
         {{range .Repos}}
         <tr>

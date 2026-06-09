@@ -133,6 +133,41 @@ h3:first-child { margin-top: 0; }
 
 @media (max-width: 720px) { .desktop { display: none; } }
 
+@media (max-width: 720px) {
+    .container { padding: 0 0.75rem 3rem; }
+
+    .repo-nav { flex-wrap: wrap; gap: 0.25rem; }
+    .repo-name { flex: 1 1 100%; font-size: 15px; padding: 0.25rem 0; gap: 0.5rem; }
+    .repo-nav .tab:first-of-type { margin-left: 0; }
+    .tab { padding: 0.4rem 0.6rem; }
+
+    .last-commit { flex-wrap: wrap; gap: 0.25rem 0.75rem; padding: 0.5rem 0.75rem; }
+    .last-commit .subject {
+        flex: 1 1 100%;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .commit-title { flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+    .commit-title .subject { flex: 1 1 100%; font-size: 15px; }
+    .commit-subtitle { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+
+    .file-header { flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+
+    .diff-header { flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+    .diff-header .name { word-break: break-all; }
+
+    .blob-code .line-num { min-width: 2.5rem; padding: 0 0.4rem 0 0.25rem; }
+    .blob-code .line-code { padding-left: 0.75rem; }
+    .diff-hunk td.diff-num { min-width: 1.75rem; padding: 0 0.2rem 0 0.25rem; }
+    td.diff-marker { padding: 0 0.2rem 0 0.4rem; }
+    .diff-hunk pre, .blob-code pre { font-size: 12px; }
+
+    h1 { font-size: 16px; }
+}
+
 /* --- Breadcrumbs --- */
 
 .breadcrumbs { font-size: 13px; margin-bottom: 1rem; color: var(--fg-dim); }
@@ -335,16 +370,21 @@ td.diff-marker {
 .readme pre {
     background: var(--bg-alt);
     padding: 0.75rem;
+    margin: 0.75rem 0;
     overflow-x: auto;
     font-size: 13px;
     border-radius: 4px;
 }
+.readme p { margin: 0.5rem 0; }
 .readme code { background: var(--bg-alt); padding: 1px 4px; font-size: 13px; border-radius: 3px; }
 .readme pre code { background: transparent; padding: 0; }
 .readme blockquote { border-left: 2px solid var(--border); margin: 0.75rem 0; padding-left: 0.75rem; color: var(--fg-dim); }
 .readme table { border-collapse: collapse; margin: 0.75rem 0; }
 .readme th, .readme td { border: 1px solid var(--border); padding: 0.25rem 0.5rem; }
 .readme a { color: var(--fg); text-decoration: underline; }
+.readme ul, .readme ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+.readme li { margin: 0.25rem 0; }
+.readme li > ul, .readme li > ol { margin: 0.25rem 0; }
 
 /* --- Error page --- */
 

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -65,12 +66,43 @@ func (a *App) renderPage(w http.ResponseWriter, name string, data any) {
 	web.Render(tmpl, w, name, data, a.Log)
 }
 
-func renderMarkdown(source string) (template.HTML, error) {
+func renderMarkdown(source, rawBase string) (template.HTML, error) {
 	var buf bytes.Buffer
 	if err := md.Convert([]byte(source), &buf); err != nil {
 		return "", err
 	}
-	return template.HTML(buf.String()), nil
+	out := buf.String()
+	if rawBase != "" {
+		out = rewriteRelativeImages(out, rawBase)
+	}
+	return template.HTML(out), nil
+}
+
+var imgSrcRe = regexp.MustCompile(`(<img\b[^>]*?\bsrc=")([^"]+)(")`)
+
+func rewriteRelativeImages(html, base string) string {
+	return imgSrcRe.ReplaceAllStringFunc(html, func(m string) string {
+		sub := imgSrcRe.FindStringSubmatch(m)
+		src := sub[2]
+		if isAbsoluteRef(src) {
+			return m
+		}
+		src = strings.TrimPrefix(src, "./")
+		return sub[1] + base + src + sub[3]
+	})
+}
+
+func isAbsoluteRef(s string) bool {
+	if s == "" {
+		return true
+	}
+	if strings.HasPrefix(s, "/") || strings.HasPrefix(s, "#") {
+		return true
+	}
+	if strings.HasPrefix(s, "data:") || strings.HasPrefix(s, "//") {
+		return true
+	}
+	return strings.Contains(s, "://")
 }
 
 func renderBlobLines(source string) template.HTML {
