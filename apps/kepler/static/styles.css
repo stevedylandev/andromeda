@@ -91,7 +91,7 @@ a:hover { opacity: 0.7; }
 main { display: block; }
 
 .footer {
-    text-align: right;
+    text-align: center;
     border-top: 1px solid var(--border);
     margin-top: 3rem;
     padding: 1rem 0;
