@@ -23,9 +23,9 @@
     --border: #333;
     --link: #ffffff;
     --add-bg: #14241a;
-    --add-fg: #7ee787;
+    --add-fg: #FFC98F;
     --del-bg: #2a1818;
-    --del-fg: #ff8585;
+    --del-fg: #538888;
     --mono: "Commit Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 

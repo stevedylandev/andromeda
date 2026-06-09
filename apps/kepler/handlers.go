@@ -1,7 +1,9 @@
 package main
 
 import (
+	"mime"
 	"net/http"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -139,6 +141,14 @@ func (a *App) rawHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ct := http.DetectContentType(data)
+	// http.DetectContentType can't sniff SVG (returns text/xml or
+	// text/plain), which browsers won't render in <img>. Trust the
+	// extension for types the sniffer gets wrong.
+	if ext := strings.ToLower(path.Ext(subPath)); ext != "" {
+		if byExt := mime.TypeByExtension(ext); byExt != "" {
+			ct = byExt
+		}
+	}
 	w.Header().Set("Content-Type", ct)
 	_, _ = w.Write(data)
 }
