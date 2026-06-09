@@ -36,7 +36,14 @@
 }
 * { scrollbar-width: none; -ms-overflow-style: none; }
 
-html { background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.6; }
+html {
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
 html::-webkit-scrollbar { display: none; }
 
 body { min-height: 100vh; padding: 0; }
