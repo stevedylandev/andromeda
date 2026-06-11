@@ -25,6 +25,14 @@
     --add-fg: #FFC98F;
     --del-fg: #538888;
     --mono: "Commit Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Type scale. Keep it small; --fs-base covers most UI and all code. */
+    --fs-xs: 11px;
+    --fs-sm: 12px;
+    --fs-base: 13px;
+    --fs-md: 14px;
+    --fs-lg: 15px;
+    --fs-xl: 16px;
 }
 
 *, *::before, *::after {
@@ -39,9 +47,12 @@
 html {
     background: var(--bg);
     color: var(--fg);
-    font-size: 14px;
+    font-size: var(--fs-md);
     line-height: 1.6;
+    /* Stop iOS Safari / mobile WebKit from inflating text in wide blocks
+       (code tables, diffs). Must stay on html, not body. */
     -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
     text-size-adjust: 100%;
 }
 html::-webkit-scrollbar { display: none; }
@@ -71,7 +82,7 @@ a:hover { opacity: 0.7; }
     align-items: baseline;
     gap: 0.75rem;
     font-weight: 700;
-    font-size: 16px;
+    font-size: var(--fs-xl);
     margin-bottom: -1px;
     padding: 0.5rem 0;
 }
@@ -85,7 +96,7 @@ a:hover { opacity: 0.7; }
     border: 1px solid transparent;
     border-bottom: none;
     margin-bottom: -1px;
-    font-size: 13px;
+    font-size: var(--fs-base);
 }
 .tab:hover { color: var(--fg); opacity: 1; }
 .tab.active {
@@ -103,14 +114,14 @@ main { display: block; }
     margin-top: 3rem;
     padding: 1rem 0;
     color: var(--fg-dim);
-    font-size: 13px;
+    font-size: var(--fs-base);
 }
 .footer a { color: var(--fg-dim); text-decoration: underline; }
 .footer a:hover { color: var(--fg); }
 
-h1 { font-weight: 700; font-size: 18px; margin-bottom: 0.75rem; }
-h2 { font-weight: 700; font-size: 15px; margin-bottom: 0.5rem; }
-h3 { font-weight: 700; font-size: 14px; margin: 1.25rem 0 0.5rem; }
+h1 { font-weight: 700; font-size: var(--fs-xl); margin-bottom: 0.75rem; }
+h2 { font-weight: 700; font-size: var(--fs-lg); margin-bottom: 0.5rem; }
+h3 { font-weight: 700; font-size: var(--fs-md); margin: 1.25rem 0 0.5rem; }
 h3:first-child { margin-top: 0; }
 
 /* --- Generic list tables (repo/log/ref) --- */
@@ -119,14 +130,14 @@ h3:first-child { margin-top: 0; }
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 1rem;
-    font-size: 13px;
+    font-size: var(--fs-base);
 }
 .repo-list th, .log-list th, .ref-list th {
     text-align: left;
     padding: 0.4rem 0.5rem;
     color: var(--fg-dim);
     font-weight: 400;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     text-transform: uppercase;
     border-bottom: 1px solid var(--border);
 }
@@ -145,58 +156,11 @@ h3:first-child { margin-top: 0; }
 .author { color: var(--fg-dim); white-space: nowrap; }
 .ref-name { overflow-wrap: anywhere; word-break: break-word; }
 .subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.size { color: var(--fg-dim); text-align: right; white-space: nowrap; font-size: 12px; }
-
-@media (max-width: 720px) { .desktop { display: none; } }
-
-@media (max-width: 720px) {
-    .container { padding: 0 0.75rem 3rem; }
-
-    .repo-list, .log-list, .ref-list { font-size: 12px; }
-    .repo-list td, .log-list td, .ref-list td,
-    .repo-list th, .log-list th, .ref-list th { padding: 0.4rem 0.3rem; }
-    .log-list .subject, .repo-list .subject { white-space: normal; }
-
-    .repo-nav { flex-wrap: wrap; gap: 0.25rem; }
-    .repo-name { flex: 1 1 100%; font-size: 15px; padding: 0.25rem 0; gap: 0.5rem; }
-    .repo-nav .tab:first-of-type { margin-left: 0; }
-    .tab { padding: 0.4rem 0.6rem; }
-
-    .repo-head { flex-direction: column; gap: 0.75rem; align-items: stretch; }
-    .clone-toggle { width: 100%; }
-    .clone-menu { left: 0; right: 0; min-width: 0; }
-    .last-commit { flex-wrap: wrap; gap: 0.25rem 0.75rem; padding: 0.5rem 0.75rem; }
-    .last-commit .subject {
-        flex: 1 1 100%;
-        min-width: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .commit-title { flex-wrap: wrap; gap: 0.25rem 0.75rem; }
-    .commit-title .subject { flex: 1 1 100%; font-size: 15px; }
-    .commit-subtitle { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
-
-    .file-header { flex-wrap: wrap; gap: 0.25rem 0.75rem; }
-
-    .diff-header { flex-wrap: wrap; gap: 0.25rem 0.5rem; }
-    .diff-header .name { word-break: break-all; }
-
-    .blob-code .line-num { min-width: 2.5rem; padding: 0 0.4rem 0 0.25rem; }
-    .blob-code .line-code { padding-left: 0.75rem; }
-    .diff-hunk td.diff-num { min-width: 1.75rem; padding: 0 0.2rem 0 0.25rem; font-size: 13px; }
-    td.diff-marker { padding: 0 0.2rem 0 0.4rem; font-size: 13px; }
-    .diff-hunk pre, .blob-code pre { font-size: 13px; }
-    .blob-code .line-num a { font-size: 13px; }
-    .blob-code .line-code pre { font-size: 13px; }
-
-    h1 { font-size: 16px; }
-}
+.size { color: var(--fg-dim); text-align: right; white-space: nowrap; font-size: var(--fs-sm); }
 
 /* --- Breadcrumbs --- */
 
-.breadcrumbs { font-size: 13px; margin-bottom: 1rem; color: var(--fg-dim); }
+.breadcrumbs { font-size: var(--fs-base); margin-bottom: 1rem; color: var(--fg-dim); }
 .breadcrumbs a { color: var(--fg); }
 
 /* --- Repo head (last commit + clone) --- */
@@ -214,7 +178,7 @@ h3:first-child { margin-top: 0; }
     gap: 0.75rem;
     border: 1px solid var(--border);
     padding: 0.4rem 0.75rem;
-    font-size: 13px;
+    font-size: var(--fs-base);
     overflow: hidden;
     flex: 1;
     min-width: 0;
@@ -229,7 +193,7 @@ h3:first-child { margin-top: 0; }
     color: var(--fg);
     padding: 0.4rem 0.9rem;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-base);
     cursor: pointer;
     white-space: nowrap;
 }
@@ -251,13 +215,13 @@ h3:first-child { margin-top: 0; }
 }
 .clone-menu[hidden] { display: none; }
 .clone-option { display: flex; flex-direction: column; gap: 0.25rem; }
-.clone-label { font-size: 11px; color: var(--fg-dim); text-transform: uppercase; }
+.clone-label { font-size: var(--fs-xs); color: var(--fg-dim); text-transform: uppercase; }
 .clone-option .copy-btn { align-self: flex-end; }
 .clone-url {
     display: block;
     color: var(--fg);
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     background: var(--bg-alt);
     border: 1px solid var(--border);
     padding: 0.25rem 0.4rem;
@@ -268,13 +232,12 @@ h3:first-child { margin-top: 0; }
 /* --- Repo home grid --- */
 
 .repo-home { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; }
-@media (max-width: 720px) { .repo-home { grid-template-columns: 1fr; } }
 
 .content-view { min-width: 0; }
 
 /* --- File tree --- */
 
-.file-tree { font-size: 13px; }
+.file-tree { font-size: var(--fs-base); }
 .tree-entry {
     display: flex;
     align-items: baseline;
@@ -286,23 +249,23 @@ h3:first-child { margin-top: 0; }
 
 /* --- Tree page directory listing --- */
 
-.tree-list { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tree-list { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
 .tree-list td { padding: 0.3rem 0.5rem; vertical-align: top; }
 .tree-list tr:hover { background: var(--bg-alt); }
 
 /* --- File / blob view --- */
 
-.file-view { border: 1px solid var(--border);  }
+.file-view { border: 1px solid var(--border); }
 .file-header {
     display: flex;
     gap: 0.75rem;
     align-items: baseline;
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border);
-    font-size: 13px;
+    font-size: var(--fs-base);
 }
 .file-name { font-weight: 700; flex: 1; }
-.file-meta { color: var(--fg-dim); font-size: 12px; }
+.file-meta { color: var(--fg-dim); font-size: var(--fs-sm); }
 .copy-btn {
     background: none;
     border: 0;
@@ -321,7 +284,7 @@ h3:first-child { margin-top: 0; }
 .blob-code pre {
     margin: 0;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: var(--fs-base);
     line-height: 1.5;
     white-space: pre;
     display: inline;
@@ -337,7 +300,7 @@ h3:first-child { margin-top: 0; }
 .line-num a {
     color: var(--fg-dim);
     opacity: 0.5;
-    font-size: 13px;
+    font-size: var(--fs-base);
     line-height: 1.5;
     display: inline-block;
 }
@@ -350,12 +313,12 @@ tr:target .line-code { background: var(--bg-alt); }
 
 .commit-info { margin-bottom: 1.5rem; }
 .commit-title { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.75rem; }
-.commit-title .subject { font-weight: 700; font-size: 16px; flex: 1; white-space: normal; overflow: visible; }
-.commit-hash { color: var(--fg-dim); white-space: nowrap; font-size: 13px; }
+.commit-title .subject { font-weight: 700; font-size: var(--fs-xl); flex: 1; white-space: normal; overflow: visible; }
+.commit-hash { color: var(--fg-dim); white-space: nowrap; font-size: var(--fs-base); }
 .commit-info .body {
     background: var(--bg-alt);
     padding: 0.5rem 0.75rem;
-    font-size: 13px;
+    font-size: var(--fs-base);
     margin: 0 0 1rem 0;
     white-space: pre-wrap;
 }
@@ -363,7 +326,7 @@ tr:target .line-code { background: var(--bg-alt); }
     display: flex;
     align-items: baseline;
     gap: 1rem;
-    font-size: 13px;
+    font-size: var(--fs-base);
     color: var(--fg-dim);
     padding-top: 0.5rem;
     border-top: 1px solid var(--border);
@@ -376,18 +339,18 @@ tr:target .line-code { background: var(--bg-alt); }
 
 /* --- Diff --- */
 
-.diff-file { border: 1px solid var(--border);  margin-bottom: 1rem; overflow-x: auto; }
+.diff-file { border: 1px solid var(--border); margin-bottom: 1rem; overflow-x: auto; }
 .diff-header {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     border-bottom: 1px solid var(--border);
     padding: 0.5rem 0.75rem;
-    font-size: 13px;
+    font-size: var(--fs-base);
     background: var(--bg-alt);
 }
 .diff-header .name { flex: 1; }
-.diff-header-stats { margin-left: auto; font-size: 13px; white-space: nowrap; color: var(--fg-dim); }
+.diff-header-stats { margin-left: auto; white-space: nowrap; color: var(--fg-dim); }
 
 .diff-hunk { margin: 0; border: none; width: 100%; border-collapse: collapse; }
 .diff-hunk td { border: none; padding: 0; vertical-align: top; }
@@ -396,7 +359,7 @@ tr:target .line-code { background: var(--bg-alt); }
 .diff-hunk pre {
     margin: 0;
     font-family: var(--mono);
-    font-size: 13px;
+    font-size: var(--fs-base);
     line-height: 1.5;
     white-space: pre;
     padding: 0 0.75rem;
@@ -409,7 +372,7 @@ tr:target .line-code { background: var(--bg-alt); }
     color: var(--fg-dim);
     opacity: 0.6;
     user-select: none;
-    font-size: 13px;
+    font-size: var(--fs-base);
     line-height: 1.5;
     white-space: nowrap;
 }
@@ -419,7 +382,7 @@ tr:target .line-code { background: var(--bg-alt); }
 td.diff-marker {
     width: 1%;
     padding: 0 0.25rem 0 0.75rem;
-    font-size: 13px;
+    font-size: var(--fs-base);
     line-height: 1.5;
     user-select: none;
     white-space: pre;
@@ -434,7 +397,7 @@ td.diff-marker {
 
 /* --- Pagination --- */
 
-.pagination { display: flex; justify-content: center; padding: 0.75rem 0; font-size: 13px; gap: 0; }
+.pagination { display: flex; justify-content: center; padding: 0.75rem 0; font-size: var(--fs-base); gap: 0; }
 .pagination a {
     padding: 0.4rem 0.75rem;
     border: 1px solid var(--border);
@@ -445,7 +408,7 @@ td.diff-marker {
 
 /* --- Readme --- */
 
-.readme { font-size: 14px; line-height: 1.6; max-width: 900px; min-width: 0; overflow-wrap: break-word; }
+.readme { font-size: var(--fs-md); line-height: 1.6; max-width: 900px; min-width: 0; overflow-wrap: break-word; }
 .readme img, .readme video, .readme svg { max-width: 100%; height: auto; }
 .readme h1, .readme h2, .readme h3, .readme h4 { margin-top: 1.25rem; }
 .readme pre {
@@ -453,10 +416,10 @@ td.diff-marker {
     padding: 0.75rem;
     margin: 0.75rem 0;
     overflow-x: auto;
-    font-size: 13px;
+    font-size: var(--fs-base);
 }
 .readme p { margin: 0.5rem 0; }
-.readme code { background: var(--bg-alt); padding: 1px 4px; font-size: 13px;  }
+.readme code { background: var(--bg-alt); padding: 1px 4px; font-size: var(--fs-base); }
 .readme pre code { background: transparent; padding: 0; }
 .readme blockquote { border-left: 2px solid var(--border); margin: 0.75rem 0; padding-left: 0.75rem; color: var(--fg-dim); }
 .readme table { border-collapse: collapse; margin: 0.75rem 0; }
@@ -469,3 +432,53 @@ td.diff-marker {
 /* --- Error page --- */
 
 .error-page { text-align: center; padding: 4rem 1rem; }
+
+/* --- Mobile ---
+   Single block, kept last so equal-specificity overrides beat the
+   desktop rules above. */
+
+@media (max-width: 720px) {
+    .desktop { display: none; }
+
+    .container { padding: 0 0.75rem 3rem; }
+
+    h1 { font-size: var(--fs-lg); }
+
+    .repo-list, .log-list, .ref-list { font-size: var(--fs-sm); }
+    .repo-list td, .log-list td, .ref-list td,
+    .repo-list th, .log-list th, .ref-list th { padding: 0.4rem 0.3rem; }
+    .log-list .subject, .repo-list .subject { white-space: normal; }
+
+    .repo-nav { flex-wrap: wrap; gap: 0.25rem; }
+    .repo-name { flex: 1 1 100%; font-size: var(--fs-lg); padding: 0.25rem 0; gap: 0.5rem; }
+    .repo-nav .tab:first-of-type { margin-left: 0; }
+    .tab { padding: 0.4rem 0.6rem; }
+
+    .repo-home { grid-template-columns: 1fr; }
+
+    .repo-head { flex-direction: column; gap: 0.75rem; align-items: stretch; }
+    .clone-toggle { width: 100%; }
+    .clone-menu { left: 0; right: 0; min-width: 0; }
+    .last-commit { flex-wrap: wrap; gap: 0.25rem 0.75rem; padding: 0.5rem 0.75rem; }
+    .last-commit .subject {
+        flex: 1 1 100%;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .commit-title { flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+    .commit-title .subject { flex: 1 1 100%; font-size: var(--fs-lg); }
+    .commit-subtitle { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+
+    .file-header { flex-wrap: wrap; gap: 0.25rem 0.75rem; }
+
+    .diff-header { flex-wrap: wrap; gap: 0.25rem 0.5rem; }
+    .diff-header .name { word-break: break-all; }
+
+    .blob-code .line-num { min-width: 2.5rem; padding: 0 0.4rem 0 0.25rem; }
+    .blob-code .line-code { padding-left: 0.75rem; }
+    .diff-hunk td.diff-num { min-width: 1.75rem; padding: 0 0.2rem 0 0.25rem; }
+    td.diff-marker { padding: 0 0.2rem 0 0.4rem; }
+}
