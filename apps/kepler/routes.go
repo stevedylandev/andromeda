@@ -56,6 +56,8 @@ func (a *App) routes() *http.ServeMux {
 		mux.HandleFunc("GET /assets/"+name, staticAsset)
 	}
 
+	mux.HandleFunc("GET /api/repos", a.apiReposHandler)
+
 	mux.HandleFunc("GET /{$}", a.indexHandler)
 	mux.HandleFunc("GET /{repo}", a.repoHandler)
 	mux.HandleFunc("GET /{repo}/refs", a.refsHandler)

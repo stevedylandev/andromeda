@@ -14,6 +14,16 @@ func (a *App) base(repoName string) pageBase {
 	return pageBase{SiteName: a.SiteName, RepoName: repoName, BaseURL: a.BaseURL}
 }
 
+// requestBaseURL derives the externally-visible base URL (scheme://host) from
+// the incoming request, honoring a reverse proxy's X-Forwarded-Proto.
+func (a *App) requestBaseURL(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
+		scheme = "https"
+	}
+	return scheme + "://" + r.Host
+}
+
 func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	repos, err := a.listRepos()
 	if err != nil {
@@ -268,11 +278,7 @@ func (a *App) atomHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "log failed", http.StatusInternalServerError)
 		return
 	}
-	scheme := "http"
-	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
-		scheme = "https"
-	}
-	baseURL := scheme + "://" + r.Host
+	baseURL := a.requestBaseURL(r)
 	feed, err := buildAtomFeed(a.SiteName, summary.Name, baseURL, commits)
 	if err != nil {
 		http.Error(w, "atom build failed", http.StatusInternalServerError)

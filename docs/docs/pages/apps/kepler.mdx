@@ -13,6 +13,7 @@ Kepler is a read-only web view for on-disk git repositories. It's drop-in compat
 - Branches + tags page
 - Archive download: `.tar.gz`, `.zip`
 - Atom feed per repo
+- Public read-only JSON API
 - Dark themed UI with Commit Mono font
 
 ## Configure
@@ -87,3 +88,28 @@ A `description` file in the repo directory shows on the index and repo home (sof
 | `/{repo}/raw/{ref}/{path...}` | Raw file download |
 | `/{repo}/archive/{name}` | Archive download (`.tar.gz`, `.zip`) |
 | `/{repo}/atom.xml` | Per-repo Atom feed |
+| `/api/repos` | Public JSON list of all repos |
+
+### API
+
+`GET /api/repos` returns a JSON list of every repo. No auth, CORS open (`Access-Control-Allow-Origin: *`).
+
+```json
+{
+  "site": "kepler",
+  "repos": [
+    {
+      "name": "andromeda",
+      "description": "monorepo",
+      "default_ref": "main",
+      "last_commit": "2026-06-14T10:00:00Z",
+      "url": "https://git.example.com/andromeda",
+      "atom_url": "https://git.example.com/andromeda/atom.xml",
+      "clone_https": "https://git.example.com/andromeda.git",
+      "clone_ssh": "git@git.example.com:andromeda.git"
+    }
+  ]
+}
+```
+
+`url` and `atom_url` are derived from the request host (honors `X-Forwarded-Proto` behind a proxy). The `clone_https` / `clone_ssh` fields appear only when `KEPLER_CLONE_BASE_URL` / `KEPLER_CLONE_SSH_HOST` are set.
