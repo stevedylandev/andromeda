@@ -110,43 +110,55 @@ docker compose exec backup cat /var/log/backup.log
 
 ## Restoring from a Backup
 
-1. List available backups for a service (e.g. `jotts`):
+Use `restore.sh` to download a backup from R2 and write it into the target Docker volume.
+Run it on the **host** (it shells out to `docker run`; the backup container mounts the data
+volumes read-only). It reads the same `.env` as the backup (`R2_ENDPOINT`, `R2_BUCKET`,
+AWS keys, optional `*_VOLUME` overrides) — `source .env` first, or prefix the env inline.
 
 ```sh
-aws s3 ls s3://andromeda-backups/jotts/ --endpoint-url https://<account-id>.r2.cloudflarestorage.com
+restore.sh <app|all> [--timestamp <ts>] [--list] [--yes]
 ```
 
-2. Download the backup you want to restore:
+- `<app>` — one of: `jotts sipp cellar posts feeds library bookmarks parcels easel`, or `all`.
+- `--timestamp <ts>` — restore a specific backup (e.g. `2026-04-04T060000Z`); the
+  `.sqlite.gz` suffix is optional. Default: the latest backup. Not valid with `all`.
+- `--list` — list available backups for the app(s) and exit (no restore).
+- `--yes` — skip the interactive confirmation prompt.
+
+> **Warning:** Restoring overwrites live data. Stop the target service before restoring and
+> restart it after for a clean restore — `restore.sh` does **not** stop or start services.
+
+Examples:
 
 ```sh
-aws s3 cp s3://andromeda-backups/jotts/2026-04-04T060000Z.sqlite.gz ./restore.sqlite.gz \
-  --endpoint-url https://<account-id>.r2.cloudflarestorage.com
+# Load credentials/volume overrides
+set -a; . ./.env; set +a
+
+# See what's available
+restore.sh jotts --list
+
+# Restore the latest jotts backup (prompts for confirmation)
+restore.sh jotts
+
+# Restore a specific backup, no prompt
+restore.sh jotts --timestamp 2026-04-04T060000Z --yes
+
+# Restore every app's latest backup
+restore.sh all
 ```
 
-3. Decompress it:
+For each app the script: resolves the backup key (latest or `--timestamp`), downloads and
+decompresses it, runs `PRAGMA integrity_check`, confirms the target volume exists, then
+copies the database to the volume root via a throwaway `debian:bookworm-slim` container.
 
-```sh
-gunzip restore.sqlite.gz
-```
+### Manual restore (fallback)
 
-4. Stop the target service so nothing is writing to the database:
-
-```sh
-docker compose -f /path/to/jotts/docker-compose.yml down
-```
-
-5. Copy the restored database into the volume:
-
-```sh
-docker run --rm -v jotts_jotts-data:/data -v $(pwd):/backup debian:bookworm-slim \
-  cp /backup/restore.sqlite /data/jotts.sqlite
-```
-
-6. Restart the service:
-
-```sh
-docker compose -f /path/to/jotts/docker-compose.yml up -d
-```
+1. List backups: `aws s3 ls s3://andromeda-backups/jotts/ --endpoint-url https://<account-id>.r2.cloudflarestorage.com`
+2. Download: `aws s3 cp s3://andromeda-backups/jotts/<timestamp>.sqlite.gz ./restore.sqlite.gz --endpoint-url <endpoint>`
+3. Decompress: `gunzip restore.sqlite.gz`
+4. Stop the target service so nothing is writing to the database.
+5. Copy into the volume: `docker run --rm -v jotts_jotts-data:/data -v $(pwd):/backup debian:bookworm-slim cp /backup/restore.sqlite /data/jotts.sqlite`
+6. Restart the service.
 
 ## Configuration
 
