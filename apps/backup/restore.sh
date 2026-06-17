@@ -14,9 +14,31 @@ set -eu
 #
 # Env (same as backup.sh): R2_ENDPOINT, R2_BUCKET, AWS_ACCESS_KEY_ID,
 # AWS_SECRET_ACCESS_KEY, and optional <APP>_VOLUME overrides.
+# These are read from ./.env (or $ENV_FILE) if set; real env vars win.
 #
 # Run this on the HOST. It shells out to `docker run` to write into volumes;
 # the backup container itself mounts those volumes read-only.
+
+# Load .env from the script's directory (or $ENV_FILE) if present. Existing
+# environment variables take precedence over the file.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ENV_FILE="${ENV_FILE:-$SCRIPT_DIR/.env}"
+if [ -f "$ENV_FILE" ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+    key="${line%%=*}"
+    case "$key" in
+      *[!A-Za-z0-9_]*|'') continue ;;
+    esac
+    # Only set if not already in the environment.
+    if [ -z "$(eval "printf '%s' \"\${$key:-}\"")" ]; then
+      val="${line#*=}"
+      export "$key=$val"
+    fi
+  done < "$ENV_FILE"
+fi
 
 BUCKET="${R2_BUCKET:-andromeda-backups}"
 
