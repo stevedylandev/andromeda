@@ -13,8 +13,11 @@ set -eu
 #   --yes            Skip the interactive confirmation prompt.
 #
 # Env (same as backup.sh): R2_ENDPOINT, R2_BUCKET, AWS_ACCESS_KEY_ID,
-# AWS_SECRET_ACCESS_KEY, and optional <APP>_VOLUME overrides.
-# These are read from ./.env (or $ENV_FILE) if set; real env vars win.
+# AWS_SECRET_ACCESS_KEY. Read from ./.env (or $ENV_FILE) if set; real env wins.
+#
+# Volume names are read ONLY from the root docker-compose.yml (the `name:`
+# field of each external volume), not from .env. Override the compose file
+# location with $COMPOSE_FILE. Missing volumes are created automatically.
 #
 # Run this on the HOST. It shells out to `docker run` to write into volumes;
 # the backup container itself mounts those volumes read-only.
@@ -42,16 +45,21 @@ fi
 
 BUCKET="${R2_BUCKET:-andromeda-backups}"
 
-# app | volume-internal filename | volume env var | default volume name
-APPS="jotts:jotts.sqlite:JOTTS_VOLUME:jotts_jotts-data
-sipp:sipp.sqlite:SIPP_VOLUME:sipp_sipp-data
-cellar:cellar.sqlite:CELLAR_VOLUME:cellar_cellar-data
-posts:posts.sqlite:POSTS_VOLUME:posts_posts-data
-feeds:feeds.sqlite:FEEDS_VOLUME:feeds_feeds-data
-library:library.sqlite:LIBRARY_VOLUME:library_library-data
-bookmarks:bookmarks.sqlite:BOOKMARKS_VOLUME:bookmarks_bookmarks-data
-parcels:parcels.db:PARCELS_VOLUME:parcels_parcels_data
-easel:easel.sqlite:EASEL_VOLUME:easel_easel-data"
+# Root docker-compose.yml is the single source of truth for volume names.
+COMPOSE_FILE="${COMPOSE_FILE:-$SCRIPT_DIR/../../docker-compose.yml}"
+
+# app | volume-internal filename | compose volume key | fallback volume name
+# The compose key is looked up in COMPOSE_FILE; the fallback is used only if
+# the key (or compose file) is missing.
+APPS="jotts:jotts.sqlite:jotts_data:jotts_jotts-data
+sipp:sipp.sqlite:sipp_data:sipp-rust_sipp-data
+cellar:cellar.sqlite:cellar_data:cellar_cellar_data
+posts:posts.sqlite:posts_data:posts_posts-data
+feeds:feeds.sqlite:feeds_data:feeds_feeds_data
+library:library.sqlite:library_data:library_library-data
+bookmarks:bookmarks.sqlite:bookmarks_data:bookmarks_bookmarks-data
+parcels:parcels.db:parcels_data:parcels_parcels_data
+easel:easel.sqlite:easel_data:easel_easel-data"
 
 RESTORE_IMAGE="debian:bookworm-slim"
 
@@ -66,13 +74,13 @@ die() {
 }
 
 # Look up a field for an app from the APPS registry.
-# $1 app name, $2 field index (2=file, 3=env var, 4=default volume)
+# $1 app name, $2 field index (2=file, 3=compose key, 4=fallback volume)
 app_field() {
-  echo "$APPS" | while IFS=: read -r name file env def; do
+  echo "$APPS" | while IFS=: read -r name file key def; do
     [ "$name" = "$1" ] || continue
     case "$2" in
       2) echo "$file" ;;
-      3) echo "$env" ;;
+      3) echo "$key" ;;
       4) echo "$def" ;;
     esac
     break
@@ -83,15 +91,31 @@ app_exists() {
   echo "$APPS" | cut -d: -f1 | grep -qx "$1"
 }
 
-# Resolve the Docker volume name for an app, honoring the <APP>_VOLUME override.
+# Read the external `name:` for a volume key from the compose file's top-level
+# `volumes:` block. Echoes nothing if the file or key is absent.
+compose_volume_name() {
+  key="$1"
+  [ -f "$COMPOSE_FILE" ] || return 0
+  awk -v key="$key" '
+    /^volumes:/             { invol=1; next }
+    invol && /^[^[:space:]]/ { invol=0 }
+    invol && $0 ~ "^  "key":[[:space:]]*$" { found=1; next }
+    found && /^[[:space:]]*name:[[:space:]]/ {
+      sub(/^[[:space:]]*name:[[:space:]]*/, ""); print; exit
+    }
+    found && /^  [^[:space:]]/ { exit }   # next volume block, no name set
+  ' "$COMPOSE_FILE"
+}
+
+# Resolve the Docker volume name for an app from the root compose file,
+# falling back to the registry default only if compose has no entry.
 resolve_volume() {
   app="$1"
-  env_var=$(app_field "$app" 3)
+  key=$(app_field "$app" 3)
   def=$(app_field "$app" 4)
-  # Indirect env lookup that works in POSIX sh.
-  val=$(eval "printf '%s' \"\${$env_var:-}\"")
-  if [ -n "$val" ]; then
-    echo "$val"
+  name=$(compose_volume_name "$key")
+  if [ -n "$name" ]; then
+    echo "$name"
   else
     echo "$def"
   fi
@@ -133,8 +157,9 @@ restore_app() {
   src="s3://$BUCKET/$app/$key"
 
   if ! docker volume inspect "$volume" >/dev/null 2>&1; then
-    echo "WARN: docker volume '$volume' not found for $app, skipping"
-    return 1
+    echo "$(date -u) Creating docker volume '$volume' for $app ..."
+    docker volume create "$volume" >/dev/null \
+      || { echo "WARN: failed to create volume '$volume' for $app, skipping"; return 1; }
   fi
 
   if [ "$ASSUME_YES" != "1" ]; then
