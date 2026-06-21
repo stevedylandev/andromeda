@@ -10,17 +10,17 @@ SQLite.
 
 | App | Description | Deploy |
 |---|---|---|
-| [**Sipp**](apps/sipp) | Minimal code sharing with web UI | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Axcf_D?referralCode=JGcIp6) |
-| [**Feeds**](apps/feeds) | Minimal RSS reader with OPML import/export and a JSON API | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/Ezvmhx?referralCode=JGcIp6) |
-| [**Jotts**](apps/jotts) | Minimal markdown notes app | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DLhUhH?referralCode=JGcIp6) |
-| [**OG**](apps/og) | Open Graph tag inspector | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/OdXBt_?referralCode=JGcIp6) |
-| [**Shrink**](apps/shrink) | Image compression and resizing | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/enYUFb?referralCode=JGcIp6) |
-| [**Cellar**](apps/cellar) | Minimal wine collection tracker | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/MNprVh?referralCode=JGcIp6) |
-| [**Posts**](apps/posts) | Minimal CMS blog with admin interface | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tYtJYp?referralCode=JGcIp6) |
-| [**Bookmarks**](apps/bookmarks) | Minimal link saver with categories and JSON API | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/DZfr5P?referralCode=JGcIp6) |
-| [**Library**](apps/library) | Minimal book tracker with Google Books search | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/tepdeI?referralCode=JGcIp6) |
-| [**Easel**](apps/easel) | Daily public-domain painting from the Art Institute of Chicago | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/0DpuRE?referralCode=JGcIp6) |
-| [**Blobs**](apps/blobs) | Minimal web browser for S3-compatible blob storage | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/3CH6O6?referralCode=JGcIp6) |
+| [**Sipp**](apps/sipp) | Minimal code sharing with web UI | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-sipp) |
+| [**Feeds**](apps/feeds) | Minimal RSS reader with OPML import/export and a JSON API | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-feeds) |
+| [**Jotts**](apps/jotts) | Minimal markdown notes app | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-jotts) |
+| [**OG**](apps/og) | Open Graph tag inspector | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-og) |
+| [**Shrink**](apps/shrink) | Image compression and resizing | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-shrink) |
+| [**Cellar**](apps/cellar) | Minimal wine collection tracker | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-cellar) |
+| [**Posts**](apps/posts) | Minimal CMS blog with admin interface | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-posts) |
+| [**Bookmarks**](apps/bookmarks) | Minimal link saver with categories and JSON API | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-bookmarks) |
+| [**Library**](apps/library) | Minimal book tracker with Google Books search | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-library) |
+| [**Easel**](apps/easel) | Daily public-domain painting from the Art Institute of Chicago | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-easel) |
+| [**Blobs**](apps/blobs) | Minimal web browser for S3-compatible blob storage | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-blobs) |
 
 ## Shared packages
 
