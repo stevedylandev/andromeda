@@ -1,0 +1,39 @@
+/* App-local styles for quotes. The shared design system (palette, typography,
+   forms, admin lists) comes from /assets/darkmatter.css. Only the minimal
+   centered landing "hero" is added here, since darkmatter's body is a
+   left-aligned 700px column and does not vertically center. */
+
+.quote-hero {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+}
+
+.quote-hero .quote-text {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1.6;
+  max-width: 38rem;
+  color: #ffffff;
+}
+
+.quote-hero .attribution {
+  margin: 0;
+  opacity: 0.5;
+  font-size: 0.875rem;
+}
+
+.quote-hero cite {
+  font-style: italic;
+}
+
+.admin-list-meta cite {
+  font-style: italic;
+}

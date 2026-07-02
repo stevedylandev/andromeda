@@ -1,0 +1,8 @@
+{
+  "name": "Quotes",
+  "short_name": "Quotes",
+  "icons": [],
+  "theme_color": "#121113",
+  "background_color": "#121113",
+  "display": "standalone"
+}

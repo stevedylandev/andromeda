@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Quotes</title>
+    <meta name="description" content="A quote a day from classic literature" />
+    <meta property="og:url" content="{{.BaseURL}}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Quotes" />
+    <meta property="og:description" content="A quote a day from classic literature" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="{{.BaseURL}}" />
+    <meta name="twitter:title" content="Quotes" />
+    <meta name="twitter:description" content="A quote a day from classic literature" />
+  </head>
+  <body>
+    <main class="quote-hero">
+      {{if .Quote}}
+      <blockquote class="quote-text">{{.Quote.Text}}</blockquote>
+      <p class="attribution">
+        &mdash; {{.Quote.Author}}{{if .Quote.Source}}, <cite>{{.Quote.Source}}</cite>{{end}}
+      </p>
+      {{else}}
+      <p class="attribution">No quotes yet.</p>
+      {{end}}
+    </main>
+  </body>
+</html>
