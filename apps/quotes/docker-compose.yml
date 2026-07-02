@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/quotes/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+      - QUOTES_DB_PATH=/data/quotes.sqlite
+      - QUOTES_PASSWORD=${QUOTES_PASSWORD:-changeme}
+      - QUOTES_API_KEY=${QUOTES_API_KEY:-}
+      - BASE_URL=${BASE_URL:-http://localhost:${PORT:-3000}}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+    volumes:
+      - quotes-data:/data
+    restart: unless-stopped
+
+volumes:
+  quotes-data:

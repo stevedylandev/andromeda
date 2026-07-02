@@ -30,3 +30,5 @@ apps/posts/posts
 apps/shrink/shrink
 apps/sipp/sipp
 apps/kepler/kepler
+apps/quotes/quotes
+apps/quotes/quotes.csv

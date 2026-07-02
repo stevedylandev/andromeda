@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Quotes | Admin</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">QUOTES</a>
+      <nav class="links">
+        <a href="/admin/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    <form class="form" method="POST" action="/admin/add">
+      <div class="form-field">
+        <label for="text">Quote</label>
+        <textarea id="text" name="text" rows="3" placeholder="the quote" required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label for="author">Author</label>
+          <input type="text" id="author" name="author" placeholder="author" required />
+        </div>
+        <div class="form-field">
+          <label for="source">Source</label>
+          <input type="text" id="source" name="source" placeholder="book / work (optional)" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit">Add quote</button>
+      </div>
+    </form>
+
+    <div class="admin-toolbar">
+      <h2>Quotes ({{.Total}})</h2>
+      <form method="GET" action="/admin" class="form-row">
+        <div class="form-field">
+          <input type="text" name="q" placeholder="search text, author, source" value="{{.Query}}" />
+        </div>
+        <button type="submit">Search</button>
+        {{if .Searched}}<a href="/admin" class="link-button">clear</a>{{end}}
+      </form>
+    </div>
+
+    {{if not .Quotes}}
+    <p class="empty">
+      {{if .Searched}}No matches.{{else}}No quotes yet. Add one above or seed from the CSV.{{end}}
+    </p>
+    {{else}}
+    <ul class="admin-list">
+      {{range .Quotes}}
+      <li class="admin-list-item">
+        <div class="admin-list-info">
+          <span class="admin-list-title">{{.Text}}</span>
+          <span class="admin-list-meta">&mdash; {{.Author}}{{if .Source}}, <cite>{{.Source}}</cite>{{end}}</span>
+        </div>
+        <div class="admin-list-actions">
+          <form method="POST" action="/admin/quotes/{{.ShortID}}/delete" class="inline-form">
+            <button type="submit" class="link-button danger">delete</button>
+          </form>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+    {{if not .Searched}}
+    <p class="empty">Showing the 50 most recent. Use search to find older quotes.</p>
+    {{end}}
+    {{end}}
+  </body>
+</html>

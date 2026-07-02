@@ -105,6 +105,15 @@ services:
       - blobs_data:/data
     env_file: apps/blobs/.env
 
+  quotes:
+    image: ghcr.io/stevedylandev/andromeda/quotes:latest
+    restart: unless-stopped
+    ports:
+      - "4040:3000"
+    volumes:
+      - quotes_data:/data
+    env_file: apps/quotes/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
@@ -117,6 +126,7 @@ services:
       - bookmarks_data:/data/bookmarks:ro
       - easel_data:/data/easel:ro
       - blobs_data:/data/blobs:ro
+      - quotes_data:/data/quotes:ro
     env_file: apps/backup/.env
     restart: unless-stopped
 
@@ -151,3 +161,6 @@ volumes:
   blobs_data:
     external: true
     name: blobs_blobs-data
+  quotes_data:
+    external: true
+    name: quotes_quotes-data

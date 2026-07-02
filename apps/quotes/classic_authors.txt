@@ -1,0 +1,47 @@
+# Classic literature match list for the `quotes seed` command.
+#
+# Each non-empty, non-comment line is matched as a CASE-SENSITIVE substring
+# against the CSV "author" column. So "Jane Austen" matches both
+# "Jane Austen" and "Jane Austen, Pride and Prejudice".
+#
+# Edit this file (add/remove names or book titles) and re-run
+#   go run . seed quotes.csv
+# to pull in more quotes. Re-seeding is idempotent (dedup on text + author).
+
+Jane Austen
+Charles Dickens
+Leo Tolstoy
+Dostoyevsky
+Fyodor Dostoevsky
+Homer
+Herman Melville
+Nathaniel Hawthorne
+Mary Shelley
+Bram Stoker
+Emily Brontë
+Charlotte Brontë
+Anne Brontë
+Victor Hugo
+Alexandre Dumas
+Franz Kafka
+Marcel Proust
+James Joyce
+Virginia Woolf
+F. Scott Fitzgerald
+Ernest Hemingway
+John Steinbeck
+George Orwell
+Jules Verne
+H.G. Wells
+Edgar Allan Poe
+Walt Whitman
+Emily Dickinson
+Oscar Wilde
+Mark Twain
+Henry David Thoreau
+George Eliot
+Rudyard Kipling
+Voltaire
+Geoffrey Chaucer
+Plato
+Aristotle

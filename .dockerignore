@@ -4,3 +4,10 @@ target/
 .gitignore
 *.md
 LICENSE
+
+# App databases and bulk seed data must never enter an image build context.
+**/*.sqlite
+**/*.sqlite-journal
+**/*.sqlite-wal
+**/*.sqlite-shm
+apps/quotes/quotes.csv
