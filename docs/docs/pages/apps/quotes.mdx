@@ -1,0 +1,110 @@
+# Quotes
+
+A minimal quote-a-day site. The landing page shows a single **quote of the day** from classic literature — white, centered, on a dark background. Everything else lives behind `/admin`.
+
+- Single Go binary with embedded assets
+- Local SQLite storage
+- Deterministic quote of the day (rotates at UTC midnight, same for every visitor)
+- Password-protected admin panel to add, search, and remove quotes
+- Open JSON read API
+- CSV seed command that imports only classic-literature quotes, matched against an editable author list
+- Dark themed UI with Commit Mono font
+
+## Configure
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `QUOTES_PASSWORD` | Password for the admin panel (empty disables login) | -- |
+| `QUOTES_API_KEY` | Reserved; the read API is currently open | -- |
+| `QUOTES_DB_PATH` | SQLite database path | `quotes.sqlite` |
+| `BASE_URL` | Public base URL (used in social meta tags) | `http://localhost:3000` |
+| `HOST` | Bind address | `127.0.0.1` |
+| `PORT` | Bind port | `3000` |
+| `COOKIE_SECURE` | Enable HTTPS-only cookies | `false` |
+
+`QUOTES_PASSWORD` is required to reach the admin panel — with it empty, login is disabled.
+
+## Deploy
+
+### Railway
+
+The easiest way to deploy Quotes is with the one-click Railway template. See the [Deploying with Railway](/deploy-railway) guide for a walkthrough. Quotes requires `QUOTES_PASSWORD` during the configure step.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-quotes)
+
+### Docker
+
+```bash
+cd apps/quotes
+cp .env.example .env
+# Edit .env with your password
+docker compose up -d
+```
+
+This starts Quotes on port `4040` with a persistent volume for the SQLite database.
+
+### Binary
+
+```bash
+cd apps/quotes && go build .
+```
+
+The resulting binary is self-contained with all assets embedded (including the classic-author list). Copy it to your server with a configured `.env` file and run it directly.
+
+## Seeding from a CSV
+
+`quotes.csv` is a Goodreads-style export (`quote,author,category`). The `seed` command imports only classic-literature quotes, matched **case-sensitively** as substrings of the author column against the list in `classic_authors.txt`:
+
+```bash
+go run . seed quotes.csv
+```
+
+- Edit `classic_authors.txt` (one author or book title per line, `#` comments allowed) to widen or narrow the selection, then re-run.
+- Attribution is split at the first comma into `author` and `source` (book title).
+- Re-seeding is **idempotent** — quotes already present (matched on text + author) are skipped.
+- The list is also embedded in the binary, so `seed` works even when `classic_authors.txt` is absent. An on-disk file takes precedence.
+
+### Seeding a Docker volume
+
+The image only ships the binary — the DB lives on the `quotes_data` volume, and the large `quotes.csv` is excluded from the build. Seed with a one-off `run` that bind-mounts the CSV and writes into that same volume:
+
+```bash
+docker compose run --rm \
+  -v "$PWD/apps/quotes/quotes.csv:/seed/quotes.csv:ro" \
+  quotes quotes seed /seed/quotes.csv
+
+docker compose up -d quotes
+```
+
+To seed with an edited author list without rebuilding the image, also mount it over the working directory:
+
+```bash
+docker compose run --rm \
+  -v "$PWD/apps/quotes/quotes.csv:/seed/quotes.csv:ro" \
+  -v "$PWD/apps/quotes/classic_authors.txt:/data/classic_authors.txt:ro" \
+  quotes quotes seed /seed/quotes.csv
+```
+
+## Use
+
+The quote of the day is publicly viewable at `/`. It is deterministic — the same quote shows for everyone for the whole UTC day and rotates at midnight.
+
+### Admin
+
+Set `QUOTES_PASSWORD` and log in at `/admin/login`. From the admin panel you can:
+
+- Add a quote with author and optional source
+- Search quotes by text, author, or source
+- Remove quotes
+
+### JSON API
+
+Read endpoints are open.
+
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/quotes` | List recent quotes. Query: `limit` (1–500, default 100) |
+| `GET` | `/api/quotes/today` | The quote of the day |
+| `GET` | `/api/quotes/{short_id}` | Fetch a single quote |

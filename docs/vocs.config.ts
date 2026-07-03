@@ -81,6 +81,10 @@ export default defineConfig({
           link: '/apps/posts',
         },
         {
+          text: 'Quotes',
+          link: '/apps/quotes',
+        },
+        {
           text: 'Shrink',
           link: '/apps/shrink',
         },

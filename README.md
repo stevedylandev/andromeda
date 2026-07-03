@@ -21,6 +21,7 @@ SQLite.
 | [**Library**](apps/library) | Minimal book tracker with Google Books search | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-library) |
 | [**Easel**](apps/easel) | Daily public-domain painting from the Art Institute of Chicago | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-easel) |
 | [**Blobs**](apps/blobs) | Minimal web browser for S3-compatible blob storage | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-blobs) |
+| [**Quotes**](apps/quotes) | Minimal quote-a-day site seeded from classic literature | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/andromeda-quotes) |
 
 ## Shared packages
 
