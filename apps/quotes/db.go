@@ -92,6 +92,12 @@ func quoteOfTheDay(db *sql.DB) (*Quote, error) {
 	return scanQuote(db.QueryRow(`SELECT `+selectCols+` FROM quotes ORDER BY id LIMIT 1 OFFSET ?`, offset))
 }
 
+// randomQuote returns a uniformly random quote. Returns (nil, nil) when the
+// table is empty.
+func randomQuote(db *sql.DB) (*Quote, error) {
+	return scanQuote(db.QueryRow(`SELECT ` + selectCols + ` FROM quotes ORDER BY RANDOM() LIMIT 1`))
+}
+
 func searchQuotes(db *sql.DB, q string) ([]Quote, error) {
 	term := strings.TrimSpace(q)
 	if term == "" {

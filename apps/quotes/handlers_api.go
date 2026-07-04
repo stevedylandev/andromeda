@@ -40,6 +40,20 @@ func (a *App) apiQuoteOfTheDay(w http.ResponseWriter, r *http.Request) {
 	web.WriteJSON(w, http.StatusOK, q)
 }
 
+func (a *App) apiRandomQuote(w http.ResponseWriter, r *http.Request) {
+	q, err := randomQuote(a.DB)
+	if err != nil {
+		a.Log.Error("random quote", "err", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if q == nil {
+		web.WriteError(w, http.StatusNotFound, "no quotes")
+		return
+	}
+	web.WriteJSON(w, http.StatusOK, q)
+}
+
 func (a *App) apiGetQuote(w http.ResponseWriter, r *http.Request) {
 	q, err := getQuoteByShortID(a.DB, r.PathValue("short_id"))
 	if err != nil {

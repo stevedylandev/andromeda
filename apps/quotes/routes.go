@@ -15,6 +15,7 @@ func (a *App) routes() *http.ServeMux {
 	}
 
 	mux.HandleFunc("GET /", a.indexHandler)
+	mux.HandleFunc("GET /random", a.randomHandler)
 	mux.HandleFunc("GET /static/", web.EmbeddedHandler(appFS, "static"))
 	darkmatter.Mount(mux, "/assets")
 
@@ -27,6 +28,7 @@ func (a *App) routes() *http.ServeMux {
 
 	mux.HandleFunc("GET /api/quotes", a.apiListQuotes)
 	mux.HandleFunc("GET /api/quotes/today", a.apiQuoteOfTheDay)
+	mux.HandleFunc("GET /api/quotes/random", a.apiRandomQuote)
 	mux.HandleFunc("GET /api/quotes/{short_id}", a.apiGetQuote)
 
 	return mux

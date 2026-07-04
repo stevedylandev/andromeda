@@ -35,6 +35,17 @@ func (a *App) indexHandler(w http.ResponseWriter, r *http.Request) {
 	web.Render(a.Templates, w, "index.html", data, a.Log)
 }
 
+func (a *App) randomHandler(w http.ResponseWriter, r *http.Request) {
+	data := indexPageData{BaseURL: a.BaseURL}
+	if q, err := randomQuote(a.DB); err != nil {
+		a.Log.Error("random quote", "err", err)
+	} else if q != nil {
+		v := quoteToView(*q)
+		data.Quote = &v
+	}
+	web.Render(a.Templates, w, "index.html", data, a.Log)
+}
+
 func (a *App) loginGetHandler(w http.ResponseWriter, r *http.Request) {
 	web.Render(a.Templates, w, "login.html", loginPageData{Error: r.URL.Query().Get("error")}, a.Log)
 }
