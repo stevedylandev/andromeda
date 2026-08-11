@@ -11,6 +11,7 @@ services:
       - bookmarks-data:/data/bookmarks:ro
       - parcels-data:/data/parcels:ro
       - easel-data:/data/easel:ro
+      - habbits-data:/data/habbits:ro
     env_file: .env
     restart: unless-stopped
 
@@ -42,3 +43,6 @@ volumes:
   easel-data:
     external: true
     name: ${EASEL_VOLUME:-easel_easel-data}
+  habbits-data:
+    external: true
+    name: ${HABBITS_VOLUME:-habbits_habbits-data}

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <title>Habbits</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">HABBITS</a>
+      <nav class="links">
+        <a href="/new">new habit</a>
+        <a href="/settings">settings</a>
+        <a href="/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    {{if .Habits}}
+    <section class="section">
+      <h2>New record</h2>
+      <form class="form" method="POST" action="/records">
+        <input type="hidden" name="return_to" value="/" />
+        <div class="form-row">
+          <div class="form-field">
+            <label for="habit">Habit</label>
+            <select id="habit" name="habit" required>
+              {{range .Habits}}<option value="{{.ShortID}}" data-type="{{.ValueType}}"{{if .Unit}} data-unit="{{.Unit}}"{{end}}>{{.Name}} ({{.ValueType}})</option>{{end}}
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="value">Value</label>
+            <div id="value-container"></div>
+          </div>
+          <div class="form-field">
+            <label for="recorded_at">When</label>
+            <input type="datetime-local" id="recorded_at" name="recorded_at" class="now-default" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Add record</button>
+        </div>
+      </form>
+    </section>
+    {{end}}
+
+    <section class="section">
+      <div class="admin-toolbar">
+        <h2>Habits ({{len .Habits}})</h2>
+      </div>
+      {{if not .Habits}}
+      <p class="empty">No habits yet. <a href="/new">Create one</a>.</p>
+      {{else}}
+      <ul class="admin-list">
+        {{range .Habits}}
+        <li class="admin-list-item">
+          <div class="admin-list-info">
+            <a class="admin-list-title" href="/habits/{{.ShortID}}">{{.Name}}</a>
+            <span class="admin-list-meta">
+              <span class="tag">{{.ValueType}}</span>
+              {{if .Unit}}<span class="tag">{{.Unit}}</span>{{end}}
+              <span class="admin-list-date">{{.RecordCount}} record{{if ne .RecordCount 1}}s{{end}}</span>
+            </span>
+          </div>
+        </li>
+        {{end}}
+      </ul>
+      {{end}}
+    </section>
+
+    <section class="section">
+      <div class="admin-toolbar">
+        <h2>Recent records</h2>
+      </div>
+      {{if not .Days}}
+      <p class="empty">No records yet.</p>
+      {{else}}
+      {{range .Days}}
+      <div class="day-group">
+        <h3 class="day-heading">{{.Date}}</h3>
+        {{range .Habits}}
+        <div class="habit-group">
+          <a class="habit-group-name" href="/habits/{{.HabitShortID}}">{{.HabitName}}</a>
+          <ul class="admin-list">
+            {{range .Records}}
+            <li class="admin-list-item">
+              <div class="admin-list-info">
+                <span class="admin-list-title">{{.Value}}{{if .Unit}} {{.Unit}}{{end}}</span>
+                <span class="admin-list-meta">
+                  <span class="admin-list-date">{{.TimeDisplay}}</span>
+                </span>
+              </div>
+            </li>
+            {{end}}
+          </ul>
+        </div>
+        {{end}}
+      </div>
+      {{end}}
+      {{end}}
+    </section>
+
+    <script>
+      // Swap the record value widget to match the selected habit's type. The
+      // server re-validates, so this is only a convenience.
+      (function () {
+        var sel = document.getElementById("habit");
+        var container = document.getElementById("value-container");
+        if (!sel || !container) return;
+        function render() {
+          var opt = sel.options[sel.selectedIndex];
+          var type = opt ? opt.getAttribute("data-type") : "string";
+          var html;
+          if (type === "bool") {
+            html = '<select id="value" name="value" required><option value="true">true</option><option value="false">false</option></select>';
+          } else if (type === "int") {
+            html = '<input type="number" step="1" id="value" name="value" required />';
+          } else if (type === "float") {
+            html = '<input type="number" step="any" id="value" name="value" required />';
+          } else {
+            html = '<input type="text" id="value" name="value" required />';
+          }
+          container.innerHTML = html;
+        }
+        sel.addEventListener("change", render);
+        render();
+      })();
+
+      // Default any empty datetime-local input to the current local time.
+      (function () {
+        var now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        var stamp = now.toISOString().slice(0, 16);
+        document.querySelectorAll("input.now-default").forEach(function (el) {
+          if (!el.value) el.value = stamp;
+        });
+      })();
+    </script>
+  </body>
+</html>

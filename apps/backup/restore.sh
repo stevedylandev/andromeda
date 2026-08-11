@@ -59,7 +59,8 @@ feeds:feeds.sqlite:feeds_data:feeds_feeds_data
 library:library.sqlite:library_data:library_library-data
 bookmarks:bookmarks.sqlite:bookmarks_data:bookmarks_bookmarks-data
 parcels:parcels.db:parcels_data:parcels_parcels_data
-easel:easel.sqlite:easel_data:easel_easel-data"
+easel:easel.sqlite:easel_data:easel_easel-data
+habbits:habbits.sqlite:habbits_data:habbits_habbits-data"
 
 RESTORE_IMAGE="debian:bookworm-slim"
 

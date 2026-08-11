@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/habbits/Dockerfile
+    ports:
+      - "${PORT:-3000}:${PORT:-3000}"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=${PORT:-3000}
+      - HABBITS_DB_PATH=/data/habbits.sqlite
+      - HABBITS_PASSWORD=${HABBITS_PASSWORD:-changeme}
+      - HABBITS_API_KEY=${HABBITS_API_KEY:-}
+      - BASE_URL=${BASE_URL:-http://localhost:${PORT:-3000}}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+    volumes:
+      - habbits-data:/data
+    restart: unless-stopped
+
+volumes:
+  habbits-data:
