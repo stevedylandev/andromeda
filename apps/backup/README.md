@@ -1,6 +1,6 @@
 # Backup
 
-Automated SQLite backups for Jotts, Sipp, Cellar, Posts, Feeds, Library, Bookmarks, Parcels, and Easel to Cloudflare R2. Runs every 6 hours via cron inside a Docker container and prunes backups older than 30 days.
+Automated SQLite backups for Jotts, Sipp, Cellar, Posts, Feeds, Library, Bookmarks, Parcels, Easel, and Habbits to Cloudflare R2. Runs every 6 hours via cron inside a Docker container and prunes backups older than 30 days.
 
 ## Setup
 
@@ -50,6 +50,7 @@ LIBRARY_VOLUME=library_library-data
 BOOKMARKS_VOLUME=bookmarks_bookmarks-data
 PARCELS_VOLUME=parcels_parcels_data
 EASEL_VOLUME=easel_easel-data
+HABBITS_VOLUME=habbits_habbits-data
 ```
 
 Run `docker volume ls` to check the actual names on your host.
@@ -93,6 +94,7 @@ docker run -d --restart unless-stopped \
   -v bookmarks_bookmarks-data:/data/bookmarks:ro \
   -v parcels_parcels_data:/data/parcels:ro \
   -v easel_easel-data:/data/easel:ro \
+  -v habbits_habbits-data:/data/habbits:ro \
   ghcr.io/stevedylandev/andromeda-backup:latest
 ```
 
@@ -119,7 +121,7 @@ AWS keys, optional `*_VOLUME` overrides) — `source .env` first, or prefix the 
 restore.sh <app|all> [--timestamp <ts>] [--list] [--yes]
 ```
 
-- `<app>` — one of: `jotts sipp cellar posts feeds library bookmarks parcels easel`, or `all`.
+- `<app>` — one of: `jotts sipp cellar posts feeds library bookmarks parcels easel habbits`, or `all`.
 - `--timestamp <ts>` — restore a specific backup (e.g. `2026-04-04T060000Z`); the
   `.sqlite.gz` suffix is optional. Default: the latest backup. Not valid with `all`.
 - `--list` — list available backups for the app(s) and exit (no restore).
@@ -178,3 +180,4 @@ copies the database to the volume root via a throwaway `debian:bookworm-slim` co
 | `BOOKMARKS_VOLUME` | `bookmarks_bookmarks-data` | Docker volume name for Bookmarks data |
 | `PARCELS_VOLUME` | `parcels_parcels_data` | Docker volume name for Parcels data |
 | `EASEL_VOLUME` | `easel_easel-data` | Docker volume name for Easel data |
+| `HABBITS_VOLUME` | `habbits_habbits-data` | Docker volume name for Habbits data |

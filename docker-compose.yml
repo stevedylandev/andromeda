@@ -114,6 +114,15 @@ services:
       - quotes_data:/data
     env_file: apps/quotes/.env
 
+  habbits:
+    image: ghcr.io/stevedylandev/andromeda/habbits:latest
+    restart: unless-stopped
+    ports:
+      - "4041:3000"
+    volumes:
+      - habbits_data:/data
+    env_file: apps/habbits/.env
+
   backup:
     image: ghcr.io/stevedylandev/andromeda/backup:latest
     volumes:
@@ -127,6 +136,7 @@ services:
       - easel_data:/data/easel:ro
       - blobs_data:/data/blobs:ro
       - quotes_data:/data/quotes:ro
+      - habbits_data:/data/habbits:ro
     env_file: apps/backup/.env
     restart: unless-stopped
 
@@ -164,3 +174,6 @@ volumes:
   quotes_data:
     external: true
     name: quotes_quotes-data
+  habbits_data:
+    external: true
+    name: habbits_habbits-data

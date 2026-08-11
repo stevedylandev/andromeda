@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <title>Habbits | Settings</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">HABBITS</a>
+      <nav class="links">
+        <a href="/">dashboard</a>
+        <a href="/new">new habit</a>
+        <a href="/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    {{$types := .ValueTypes}}
+
+    <section class="section">
+      <div class="admin-toolbar">
+        <h2>Habits ({{len .Habits}})</h2>
+        <div class="admin-list-actions">
+          {{if .Habits}}<a href="/export.csv">export all (csv)</a>{{end}}
+          <a href="/new">new habit</a>
+        </div>
+      </div>
+
+      {{if not .Habits}}
+      <p class="empty">No habits yet. <a href="/new">Create one</a>.</p>
+      {{else}}
+      {{range .Habits}}
+      <div class="settings-habit">
+        <form class="form" method="POST" action="/habits/{{.ShortID}}">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Name</label>
+              <input type="text" name="name" value="{{.Name}}" required />
+            </div>
+            <div class="form-field">
+              <label>Value type</label>
+              <select name="value_type" required>
+                {{$vt := .ValueType}}
+                {{range $types}}<option value="{{.}}"{{if eq . $vt}} selected{{end}}>{{.}}</option>{{end}}
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Unit</label>
+              <input type="text" name="unit" value="{{.Unit}}" placeholder="optional" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Description</label>
+            <input type="text" name="description" value="{{.Description}}" placeholder="optional" />
+          </div>
+          <div class="form-actions">
+            <button type="submit">Save</button>
+            <a href="/export.csv?habit={{.ShortID}}">export (csv)</a>
+            <span class="admin-list-date">{{.RecordCount}} record{{if ne .RecordCount 1}}s{{end}}</span>
+          </div>
+        </form>
+        <form method="POST" action="/habits/{{.ShortID}}/delete" class="inline-form" onsubmit="return confirm('Delete this habit and all its records?')">
+          <input type="hidden" name="return_to" value="/settings" />
+          <button type="submit" class="link-button danger">delete habit</button>
+        </form>
+      </div>
+      {{end}}
+      {{end}}
+    </section>
+  </body>
+</html>

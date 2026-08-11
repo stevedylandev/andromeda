@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <title>Habbits | {{.Habit.Name}}</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">HABBITS</a>
+      <nav class="links">
+        <a href="/">dashboard</a>
+        <a href="/new">new habit</a>
+        <a href="/settings">settings</a>
+        <a href="/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    {{$habit := .Habit}}
+
+    <section class="section">
+      <div class="admin-toolbar">
+        <h2>{{.Habit.Name}} <span class="tag">{{.Habit.ValueType}}</span>{{if .Habit.Unit}} <span class="tag">{{.Habit.Unit}}</span>{{end}}</h2>
+        <a href="/settings">edit habit</a>
+      </div>
+      {{if .Habit.Description}}<p class="admin-list-meta">{{.Habit.Description}}</p>{{end}}
+    </section>
+
+    <section class="section">
+      <h2>New record</h2>
+      <form class="form" method="POST" action="/records">
+        <input type="hidden" name="return_to" value="/habits/{{.Habit.ShortID}}" />
+        <input type="hidden" name="habit" value="{{.Habit.ShortID}}" />
+        <div class="form-row">
+          <div class="form-field">
+            <label for="value">Value{{if .Habit.Unit}} ({{.Habit.Unit}}){{end}}</label>
+            {{if eq .Habit.ValueType "bool"}}
+            <select id="value" name="value" required>
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+            {{else if eq .Habit.ValueType "int"}}
+            <input type="number" step="1" id="value" name="value" required />
+            {{else if eq .Habit.ValueType "float"}}
+            <input type="number" step="any" id="value" name="value" required />
+            {{else}}
+            <input type="text" id="value" name="value" required />
+            {{end}}
+          </div>
+          <div class="form-field">
+            <label for="recorded_at">When</label>
+            <input type="datetime-local" id="recorded_at" name="recorded_at" class="now-default" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit">Add record</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="section">
+      <div class="admin-toolbar">
+        <h2>Records ({{.Habit.RecordCount}})</h2>
+      </div>
+      {{if not .Days}}
+      <p class="empty">No records yet. Add one above.</p>
+      {{else}}
+      {{range .Days}}
+      <div class="day-group">
+        <h3 class="day-heading">{{.Date}}</h3>
+        <ul class="admin-list">
+          {{range .Records}}
+          <li class="admin-list-item">
+            <form class="form-row record-edit" method="POST" action="/records/{{.ShortID}}">
+              <input type="hidden" name="return_to" value="/habits/{{$habit.ShortID}}" />
+              <div class="form-field">
+                {{if eq $habit.ValueType "bool"}}
+                <select name="value" required>
+                  <option value="true"{{if eq .Value "true"}} selected{{end}}>true</option>
+                  <option value="false"{{if eq .Value "false"}} selected{{end}}>false</option>
+                </select>
+                {{else if eq $habit.ValueType "int"}}
+                <input type="number" step="1" name="value" value="{{.Value}}" required />
+                {{else if eq $habit.ValueType "float"}}
+                <input type="number" step="any" name="value" value="{{.Value}}" required />
+                {{else}}
+                <input type="text" name="value" value="{{.Value}}" required />
+                {{end}}
+              </div>
+              <div class="form-field">
+                <input type="datetime-local" name="recorded_at" value="{{.RecordedAtInput}}" required />
+              </div>
+              <button type="submit" class="link-button">save</button>
+            </form>
+            <div class="admin-list-actions">
+              <form method="POST" action="/records/{{.ShortID}}/delete" class="inline-form">
+                <input type="hidden" name="return_to" value="/habits/{{$habit.ShortID}}" />
+                <button type="submit" class="link-button danger">delete</button>
+              </form>
+            </div>
+          </li>
+          {{end}}
+        </ul>
+      </div>
+      {{end}}
+      {{end}}
+    </section>
+
+    <script>
+      (function () {
+        var now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        var stamp = now.toISOString().slice(0, 16);
+        document.querySelectorAll("input.now-default").forEach(function (el) {
+          if (!el.value) el.value = stamp;
+        });
+      })();
+    </script>
+  </body>
+</html>

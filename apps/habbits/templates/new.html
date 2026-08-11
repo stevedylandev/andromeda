@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <title>Habbits | New habit</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">HABBITS</a>
+      <nav class="links">
+        <a href="/">dashboard</a>
+        <a href="/settings">settings</a>
+        <a href="/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    <section class="section">
+      <h2>New habit</h2>
+      <form class="form" method="POST" action="/habits">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="e.g. Sleep" required autofocus />
+          </div>
+          <div class="form-field">
+            <label for="value_type">Value type</label>
+            <select id="value_type" name="value_type" required>
+              {{range .ValueTypes}}<option value="{{.}}">{{.}}</option>{{end}}
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="unit">Unit</label>
+            <input type="text" id="unit" name="unit" placeholder="hrs, kg… (optional)" />
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" placeholder="optional" />
+        </div>
+        <div class="form-actions">
+          <button type="submit">Create habit</button>
+        </div>
+      </form>
+    </section>
+  </body>
+</html>
