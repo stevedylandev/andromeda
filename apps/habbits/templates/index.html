@@ -83,23 +83,21 @@
       {{range .Days}}
       <div class="day-group">
         <h3 class="day-heading">{{.Date}}</h3>
-        {{range .Habits}}
-        <div class="habit-group">
-          <a class="habit-group-name" href="/habits/{{.HabitShortID}}">{{.HabitName}}</a>
-          <ul class="admin-list">
-            {{range .Records}}
-            <li class="admin-list-item">
-              <div class="admin-list-info">
-                <span class="admin-list-title">{{.Value}}{{if .Unit}} {{.Unit}}{{end}}</span>
-                <span class="admin-list-meta">
-                  <span class="admin-list-date">{{.TimeDisplay}}</span>
-                </span>
-              </div>
-            </li>
-            {{end}}
-          </ul>
-        </div>
-        {{end}}
+        <ul class="admin-list">
+          {{range .Records}}
+          <li class="admin-list-item">
+            <div class="admin-list-info">
+              <span class="admin-list-title">
+                <a href="/habits/{{.HabitShortID}}">{{.HabitName}}</a>
+                {{.Value}}{{if .Unit}} {{.Unit}}{{end}}
+              </span>
+              <span class="admin-list-meta">
+                <span class="admin-list-date">{{.TimeDisplay}}</span>
+              </span>
+            </div>
+          </li>
+          {{end}}
+        </ul>
       </div>
       {{end}}
       {{end}}

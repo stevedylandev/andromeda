@@ -41,39 +41,8 @@ func recordToRow(r Record) recordRow {
 	}
 }
 
-// groupDashboard buckets records (ordered recorded_at DESC) into day groups,
-// and within each day into per-habit groups, preserving encounter order.
-func groupDashboard(recs []Record) []dashDay {
-	var days []dashDay
-	dayIdx := map[string]int{}
-	habitIdx := map[string]map[string]int{}
-	for _, r := range recs {
-		row := recordToRow(r)
-		di, ok := dayIdx[row.Date]
-		if !ok {
-			di = len(days)
-			dayIdx[row.Date] = di
-			habitIdx[row.Date] = map[string]int{}
-			days = append(days, dashDay{Date: row.Date})
-		}
-		hi, ok := habitIdx[row.Date][r.HabitShortID]
-		if !ok {
-			hi = len(days[di].Habits)
-			habitIdx[row.Date][r.HabitShortID] = hi
-			days[di].Habits = append(days[di].Habits, dashHabit{
-				HabitName:    r.HabitName,
-				HabitShortID: r.HabitShortID,
-				ValueType:    r.ValueType,
-				Unit:         r.Unit,
-			})
-		}
-		days[di].Habits[hi].Records = append(days[di].Habits[hi].Records, row)
-	}
-	return days
-}
-
-// groupByDay buckets a single habit's records (ordered recorded_at DESC) into
-// day groups, preserving encounter order.
+// groupByDay buckets records (ordered recorded_at DESC) into day groups,
+// preserving encounter order so records stay chronological within a day.
 func groupByDay(recs []Record) []habitDay {
 	var days []habitDay
 	idx := map[string]int{}
@@ -164,7 +133,7 @@ func (a *App) dashboardHandler(w http.ResponseWriter, r *http.Request) {
 		Success: r.URL.Query().Get("success"),
 		Error:   r.URL.Query().Get("error"),
 		Habits:  habitRows,
-		Days:    groupDashboard(records),
+		Days:    groupByDay(records),
 	}, a.Log)
 }
 

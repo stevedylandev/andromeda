@@ -52,21 +52,8 @@ type recordRow struct {
 	RecordedAtInput string
 }
 
-// dashDay groups a day's records by habit for the dashboard (day -> habit -> records).
-type dashDay struct {
-	Date   string
-	Habits []dashHabit
-}
-
-type dashHabit struct {
-	HabitName    string
-	HabitShortID string
-	ValueType    string
-	Unit         string
-	Records      []recordRow
-}
-
-// habitDay groups a single habit's records by day for the habit detail page.
+// habitDay groups records by day. Used for both the dashboard (all habits,
+// records interleaved chronologically) and the habit detail page.
 type habitDay struct {
 	Date    string
 	Records []recordRow
@@ -80,7 +67,7 @@ type dashboardData struct {
 	Success string
 	Error   string
 	Habits  []habitRow
-	Days    []dashDay
+	Days    []habitDay
 }
 
 type newHabitPageData struct {
