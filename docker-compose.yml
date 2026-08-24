@@ -23,9 +23,6 @@ services:
     restart: unless-stopped
     ports:
       - "3456:3000"
-    volumes:
-      - og_db_data:/app/data
-
   sipp:
     image: ghcr.io/stevedylandev/andromeda/sipp:latest
     restart: unless-stopped
