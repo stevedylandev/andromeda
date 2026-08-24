@@ -32,6 +32,19 @@
       {{if .Habit.Description}}<p class="admin-list-meta">{{.Habit.Description}}</p>{{end}}
     </section>
 
+    {{if .ChartType}}
+    <section class="section">
+      <h2>{{if eq .ChartType "bool"}}Streak{{else}}Trend{{end}}</h2>
+      <div
+        id="habit-chart"
+        class="chart"
+        data-type="{{.ChartType}}"
+        data-unit="{{.Habit.Unit}}"
+        data-points="{{.ChartPoints}}"
+      ></div>
+    </section>
+    {{end}}
+
     <section class="section">
       <h2>New record</h2>
       <form class="form" method="POST" action="/records">
@@ -122,5 +135,6 @@
         });
       })();
     </script>
+    <script src="/static/chart.js"></script>
   </body>
 </html>

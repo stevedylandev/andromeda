@@ -57,3 +57,51 @@
   opacity: 0.7;
   margin-bottom: 0.15rem;
 }
+
+/* Habit detail chart: SVG rendered client-side by chart.js. */
+.chart {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.chart-svg {
+  display: block;
+  max-width: 100%;
+}
+
+.chart-gridline {
+  stroke: #333;
+  stroke-width: 1;
+}
+
+.chart-axis-label {
+  fill: #888;
+  font-size: 10px;
+}
+
+.chart-line {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  opacity: 0.8;
+}
+
+.chart-dot {
+  fill: #121113;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+}
+
+.chart-cell-0 {
+  fill: #1e1c1f;
+  stroke: #333;
+  stroke-width: 1;
+}
+
+.chart-cell-1 {
+  fill: #555;
+}
+
+.chart-cell-2 {
+  fill: #ffffff;
+}

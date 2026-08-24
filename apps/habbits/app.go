@@ -87,4 +87,16 @@ type habitPageData struct {
 	Error   string
 	Habit   habitRow
 	Days    []habitDay
+	// ChartType selects the client-side renderer: "numeric" (int/float line
+	// chart), "bool" (streak heatmap), or "" (no chart, e.g. string habits).
+	ChartType string
+	// ChartPoints is the JSON-encoded []chartPoint for the chart, chronological.
+	ChartPoints string
+}
+
+// chartPoint is one plotted value: T is a unix timestamp (seconds), V is the
+// record's value as a float (1/0 for bool).
+type chartPoint struct {
+	T int64   `json:"t"`
+	V float64 `json:"v"`
 }

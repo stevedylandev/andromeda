@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -57,6 +59,47 @@ func groupByDay(recs []Record) []habitDay {
 		days[i].Records = append(days[i].Records, row)
 	}
 	return days
+}
+
+// buildChartData turns records (as returned by listRecordsForHabit, newest
+// first) into chart type + JSON points for the habit detail chart. Numeric
+// habits (int/float) get a line chart; bool habits get a streak heatmap;
+// string habits have no natural numeric chart and are skipped.
+func buildChartData(valueType string, records []Record) (chartType, pointsJSON string) {
+	switch valueType {
+	case "int", "float":
+		chartType = "numeric"
+	case "bool":
+		chartType = "bool"
+	default:
+		return "", ""
+	}
+
+	points := make([]chartPoint, 0, len(records))
+	for i := len(records) - 1; i >= 0; i-- {
+		r := records[i]
+		var v float64
+		if chartType == "bool" {
+			if r.Value == "true" {
+				v = 1
+			}
+		} else {
+			f, err := strconv.ParseFloat(r.Value, 64)
+			if err != nil {
+				continue
+			}
+			v = f
+		}
+		points = append(points, chartPoint{T: r.RecordedAt, V: v})
+	}
+	if len(points) == 0 {
+		return "", ""
+	}
+	b, err := json.Marshal(points)
+	if err != nil {
+		return "", ""
+	}
+	return chartType, string(b)
 }
 
 // parseRecordedAt converts a datetime-local form value into unix seconds. An
@@ -203,11 +246,14 @@ func (a *App) habitDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.Log.Error("list habit records", "err", err)
 	}
+	chartType, chartPoints := buildChartData(habit.ValueType, records)
 	web.Render(a.Templates, w, "habit.html", habitPageData{
-		Success: r.URL.Query().Get("success"),
-		Error:   r.URL.Query().Get("error"),
-		Habit:   habitToRow(*habit, len(records)),
-		Days:    groupByDay(records),
+		Success:     r.URL.Query().Get("success"),
+		Error:       r.URL.Query().Get("error"),
+		Habit:       habitToRow(*habit, len(records)),
+		Days:        groupByDay(records),
+		ChartType:   chartType,
+		ChartPoints: chartPoints,
 	}, a.Log)
 }
 
