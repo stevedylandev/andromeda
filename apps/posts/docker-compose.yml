@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: ../..
-      dockerfile: apps/posts-go/Dockerfile
+      dockerfile: apps/posts/Dockerfile
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     environment:
