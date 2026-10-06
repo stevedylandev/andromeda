@@ -40,5 +40,10 @@ go build .
 - Markdown: `github.com/yuin/goldmark` with GFM + Footnotes.
 - Zip via stdlib `archive/zip`. Upload limit 10 MB; import zip limit 50 MB.
 - API: `GET /api/posts` and `GET /api/posts/{slug}` (permissive CORS).
+- `POST /api/posts` creates a post (requires `X-API-Key` header matching
+  `POSTS_API_KEY`; disabled when unset). JSON body: `content` (required),
+  optional `title`, `slug`, `status` (`draft`|`published`, default `draft`),
+  `alias`, `canonical_url`, `published_date`, `meta_description`,
+  `meta_image`, `lang`, `tags`, `weather`.
 
 See `.env.example`.

@@ -76,6 +76,7 @@ func main() {
 		UploadsDir:   uploadsDir,
 		Storage:      storageBackend,
 		SiteURL:      strings.TrimRight(config.Getenv("SITE_URL", "http://localhost:3000"), "/"),
+		APIKey:       config.Getenv("POSTS_API_KEY", ""),
 	}
 
 	addr := config.Getenv("HOST", "127.0.0.1") + ":" + config.Getenv("PORT", "3000")

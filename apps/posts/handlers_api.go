@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/stevedylandev/andromeda/pkg/web"
 )
@@ -92,4 +93,82 @@ func (a *App) apiGetPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.WriteJSON(w, http.StatusOK, toDetail(*post))
+}
+
+type apiCreatePostRequest struct {
+	Title           string `json:"title"`
+	Slug            string `json:"slug"`
+	Content         string `json:"content"`
+	Status          string `json:"status"`
+	Alias           string `json:"alias"`
+	CanonicalURL    string `json:"canonical_url"`
+	PublishedDate   string `json:"published_date"`
+	MetaDescription string `json:"meta_description"`
+	MetaImage       string `json:"meta_image"`
+	Lang            string `json:"lang"`
+	Tags            string `json:"tags"`
+	Weather         string `json:"weather"`
+}
+
+func (a *App) apiCreatePost(w http.ResponseWriter, r *http.Request) {
+	var req apiCreatePostRequest
+	if !web.DecodeJSON(w, r, &req) {
+		return
+	}
+	if strings.TrimSpace(req.Content) == "" {
+		web.WriteError(w, http.StatusBadRequest, "content is required")
+		return
+	}
+	status := strings.TrimSpace(req.Status)
+	if status == "" {
+		status = "draft"
+	}
+	if status != "draft" && status != "published" {
+		web.WriteError(w, http.StatusBadRequest, "status must be 'draft' or 'published'")
+		return
+	}
+	title := strings.TrimSpace(req.Title)
+	slug := deriveSlugWith(a, title, strings.TrimSpace(req.Slug))
+	existing, err := getPostBySlug(a.DB, slug)
+	if err != nil {
+		web.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	if existing != nil {
+		web.WriteError(w, http.StatusConflict, "slug already exists")
+		return
+	}
+	lang := "en"
+	if l := strings.TrimSpace(req.Lang); l != "" {
+		lang = l
+	}
+	weather := strings.TrimSpace(req.Weather)
+	if weather == "" {
+		defaultLocation, err := getSetting(a.DB, "default_location")
+		if err != nil {
+			defaultLocation = ""
+		}
+		weather = getWeather(defaultLocation)
+	}
+	pub := strings.TrimSpace(req.PublishedDate)
+	if pub == "" {
+		pub = nowDatetime()
+	}
+	in := PostInput{
+		Title: optStr(title), Slug: slug, Content: req.Content,
+		Status: status, Alias: optStr(req.Alias),
+		CanonicalURL:    optStr(req.CanonicalURL),
+		PublishedDate:   &pub,
+		MetaDescription: optStr(req.MetaDescription),
+		MetaImage:       optStr(req.MetaImage),
+		Lang:            lang, Tags: optStr(req.Tags),
+		Weather:         optStr(weather),
+	}
+	post, err := createPost(a.DB, in)
+	if err != nil {
+		a.Log.Error("api create post", "err", err)
+		web.WriteError(w, http.StatusInternalServerError, "failed to create post")
+		return
+	}
+	web.WriteJSON(w, http.StatusCreated, toDetail(*post))
 }

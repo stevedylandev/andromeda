@@ -24,6 +24,7 @@ type App struct {
 	UploadsDir   string
 	Storage      poststorage.Backend
 	SiteURL      string
+	APIKey       string
 }
 
 type Post struct {

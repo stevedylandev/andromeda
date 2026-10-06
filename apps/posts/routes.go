@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/stevedylandev/andromeda/pkg/auth"
 	"github.com/stevedylandev/andromeda/pkg/darkmatter"
 	"github.com/stevedylandev/andromeda/pkg/web"
 )
@@ -13,6 +14,9 @@ func (a *App) routes() *http.ServeMux {
 
 	requireSession := func(next http.HandlerFunc) http.HandlerFunc {
 		return a.Sessions.RequireSession("/admin/login", next)
+	}
+	requireAPIKey := func(next http.HandlerFunc) http.HandlerFunc {
+		return auth.RequireAPIKey(a.APIKey, next)
 	}
 	cors := func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +40,7 @@ func (a *App) routes() *http.ServeMux {
 	// API
 	mux.HandleFunc("GET /api/posts", cors(a.apiListPosts))
 	mux.HandleFunc("GET /api/posts/{slug}", cors(a.apiGetPost))
+	mux.HandleFunc("POST /api/posts", requireAPIKey(a.apiCreatePost))
 
 	// Admin auth
 	mux.HandleFunc("GET /admin/login", a.loginGet)

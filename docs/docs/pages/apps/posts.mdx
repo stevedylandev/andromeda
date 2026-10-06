@@ -11,6 +11,7 @@ A self-hosted blog CMS built in Go.
 - File uploads with admin management
 - Custom CSS support from the admin panel
 - RSS feed at `/feed.xml`
+- JSON API for reading and creating posts
 - Dark themed UI with Commit Mono font
 - SQLite for persistent storage
 
@@ -21,6 +22,7 @@ A self-hosted blog CMS built in Go.
 | Variable | Description | Default |
 |---|---|---|
 | `POSTS_PASSWORD` | Password for admin login | `changeme` |
+| `POSTS_API_KEY` | API key for creating posts via `POST /api/posts` | _(unset)_ |
 | `POSTS_DB_PATH` | SQLite database file path | `posts.sqlite` |
 | `UPLOADS_DIR` | Directory for uploaded files (used when R2 unset) | `uploads` |
 | `SITE_URL` | Public URL for RSS feed and links | `http://localhost:3000` |
@@ -34,6 +36,8 @@ A self-hosted blog CMS built in Go.
 | `R2_PUBLIC_URL` | Public URL prefix for uploaded files | _(unset)_ |
 
 Upload storage falls back to local filesystem (`UPLOADS_DIR`) when `R2_BUCKET` is empty. Set all five `R2_*` variables to switch uploads to Cloudflare R2.
+
+If `POSTS_API_KEY` is not set, `POST /api/posts` returns `403`. The read-only `GET` endpoints are always public.
 
 ## Deploy
 
@@ -75,6 +79,40 @@ The resulting binary is self-contained with all assets embedded. Copy it to your
 ## Use
 
 Log in at `/login` with your configured password to access the admin panel. From there you can manage blog posts, static pages, file uploads, and site settings including custom CSS. Your blog's RSS feed is available at `/feed.xml`.
+
+### API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/posts?limit=30` | List published posts |
+| `GET` | `/api/posts/{slug}` | Get a published post by slug |
+| `POST` | `/api/posts` | Create a post |
+
+`POST /api/posts` requires an `x-api-key` header matching `POSTS_API_KEY`. The JSON body accepts:
+
+| Field | Description | Default |
+|---|---|---|
+| `content` | Markdown content (required) | — |
+| `title` | Post title | _(none)_ |
+| `slug` | URL slug | Derived from title, or a random ID |
+| `status` | `draft` or `published` | `draft` |
+| `published_date` | Publish date (RFC3339 or `YYYY-MM-DD`) | Now |
+| `lang` | Language code | `en` |
+| `tags` | Comma-separated tags | _(none)_ |
+| `alias` | Alternate path that redirects to the post | _(none)_ |
+| `canonical_url` | Canonical URL | _(none)_ |
+| `meta_description` | Meta description | _(none)_ |
+| `meta_image` | Meta image URL | _(none)_ |
+| `weather` | Weather string | Fetched for the default location |
+
+Returns `201` with the created post, `400` for invalid input, or `409` if the slug already exists.
+
+```bash
+curl -X POST https://your-posts-instance.com/api/posts \
+  -H "x-api-key: $POSTS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Hello World", "content": "My first post via the API", "status": "published"}'
+```
 
 ## Acknowledgements
 
