@@ -1,0 +1,66 @@
+package main
+
+templ layout(site siteContext, title string, meta templ.Component, body templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title }</title>
+			if site.FaviconURL != "" {
+				<link rel="apple-touch-icon" sizes="180x180" href={ site.FaviconURL }/>
+				<link rel="icon" type="image/png" sizes="32x32" href={ site.FaviconURL }/>
+				<link rel="icon" type="image/png" sizes="16x16" href={ site.FaviconURL }/>
+			} else {
+				<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png"/>
+				<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png"/>
+				<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png"/>
+				<link rel="manifest" href="/static/site.webmanifest"/>
+			}
+			<meta name="theme-color" content="#121113"/>
+			@meta
+			<link rel="stylesheet" href="/assets/darkmatter.css"/>
+			<link rel="stylesheet" href="/static/styles.css"/>
+			<link rel="stylesheet" href="/custom-styles.css"/>
+		</head>
+		<body>
+			if site.HeaderHTML != "" {
+				<div class="custom-header">
+					@templ.Raw(string(site.HeaderHTML))
+				</div>
+			}
+			<header class="header">
+				<a href="/" class="logo">{ site.BlogTitle }</a>
+				<nav class="links">
+					for _, l := range site.NavLinks {
+						<a href={ templ.URL(l.URL) }>{ l.Label }</a>
+					}
+				</nav>
+			</header>
+			<main>
+				@body
+			</main>
+			<footer class="footer">
+				@templ.Raw(string(site.FooterHTML))
+			</footer>
+			<script>
+				document.querySelectorAll('.post-date').forEach(el => {
+					const d = new Date(el.textContent.trim());
+					if (!isNaN(d)) {
+						const day = String(d.getDate()).padStart(2, '0');
+						const mon = d.toLocaleString('en-US', { month: 'short' });
+						el.textContent = `${day} ${mon}, ${d.getFullYear()}`;
+					}
+				});
+			</script>
+		</body>
+	</html>
+}
+
+templ ogImage(site siteContext) {
+	if site.OGImageURL != "" {
+		<meta property="og:image" content={ site.OGImageURL }/>
+	} else {
+		<meta property="og:image" content={ site.SiteURL + "/static/og.png" }/>
+	}
+}

@@ -20,18 +20,15 @@ func buildTemplates() (map[string]*template.Template, error) {
 	out := make(map[string]*template.Template, len(pages))
 	for _, page := range pages {
 		name := path.Base(page)
-		if name == "base.html" || name == "admin_base.html" {
+		if name == "admin_base.html" {
 			continue
 		}
 
+		// Public pages are templ components (see *.templ); what's left here is
+		// the admin UI plus the standalone login page.
 		patterns := []string{page}
-		switch {
-		case strings.HasPrefix(name, "admin_"):
+		if strings.HasPrefix(name, "admin_") {
 			patterns = append([]string{"templates/admin_base.html"}, patterns...)
-		case name == "login.html":
-			// standalone template
-		default:
-			patterns = append([]string{"templates/base.html"}, patterns...)
 		}
 
 		tmpl, err := template.ParseFS(appFS, patterns...)

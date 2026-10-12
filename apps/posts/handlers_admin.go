@@ -573,3 +573,58 @@ func (a *App) importOne(basename, raw string, imported, skipped *int) bool {
 }
 
 var _ = url.QueryEscape
+
+func (a *App) adminGetTemplates(w http.ResponseWriter, r *http.Request) {
+	kind := r.URL.Query().Get("t")
+	if !isTemplateKind(kind) {
+		kind = "index"
+	}
+	src, _ := getSetting(a.DB, templateSettingKey(kind))
+	a.renderTemplatesForm(w, http.StatusOK, kind, src, "", r.URL.Query().Get("success") == "true")
+}
+
+func (a *App) adminPostTemplate(w http.ResponseWriter, r *http.Request) {
+	kind := r.PathValue("kind")
+	if !isTemplateKind(kind) {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/admin/templates?t="+kind, http.StatusSeeOther)
+		return
+	}
+	src := r.FormValue("template")
+	if strings.TrimSpace(src) == "" {
+		_ = setSetting(a.DB, templateSettingKey(kind), "")
+		a.Overrides.set(kind, nil)
+		http.Redirect(w, r, "/admin/templates?t="+kind+"&success=true", http.StatusSeeOther)
+		return
+	}
+	t, err := validateOverride(kind, src)
+	if err != nil {
+		a.renderTemplatesForm(w, http.StatusUnprocessableEntity, kind, src, err.Error(), false)
+		return
+	}
+	if err := setSetting(a.DB, templateSettingKey(kind), src); err != nil {
+		a.renderTemplatesForm(w, http.StatusInternalServerError, kind, src, "failed to save template", false)
+		return
+	}
+	a.Overrides.set(kind, t)
+	http.Redirect(w, r, "/admin/templates?t="+kind+"&success=true", http.StatusSeeOther)
+}
+
+// renderTemplatesForm shows the editor for kind. An empty src means no custom
+// template is set, so the textarea is prefilled with the starter.
+func (a *App) renderTemplatesForm(w http.ResponseWriter, status int, kind, src, errMsg string, success bool) {
+	custom := src != ""
+	if !custom {
+		starter, _ := appFS.ReadFile("starters/" + kind + ".html")
+		src = string(starter)
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	a.renderPage(w, "admin_templates.html", adminTemplatesPageData{
+		Kinds: templateKinds, Kind: kind, Template: src, Custom: custom,
+		Error: errMsg, Success: success,
+	})
+}

@@ -11,7 +11,7 @@ import (
 	"github.com/stevedylandev/andromeda/pkg/auth"
 )
 
-//go:embed templates/*.html static/*
+//go:embed templates/*.html static/* starters/*.html
 var appFS embed.FS
 
 type App struct {
@@ -25,6 +25,7 @@ type App struct {
 	Storage      poststorage.Backend
 	SiteURL      string
 	APIKey       string
+	Overrides    *overrides
 }
 
 type Post struct {
@@ -230,55 +231,6 @@ type loginPageData struct {
 	Error string
 }
 
-type indexPageData struct {
-	BlogTitle       string
-	BlogDescription string
-	IntroHTML       template.HTML
-	Posts           []Post
-	NavLinks        []NavLink
-	FaviconURL      string
-	OGImageURL      string
-	SiteURL         string
-	HeaderHTML      template.HTML
-	FooterHTML      template.HTML
-}
-
-type postPageData struct {
-	BlogTitle       string
-	NavLinks        []NavLink
-	Post            Post
-	RenderedContent template.HTML
-	FaviconURL      string
-	OGImageURL      string
-	SiteURL         string
-	HeaderHTML      template.HTML
-	FooterHTML      template.HTML
-	Weather 				Weather
-}
-
-type pagePageData struct {
-	BlogTitle       string
-	NavLinks        []NavLink
-	Page            Page
-	RenderedContent template.HTML
-	FaviconURL      string
-	OGImageURL      string
-	SiteURL         string
-	HeaderHTML      template.HTML
-	FooterHTML      template.HTML
-}
-
-type postsListPageData struct {
-	BlogTitle  string
-	NavLinks   []NavLink
-	Posts      []Post
-	FaviconURL string
-	OGImageURL string
-	SiteURL    string
-	HeaderHTML template.HTML
-	FooterHTML template.HTML
-}
-
 type adminIndexPageData struct {
 	Posts []Post
 }
@@ -317,6 +269,15 @@ type adminFilesPageData struct {
 	SiteURL string
 	Error   string
 	Success bool
+}
+
+type adminTemplatesPageData struct {
+	Kinds    []struct{ Kind, Label string }
+	Kind     string
+	Template string
+	Custom   bool
+	Error    string
+	Success  bool
 }
 
 type adminImportPageData struct {
