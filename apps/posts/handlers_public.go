@@ -212,30 +212,24 @@ func (a *App) rssFeed(w http.ResponseWriter, r *http.Request) {
 				title = xmlEscape(t)
 			}
 		}
-		desc := ""
+		content := absolutizeURLs(renderMarkdown(p.Content), a.SiteURL)
+		desc := cdata(content)
 		if p.MetaDescription != nil && *p.MetaDescription != "" {
 			desc = xmlEscape(*p.MetaDescription)
-		} else {
-			runes := []rune(p.Content)
-			n := 200
-			if len(runes) < n {
-				n = len(runes)
-			}
-			desc = xmlEscape(string(runes[:n]))
 		}
 		rawDate := p.CreatedAt
 		if p.PublishedDate != nil {
 			rawDate = *p.PublishedDate
 		}
 		pubDate := toRFC2822(rawDate)
-		items.WriteString("    <item>\n      <title>" + title + "</title>\n      <link>" + link + "</link>\n      <guid>" + link + "</guid>\n      <description>" + desc + "</description>\n      <pubDate>" + pubDate + "</pubDate>\n    </item>\n")
+		items.WriteString("    <item>\n      <title>" + title + "</title>\n      <link>" + link + "</link>\n      <guid>" + link + "</guid>\n      <description>" + desc + "</description>\n      <content:encoded>" + cdata(content) + "</content:encoded>\n      <pubDate>" + pubDate + "</pubDate>\n    </item>\n")
 	}
 	lastBuild := ""
 	if len(posts) > 0 && posts[0].PublishedDate != nil {
 		lastBuild = toRFC2822(*posts[0].PublishedDate)
 	}
 	out := `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>` + xmlEscape(blogTitle) + `</title>
     <link>` + a.SiteURL + `</link>

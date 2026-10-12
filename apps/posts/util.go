@@ -499,3 +499,16 @@ func sanitizeFilename(name, fallbackExt string) string {
 	}
 	return base + "." + ext
 }
+
+// cdata wraps s in a CDATA section, splitting any "]]>" so it can't terminate it early.
+func cdata(s string) string {
+	return "<![CDATA[" + strings.ReplaceAll(s, "]]>", "]]]]><![CDATA[>") + "]]>"
+}
+
+var rootRelativeAttr = regexp.MustCompile(`(?i)\b(src|href|poster)=(["'])/([^/])`)
+
+// absolutizeURLs rewrites root-relative src/href/poster attributes (e.g. "/files/x.png")
+// to absolute URLs so feed readers can resolve them.
+func absolutizeURLs(html, siteURL string) string {
+	return rootRelativeAttr.ReplaceAllString(html, `${1}=${2}`+siteURL+`/${3}`)
+}
