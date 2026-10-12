@@ -69,6 +69,10 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /admin/settings", requireSession(a.adminGetSettings))
 	mux.HandleFunc("POST /admin/settings", requireSession(a.adminPostSettings))
 
+	// Templates
+	mux.HandleFunc("GET /admin/templates", requireSession(a.adminGetTemplates))
+	mux.HandleFunc("POST /admin/templates/{kind}", requireSession(a.adminPostTemplate))
+
 	// Downloads
 	mux.HandleFunc("GET /admin/downloads/posts", requireSession(a.adminDownloadPosts))
 	mux.HandleFunc("GET /admin/downloads/uploads", requireSession(a.adminDownloadUploads))

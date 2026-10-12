@@ -1,0 +1,154 @@
+package main
+
+// Each public view has a meta component (kept in the layout's <head>) and a
+// body component. The body can be replaced by a custom html/template from
+// /admin/templates; the starters/*.html files mirror these defaults.
+
+templ postItem(p Post, class string) {
+	<a href={ templ.URL("/posts/" + p.Slug) } class={ class }>
+		<div class="post-item-info">
+			<span class="post-title">{ p.DisplayTitle() }</span>
+		</div>
+		if p.PublishedDate != nil {
+			<time class="post-date">{ p.PublishedDateStr() }</time>
+		}
+	</a>
+}
+
+templ latestPosts(posts []Post) {
+	<div class="post-list">
+		for _, p := range posts {
+			<a href={ templ.URL("/posts/" + p.Slug) } class="post-item">
+				<div class="post-item-info">
+					<span class="post-title">{ p.DisplayTitle() }</span>
+					if tags := p.TagList(); len(tags) > 0 {
+						<span class="post-tags">
+							for _, t := range tags {
+								<span class="tag">{ t }</span>
+							}
+						</span>
+					}
+				</div>
+				if p.PublishedDate != nil {
+					<time class="post-date">{ p.PublishedDateStr() }</time>
+				}
+			</a>
+		}
+	</div>
+}
+
+templ indexMeta(v indexView) {
+	<meta name="description" content={ v.BlogDescription }/>
+	<meta property="og:title" content={ v.BlogTitle }/>
+	<meta property="og:description" content={ v.BlogDescription }/>
+	<meta property="og:type" content="website"/>
+	<meta property="og:url" content={ v.SiteURL }/>
+	@ogImage(v.siteContext)
+}
+
+templ indexBody(v indexView) {
+	if v.IntroHTML != "" {
+		<article class="intro markdown-body">
+			@templ.Raw(string(v.IntroHTML))
+		</article>
+	}
+	if len(v.Posts) == 0 {
+		<p class="empty">no posts yet</p>
+	}
+	<div class="post-list">
+		for _, p := range v.Posts {
+			@postItem(p, "post-item")
+		}
+	</div>
+}
+
+templ postsMeta(v postsView) {
+	@ogImage(v.siteContext)
+	<meta property="og:url" content={ v.SiteURL + "/posts" }/>
+}
+
+templ postsBody(v postsView) {
+	<h1>Posts</h1>
+	if len(v.Posts) == 0 {
+		<p class="empty">no posts yet</p>
+	}
+	<div class="post-list">
+		for _, p := range v.Posts {
+			@postItem(p, "post-item post-item-enhanced")
+		}
+	</div>
+}
+
+templ pageMeta(v pageView) {
+	@ogImage(v.siteContext)
+	<meta property="og:url" content={ v.SiteURL + "/" + v.Page.Slug }/>
+}
+
+templ pageBody(v pageView) {
+	<div class="page-header">
+		<h1>{ v.Page.Title }</h1>
+	</div>
+	<article class="markdown-body">
+		@templ.Raw(string(v.RenderedContent))
+	</article>
+}
+
+templ postMeta(v postView) {
+	if v.Post.MetaDescription != nil {
+		<meta name="description" content={ v.Post.MetaDescriptionStr() }/>
+		<meta property="og:description" content={ v.Post.MetaDescriptionStr() }/>
+	}
+	if v.Post.MetaImageStr() != "" {
+		<meta property="og:image" content={ v.Post.MetaImageStr() }/>
+	} else {
+		@ogImage(v.siteContext)
+	}
+	if v.Post.CanonicalURL != nil {
+		<link rel="canonical" href={ templ.URL(v.Post.CanonicalURLStr()) }/>
+	}
+	<meta property="og:title" content={ v.Post.DisplayTitle() }/>
+	<meta property="og:type" content="article"/>
+	<meta property="og:url" content={ v.SiteURL + "/posts/" + v.Post.Slug }/>
+	<meta property="article:published_time" content={ v.Post.PublishedDateStr() }/>
+}
+
+// The location icon is from Phosphor Icons:
+// https://github.com/phosphor-icons/core/blob/main/LICENSE
+templ postBody(v postView) {
+	<div class="post-header">
+		if v.Post.HasTitle() {
+			<h1>{ v.Post.TitleStr() }</h1>
+		}
+		if v.Post.MetaDescription != nil {
+			<p class="post-description">{ v.Post.MetaDescriptionStr() }</p>
+		}
+		<div class="post-weather">
+			if v.Post.PublishedDate != nil {
+				<span>
+					<time class="post-date">{ v.Post.PublishedDateStr() }</time>
+				</span>
+				<span>•</span>
+			}
+			if v.Post.Weather != nil {
+				@templ.Raw(string(v.Weather.Icon))
+				<p class="weather-conditions">{ v.Weather.Conditions }</p>
+				<p class="weather-temp">{ v.Weather.Temperature }</p>
+				•
+				<div class="weather-location">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path fill="currentColor" d="M128 68a36 36 0 1 0 36 36a36 36 0 0 0-36-36m0 64a28 28 0 1 1 28-28a28 28 0 0 1-28 28m0-112a84.09 84.09 0 0 0-84 84c0 30.42 14.17 62.79 41 93.62a250 250 0 0 0 40.73 37.66a4 4 0 0 0 4.58 0A250 250 0 0 0 171 197.62c26.81-30.83 41-63.2 41-93.62a84.09 84.09 0 0 0-84-84m37.1 172.23A254.6 254.6 0 0 1 128 227a254.6 254.6 0 0 1-37.1-34.81C73.15 171.8 52 139.9 52 104a76 76 0 0 1 152 0c0 35.9-21.15 67.8-38.9 88.23"></path></svg>
+					<p>{ v.Weather.Location }</p>
+				</div>
+			}
+		</div>
+		if len(v.Post.TagList()) > 0 {
+			<div class="post-tags">
+				for _, t := range v.Post.TagList() {
+					<span class="tag">{ t }</span>
+				}
+			</div>
+		}
+	</div>
+	<article class="markdown-body">
+		@templ.Raw(string(v.RenderedContent))
+	</article>
+}

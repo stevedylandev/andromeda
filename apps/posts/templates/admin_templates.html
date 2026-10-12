@@ -1,0 +1,62 @@
+{{define "admin_templates.html"}}{{template "admin_base.html" .}}{{end}}
+{{define "title"}}Admin — Templates{{end}}
+{{define "content"}}
+  <h2>Templates</h2>
+  <nav class="form-actions template-tabs">
+    {{range .Kinds}}
+      <a href="/admin/templates?t={{.Kind}}" class="btn" {{if eq .Kind $.Kind}}aria-current="page"{{end}}>{{.Label}}</a>
+    {{end}}
+  </nav>
+  {{if .Success}}<p class="success">Template saved.</p>{{end}}
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  <form method="POST" action="/admin/templates/{{.Kind}}" class="form">
+    <div class="switch-row">
+      <label class="switch">
+        <input type="checkbox" id="custom_template_toggle" {{if .Custom}}checked{{end}}>
+        <span class="switch-slider"></span>
+      </label>
+      <span class="switch-label">custom template</span>
+    </div>
+    <div id="custom_template_section" {{if not .Custom}}class="hidden"{{end}}>
+      <label for="template">page body (Go html/template, replaces the default content inside &lt;main&gt;)</label>
+      <textarea id="template" name="template" class="post-content">{{.Template}}</textarea>
+      <details class="available-fields">
+        <summary>available fields</summary>
+        <div class="fields-list">
+          <span>.BlogTitle, .SiteURL, .FaviconURL, .OGImageURL</span>
+          <span>.NavLinks (range: .Label, .URL)</span>
+          <span>.HeaderHTML, .FooterHTML</span>
+          {{if eq .Kind "index"}}
+            <span>.BlogDescription</span>
+            <span>.IntroHTML</span>
+            <span>.Posts (range: see post fields)</span>
+          {{else if eq .Kind "posts"}}
+            <span>.Posts (range: see post fields)</span>
+          {{else if eq .Kind "page"}}
+            <span>.Page.Title, .Page.Slug, .Page.Content, .Page.CreatedAt, .Page.UpdatedAt</span>
+            <span>.RenderedContent</span>
+          {{else if eq .Kind "post"}}
+            <span>.Post (see post fields)</span>
+            <span>.RenderedContent</span>
+            <span>.Weather.Icon, .Weather.Conditions, .Weather.Temperature, .Weather.Location</span>
+          {{end}}
+          {{if ne .Kind "page"}}
+            <span>post fields: .Slug, .DisplayTitle, .TitleStr, .HasTitle, .PublishedDateStr, .MetaDescriptionStr, .MetaImageStr, .CanonicalURLStr, .TagList, .Lang, .Content</span>
+          {{end}}
+        </div>
+      </details>
+    </div>
+    <button type="submit">save</button>
+  </form>
+  <script>
+    var toggle = document.getElementById('custom_template_toggle');
+    var section = document.getElementById('custom_template_section');
+    var textarea = document.getElementById('template');
+    toggle.addEventListener('change', function() {
+      section.classList.toggle('hidden', !this.checked);
+    });
+    document.querySelector('form').addEventListener('submit', function() {
+      if (!toggle.checked) { textarea.value = ''; }
+    });
+  </script>
+{{end}}
