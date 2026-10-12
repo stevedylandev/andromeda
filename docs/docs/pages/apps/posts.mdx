@@ -22,7 +22,7 @@ A self-hosted blog CMS built in Go.
 | Variable | Description | Default |
 |---|---|---|
 | `POSTS_PASSWORD` | Password for admin login | `changeme` |
-| `POSTS_API_KEY` | API key for creating posts via `POST /api/posts` | _(unset)_ |
+| `POSTS_API_KEY` | API key for `POST /api/posts` and `POST /api/files` | _(unset)_ |
 | `POSTS_DB_PATH` | SQLite database file path | `posts.sqlite` |
 | `UPLOADS_DIR` | Directory for uploaded files (used when R2 unset) | `uploads` |
 | `SITE_URL` | Public URL for RSS feed and links | `http://localhost:3000` |
@@ -37,7 +37,7 @@ A self-hosted blog CMS built in Go.
 
 Upload storage falls back to local filesystem (`UPLOADS_DIR`) when `R2_BUCKET` is empty. Set all five `R2_*` variables to switch uploads to Cloudflare R2.
 
-If `POSTS_API_KEY` is not set, `POST /api/posts` returns `403`. The read-only `GET` endpoints are always public.
+If `POSTS_API_KEY` is not set, `POST /api/posts` and `POST /api/files` return `403`. The read-only `GET` endpoints are always public.
 
 ## Deploy
 
@@ -87,6 +87,7 @@ Log in at `/login` with your configured password to access the admin panel. From
 | `GET` | `/api/posts?limit=30` | List published posts |
 | `GET` | `/api/posts/{slug}` | Get a published post by slug |
 | `POST` | `/api/posts` | Create a post |
+| `POST` | `/api/files` | Upload a file |
 
 `POST /api/posts` requires an `x-api-key` header matching `POSTS_API_KEY`. The JSON body accepts:
 
@@ -112,6 +113,15 @@ curl -X POST https://your-posts-instance.com/api/posts \
   -H "x-api-key: $POSTS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"title": "Hello World", "content": "My first post via the API", "status": "published"}'
+```
+
+`POST /api/files` uses the same `x-api-key` header and takes `multipart/form-data` with a `file` field (max 10 MB) and an optional `name` field to set the filename. Returns `201` with the file's `url`, `filename`, `original_name`, `content_type`, and `size`, or `409` if the name is taken.
+
+```bash
+curl -X POST https://your-posts-instance.com/api/files \
+  -H "x-api-key: $POSTS_API_KEY" \
+  -F file=@photo.png \
+  -F name=my-photo
 ```
 
 ## Acknowledgements

@@ -41,6 +41,7 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /api/posts", cors(a.apiListPosts))
 	mux.HandleFunc("GET /api/posts/{slug}", cors(a.apiGetPost))
 	mux.HandleFunc("POST /api/posts", requireAPIKey(a.apiCreatePost))
+	mux.HandleFunc("POST /api/files", requireAPIKey(a.apiUploadFile))
 
 	// Admin auth
 	mux.HandleFunc("GET /admin/login", a.loginGet)

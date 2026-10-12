@@ -1,10 +1,12 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/stevedylandev/andromeda/pkg/auth"
 	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
@@ -171,4 +173,107 @@ func (a *App) apiCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	web.WriteJSON(w, http.StatusCreated, toDetail(*post))
+}
+
+type apiFile struct {
+	URL          string `json:"url"`
+	Filename     string `json:"filename"`
+	OriginalName string `json:"original_name"`
+	ContentType  string `json:"content_type"`
+	Size         int64  `json:"size"`
+}
+
+func (a *App) apiUploadFile(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, bodyLimit)
+	if err := r.ParseMultipartForm(uploadMaxBytes); err != nil {
+		web.WriteError(w, http.StatusBadRequest, "failed to read multipart form")
+		return
+	}
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		web.WriteError(w, http.StatusBadRequest, "file is required")
+		return
+	}
+	defer file.Close()
+	data, err := io.ReadAll(file)
+	if err != nil {
+		web.WriteError(w, http.StatusBadRequest, "failed to read upload")
+		return
+	}
+	if int64(len(data)) > uploadMaxBytes {
+		web.WriteError(w, http.StatusRequestEntityTooLarge, "file exceeds 10MB limit")
+		return
+	}
+	originalName := "upload"
+	contentType := "application/octet-stream"
+	if header != nil {
+		originalName = header.Filename
+		if ct := header.Header.Get("Content-Type"); ct != "" {
+			contentType = ct
+		}
+	}
+	ext := ""
+	if i := strings.LastIndex(originalName, "."); i > 0 && i < len(originalName)-1 {
+		ext = originalName[i+1:]
+	}
+
+	var stored string
+	if name := strings.TrimSpace(r.FormValue("name")); name != "" {
+		stored = sanitizeFilename(name, ext)
+		if stored == "" {
+			web.WriteError(w, http.StatusBadRequest, "name must contain letters or numbers")
+			return
+		}
+		originalName = name
+	} else {
+		id, err := auth.GenerateShortID(10)
+		if err != nil {
+			web.WriteError(w, http.StatusInternalServerError, "internal server error")
+			return
+		}
+		stored = id
+		if ext != "" {
+			stored = id + "." + ext
+		}
+	}
+
+	backend := a.Storage
+	if backend == nil {
+		web.WriteError(w, http.StatusInternalServerError, "storage not configured")
+		return
+	}
+	existing, err := getFileByFilename(a.DB, stored)
+	if err != nil {
+		web.WriteError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	if existing != nil {
+		web.WriteError(w, http.StatusConflict, "file with that name already exists")
+		return
+	}
+	// Record before writing to storage so the UNIQUE filename constraint keeps
+	// two concurrent uploads with the same name from overwriting each other.
+	rec, err := createFile(a.DB, stored, originalName, contentType, int64(len(data)), backend.Name())
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE") {
+			web.WriteError(w, http.StatusConflict, "file with that name already exists")
+			return
+		}
+		a.Log.Error("api record file", "err", err)
+		web.WriteError(w, http.StatusInternalServerError, "failed to record file")
+		return
+	}
+	if err := backend.Put(r.Context(), stored, contentType, data); err != nil {
+		a.Log.Error("api save file", "backend", backend.Name(), "err", err)
+		_, _ = deleteFile(a.DB, rec.ShortID)
+		web.WriteError(w, http.StatusInternalServerError, "failed to save file")
+		return
+	}
+	web.WriteJSON(w, http.StatusCreated, apiFile{
+		URL:          a.SiteURL + "/files/" + rec.Filename,
+		Filename:     rec.Filename,
+		OriginalName: rec.OriginalName,
+		ContentType:  rec.ContentType,
+		Size:         rec.Size,
+	})
 }

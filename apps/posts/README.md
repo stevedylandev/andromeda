@@ -45,5 +45,10 @@ go build .
   optional `title`, `slug`, `status` (`draft`|`published`, default `draft`),
   `alias`, `canonical_url`, `published_date`, `meta_description`,
   `meta_image`, `lang`, `tags`, `weather`.
+- `POST /api/files` uploads a file (same `X-API-Key` auth). Multipart form:
+  `file` (required, 10 MB max) and optional `name`, which becomes the stored
+  filename (slugified, extension kept or taken from the upload; 409 if taken).
+  Without `name` a random ID is used. Returns 201 with JSON `url`,
+  `filename`, `original_name`, `content_type`, `size`.
 
 See `.env.example`.
