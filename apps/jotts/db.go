@@ -18,8 +18,8 @@ func getNoteByShortID(db *sql.DB, shortID string) (*Note, error) {
 
 func listNotes(db *sql.DB) ([]Note, error) { return store.List(db) }
 
-func updateNoteByShortID(db *sql.DB, shortID, title, content string) (*Note, error) {
-	return store.UpdateByShortID(db, shortID, title, content)
+func updateNoteByShortID(db *sql.DB, shortID, title, content string, public *bool) (*Note, error) {
+	return store.UpdateByShortID(db, shortID, title, content, public)
 }
 
 func deleteNoteByShortID(db *sql.DB, shortID string) (bool, error) {

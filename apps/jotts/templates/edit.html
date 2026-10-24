@@ -25,6 +25,11 @@
         <input type="text" id="title" name="title" value="{{.Note.Title}}" required>
         <label for="content">content</label>
         <textarea id="content" name="content">{{.Note.Content}}</textarea>
+        <div style="display: flex; align-items: center; padding: 1rem 0;">
+        <label style="padding-right: 1rem;" for="public">Public</label>
+        <input type="checkbox" id="public" name="public" value="true" {{if .Note.Public}}checked{{end}}>
+        <input type="hidden" name="public" value="false">
+        </div>
         <button type="submit">save</button>
       </form>
     </main>

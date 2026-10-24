@@ -29,6 +29,7 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /notes/new", requireSession(a.newNoteGetHandler))
 	mux.HandleFunc("POST /notes", requireSession(a.createNoteHandler))
 	mux.HandleFunc("GET /notes/{short_id}", requireSession(a.viewNoteHandler))
+	mux.HandleFunc("GET /n/{short_id}", a.viewPublicNoteHandler)
 	mux.HandleFunc("GET /notes/{short_id}/edit", requireSession(a.editNoteGetHandler))
 	mux.HandleFunc("POST /notes/{short_id}", requireSession(a.updateNoteHandler))
 	mux.HandleFunc("POST /notes/{short_id}/delete", requireSession(a.deleteNoteHandler))

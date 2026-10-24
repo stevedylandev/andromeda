@@ -15,6 +15,7 @@ type Note struct {
 	Content   string `json:"content"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
+	Public    bool   `json:"public"`
 }
 
 type NoteInput struct {
@@ -22,7 +23,13 @@ type NoteInput struct {
 	Content string `json:"content"`
 }
 
-const noteColumns = `id, short_id, title, content, created_at, updated_at`
+type UpdateNoteRequest struct {
+    Title   string `json:"title"`
+    Content string `json:"content"`
+    Public  *bool  `json:"public,omitempty"`
+}
+
+const noteColumns = `id, short_id, title, content, created_at, updated_at, public`
 
 const schema = `
 CREATE TABLE IF NOT EXISTS notes (
@@ -31,17 +38,23 @@ CREATE TABLE IF NOT EXISTS notes (
     title      TEXT NOT NULL,
     content    TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+		public     BOOL          DEFAULT (false)
 );
 `
 
 func Open(path string) (*sql.DB, error) {
-	return sqlite.Open(path, schema)
+	db, err := sqlite.Open(path, schema)
+	if err != nil {
+		return nil, err
+	}
+	db.Exec(`ALTER TABLE notes ADD COLUMN public BOOL DEFAULT (false)`)
+	return db, nil
 }
 
 func scanNote(scanner interface{ Scan(dest ...any) error }) (*Note, error) {
 	var n Note
-	err := scanner.Scan(&n.ID, &n.ShortID, &n.Title, &n.Content, &n.CreatedAt, &n.UpdatedAt)
+	err := scanner.Scan(&n.ID, &n.ShortID, &n.Title, &n.Content, &n.CreatedAt, &n.UpdatedAt, &n.Public)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -80,7 +93,7 @@ func List(db *sql.DB) ([]Note, error) {
 	var out []Note
 	for rows.Next() {
 		var n Note
-		if err := rows.Scan(&n.ID, &n.ShortID, &n.Title, &n.Content, &n.CreatedAt, &n.UpdatedAt); err != nil {
+		if err := rows.Scan(&n.ID, &n.ShortID, &n.Title, &n.Content, &n.CreatedAt, &n.UpdatedAt, &n.Public); err != nil {
 			return nil, err
 		}
 		out = append(out, n)
@@ -88,16 +101,22 @@ func List(db *sql.DB) ([]Note, error) {
 	return out, rows.Err()
 }
 
-func UpdateByShortID(db *sql.DB, shortID, title, content string) (*Note, error) {
-	res, err := db.Exec(`UPDATE notes SET title = ?, content = ?, updated_at = datetime('now') WHERE short_id = ?`, title, content, shortID)
-	if err != nil {
-		return nil, err
-	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return nil, nil
-	}
-	return GetByShortID(db, shortID)
+
+func UpdateByShortID(db *sql.DB, shortID, title, content string, public *bool) (*Note, error) {
+    res, err := db.Exec(
+        `UPDATE notes
+         SET title = ?, content = ?, public = COALESCE(?, public), updated_at = datetime('now')
+         WHERE short_id = ?`,
+        title, content, public, shortID,
+    )
+    if err != nil {
+        return nil, err
+    }
+    n, _ := res.RowsAffected()
+    if n == 0 {
+        return nil, nil
+    }
+    return GetByShortID(db, shortID)
 }
 
 func DeleteByShortID(db *sql.DB, shortID string) (bool, error) {

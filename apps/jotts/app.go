@@ -25,6 +25,7 @@ type App struct {
 
 type Note = store.Note
 type NoteInput = store.NoteInput
+type UpdateNoteRequest = store.UpdateNoteRequest
 
 type indexPageData struct {
 	Notes []Note

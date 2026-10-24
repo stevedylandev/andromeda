@@ -45,14 +45,14 @@ func TestNoteCRUDAndOrdering(t *testing.T) {
 		t.Fatalf("not newest first: %#v", all)
 	}
 
-	updated, err := updateNoteByShortID(db, first.ShortID, "updated", "changed")
+	updated, err := updateNoteByShortID(db, first.ShortID, "updated", "changed", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if updated == nil || updated.Title != "updated" || updated.Content != "changed" {
 		t.Fatalf("unexpected update: %#v", updated)
 	}
-	updated, err = updateNoteByShortID(db, "missing", "x", "y")
+	updated, err = updateNoteByShortID(db, "missing", "x", "y", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
