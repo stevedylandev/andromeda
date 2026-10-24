@@ -197,14 +197,15 @@ restore_app() {
   fi
 
   echo "$(date -u) Writing into volume $volume ..."
-  docker run --rm \
+  if ! docker run --rm \
     -v "$volume:/data" \
-    -v "$workdir:/backup:ro" \
+    -v "$workdir:/backup:ro,z" \
     "$RESTORE_IMAGE" \
-    cp "/backup/$(basename "$decompressed")" "/data/$internal_file"
-
-  rm -rf "$workdir"
-  trap - EXIT INT TERM
+    cp "/backup/$(basename "$decompressed")" "/data/$internal_file"; then
+    echo "WARN: failed to write $app into volume $volume"
+    rm -rf "$workdir"; trap - EXIT INT TERM
+    return 1
+  fi
 
   echo "$(date -u) OK: $app restored from $key"
   echo "WARNING: stop the '$app' service before restoring and restart it after for a clean"
