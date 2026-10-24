@@ -19,7 +19,7 @@ type App struct {
 	Sessions        *auth.Store
 	AppPassword     string
 	CookieSecure    bool
-	AnthropicAPIKey string
+	OpenrouterAPIKey string
 	SiteURL         string
 	SiteTitle       string
 	SiteDescription string
@@ -92,7 +92,7 @@ type adminPageData struct {
 type wineFormPageData struct {
 	Wine            *Wine
 	Error           string
-	HasAnthropicKey bool
+	HasOpenrouterKey bool
 }
 
 type wishlistPageData struct {

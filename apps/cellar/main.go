@@ -46,7 +46,7 @@ func main() {
 		Sessions:        sessions,
 		AppPassword:     password,
 		CookieSecure:    sessions.CookieSecure,
-		AnthropicAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
+		OpenrouterAPIKey: os.Getenv("OPENROUTER_API_KEY"),
 		SiteURL:         strings.TrimRight(config.Getenv("SITE_URL", "http://localhost:3000"), "/"),
 		SiteTitle:       config.Getenv("SITE_TITLE", "Cellar"),
 		SiteDescription: config.Getenv("SITE_DESCRIPTION", "Personal wine tasting log"),

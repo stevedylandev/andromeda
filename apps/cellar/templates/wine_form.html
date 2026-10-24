@@ -10,7 +10,7 @@
     <label for="image">image</label>
     <div class="image-upload-row">
       <input type="file" id="image" name="image" accept="image/*">
-      {{if .HasAnthropicKey}}<button type="button" id="analyze-btn" onclick="analyzeImage()">analyze</button>{{end}}
+      {{if .HasOpenrouterKey}}<button type="button" id="analyze-btn" onclick="analyzeImage()">analyze</button>{{end}}
     </div>
 
     <label for="name">name</label>
@@ -92,7 +92,7 @@
       });
     });
 
-    {{if .HasAnthropicKey}}
+    {{if .HasOpenrouterKey}}
     async function analyzeImage() {
       var fileInput = document.getElementById('image');
       if (!fileInput.files.length) return;

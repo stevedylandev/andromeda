@@ -61,7 +61,7 @@ func (a *App) adminIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) newWineGet(w http.ResponseWriter, r *http.Request) {
-	a.renderPage(w, "wine_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
+	a.renderPage(w, "wine_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasOpenrouterKey: a.OpenrouterAPIKey != ""})
 }
 
 func (a *App) editWineGet(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +75,7 @@ func (a *App) editWineGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Wine not found", http.StatusNotFound)
 		return
 	}
-	a.renderPage(w, "wine_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
+	a.renderPage(w, "wine_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasOpenrouterKey: a.OpenrouterAPIKey != ""})
 }
 
 func (a *App) newWinePost(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +129,7 @@ func (a *App) deleteWinePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) newWishlistGet(w http.ResponseWriter, r *http.Request) {
-	a.renderPage(w, "wishlist_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
+	a.renderPage(w, "wishlist_form.html", wineFormPageData{Error: r.URL.Query().Get("error"), HasOpenrouterKey: a.OpenrouterAPIKey != ""})
 }
 
 func (a *App) editWishlistGet(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +142,7 @@ func (a *App) editWishlistGet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Wine not found", http.StatusNotFound)
 		return
 	}
-	a.renderPage(w, "wishlist_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasAnthropicKey: a.AnthropicAPIKey != ""})
+	a.renderPage(w, "wishlist_form.html", wineFormPageData{Wine: wine, Error: r.URL.Query().Get("error"), HasOpenrouterKey: a.OpenrouterAPIKey != ""})
 }
 
 func (a *App) newWishlistPost(w http.ResponseWriter, r *http.Request) {
@@ -206,7 +206,7 @@ func (a *App) promoteWinePost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) analyzeImage(w http.ResponseWriter, r *http.Request) {
-	if a.AnthropicAPIKey == "" {
+	if a.OpenrouterAPIKey == "" {
 		web.WriteError(w, http.StatusBadRequest, "No API key configured")
 		return
 	}
@@ -230,7 +230,7 @@ func (a *App) analyzeImage(w http.ResponseWriter, r *http.Request) {
 	if header != nil && header.Header.Get("Content-Type") != "" {
 		mediaType = header.Header.Get("Content-Type")
 	}
-	result, err := analyzeWineImage(r.Context(), a.AnthropicAPIKey, raw, mediaType)
+	result, err := analyzeWineImage(r.Context(), a.OpenrouterAPIKey, raw, mediaType)
 	if err != nil {
 		a.Log.Error("Claude analysis failed", "err", err)
 		web.WriteError(w, http.StatusInternalServerError, err.Error())
