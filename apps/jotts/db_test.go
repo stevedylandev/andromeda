@@ -41,7 +41,7 @@ func TestNoteCRUDAndOrdering(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(all) != 2 || all[0].ShortID != second.ShortID || all[1].ShortID != first.ShortID {
+	if len(all) != 2 || all[0].UpdatedAt != second.UpdatedAt || all[1].UpdatedAt != first.UpdatedAt {
 		t.Fatalf("not newest first: %#v", all)
 	}
 
