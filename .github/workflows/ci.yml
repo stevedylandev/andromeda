@@ -31,6 +31,17 @@ jobs:
             fi
           done
 
+      - name: templ generated files are up to date
+        working-directory: apps/posts
+        run: |
+          set -euo pipefail
+          go generate ./...
+          if [ -n "$(git status --porcelain -- .)" ]; then
+            git status --porcelain -- .
+            echo "::error::run 'go generate ./...' in apps/posts and commit the result"
+            exit 1
+          fi
+
       - name: go vet all modules
         run: |
           set -euo pipefail

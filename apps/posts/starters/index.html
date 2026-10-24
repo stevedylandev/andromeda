@@ -1,0 +1,20 @@
+{{if .IntroHTML}}
+<article class="intro markdown-body">
+  {{.IntroHTML}}
+</article>
+{{end}}
+{{if not .Posts}}
+<p class="empty">no posts yet</p>
+{{end}}
+<div class="post-list">
+  {{range .Posts}}
+  <a href="/posts/{{.Slug}}" class="post-item">
+    <div class="post-item-info">
+      <span class="post-title">{{.DisplayTitle}}</span>
+    </div>
+    {{if .PublishedDate}}
+    <time class="post-date">{{.PublishedDateStr}}</time>
+    {{end}}
+  </a>
+  {{end}}
+</div>

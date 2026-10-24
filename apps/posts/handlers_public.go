@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"html/template"
 	"net/http"
 	"strings"
@@ -30,31 +31,11 @@ func (a *App) site() siteContext {
 
 func renderLatestPostsEmbed(posts []Post) string {
 	var b strings.Builder
-	b.WriteString(`<div class="post-list">`)
-	for i := range posts {
-		p := &posts[i]
-		b.WriteString(`<a href="/posts/` + p.Slug + `" class="post-item"><div class="post-item-info"><span class="post-title">` + p.DisplayTitle() + `</span>`)
-		if p.Tags != nil && *p.Tags != "" {
-			b.WriteString(`<span class="post-tags">`)
-			for _, t := range strings.Split(*p.Tags, ",") {
-				if v := strings.TrimSpace(t); v != "" {
-					b.WriteString(`<span class="tag">` + v + `</span>`)
-				}
-			}
-			b.WriteString(`</span>`)
-		}
-		b.WriteString(`</div>`)
-		if p.PublishedDate != nil {
-			b.WriteString(`<time class="post-date">` + *p.PublishedDate + `</time>`)
-		}
-		b.WriteString(`</a>`)
-	}
-	b.WriteString(`</div>`)
+	_ = latestPosts(posts).Render(context.Background(), &b)
 	return b.String()
 }
 
 func (a *App) publicIndex(w http.ResponseWriter, r *http.Request) {
-	ctx := a.site()
 	blogDesc, _ := getSetting(a.DB, "blog_description")
 	intro, _ := getSetting(a.DB, "intro_content")
 
@@ -76,13 +57,13 @@ func (a *App) publicIndex(w http.ResponseWriter, r *http.Request) {
 		introHTML = strings.ReplaceAll(introHTML, "{{latest_posts}}", embed)
 	}
 
-	a.renderPage(w, "index.html", indexPageData{
-		BlogTitle: ctx.BlogTitle, BlogDescription: blogDesc,
-		IntroHTML: template.HTML(introHTML),
-		Posts:     posts,
-		NavLinks:  ctx.NavLinks, FaviconURL: ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
-		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	})
+	v := indexView{
+		siteContext:     a.site(),
+		BlogDescription: blogDesc,
+		IntroHTML:       template.HTML(introHTML),
+		Posts:           posts,
+	}
+	a.renderPublic(w, r, v.siteContext, v.BlogTitle, indexMeta(v), a.body("index", v, indexBody(v)))
 }
 
 func (a *App) publicPost(w http.ResponseWriter, r *http.Request) {
@@ -105,14 +86,13 @@ func (a *App) publicPost(w http.ResponseWriter, r *http.Request) {
 			weather = w
 		}
 	}
-	ctx := a.site()
-	rendered := renderMarkdown(post.Content)
-	a.renderPage(w, "post.html", postPageData{
-		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Post: *post,
-		RenderedContent: template.HTML(rendered),
-		FaviconURL:      ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
-		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML, Weather: weather,
-	})
+	v := postView{
+		siteContext:     a.site(),
+		Post:            *post,
+		RenderedContent: template.HTML(renderMarkdown(post.Content)),
+		Weather:         weather,
+	}
+	a.renderPublic(w, r, v.siteContext, post.DisplayTitle()+" — "+v.BlogTitle, postMeta(v), a.body("post", v, postBody(v)))
 }
 
 func (a *App) publicPage(w http.ResponseWriter, r *http.Request) {
@@ -131,28 +111,22 @@ func (a *App) publicPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not found", http.StatusNotFound)
 		return
 	}
-	ctx := a.site()
-	rendered := renderMarkdown(page.Content)
-	a.renderPage(w, "page.html", pagePageData{
-		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Page: *page,
-		RenderedContent: template.HTML(rendered),
-		FaviconURL:      ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
-		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	})
+	v := pageView{
+		siteContext:     a.site(),
+		Page:            *page,
+		RenderedContent: template.HTML(renderMarkdown(page.Content)),
+	}
+	a.renderPublic(w, r, v.siteContext, page.Title+" — "+v.BlogTitle, pageMeta(v), a.body("page", v, pageBody(v)))
 }
 
 func (a *App) publicPostsList(w http.ResponseWriter, r *http.Request) {
-	ctx := a.site()
 	posts, err := getPublishedPosts(a.DB, 0)
 	if err != nil {
 		http.Error(w, "Server error", http.StatusInternalServerError)
 		return
 	}
-	a.renderPage(w, "posts.html", postsListPageData{
-		BlogTitle: ctx.BlogTitle, NavLinks: ctx.NavLinks, Posts: posts,
-		FaviconURL: ctx.FaviconURL, OGImageURL: ctx.OGImageURL,
-		SiteURL: ctx.SiteURL, HeaderHTML: ctx.HeaderHTML, FooterHTML: ctx.FooterHTML,
-	})
+	v := postsView{siteContext: a.site(), Posts: posts}
+	a.renderPublic(w, r, v.siteContext, "Posts — "+v.BlogTitle, postsMeta(v), a.body("posts", v, postsBody(v)))
 }
 
 func (a *App) customCSS(w http.ResponseWriter, r *http.Request) {

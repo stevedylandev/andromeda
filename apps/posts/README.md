@@ -51,4 +51,13 @@ go build .
   Without `name` a random ID is used. Returns 201 with JSON `url`,
   `filename`, `original_name`, `content_type`, `size`.
 
+- Public pages are [templ](https://templ.guide) components (`*.templ`). After
+  editing them run `go generate ./...` and commit the generated `*_templ.go`.
+- `/admin/templates` lets you replace the body (inside `<main>`) of the home,
+  post, page and posts list views with a Go `html/template`. The editor starts
+  from `starters/*.html`, which must stay in sync with the templ defaults
+  (`TestStartersMatchTemplDefaults` checks this). Templates are validated
+  against sample data on save; if one fails at request time the default is
+  rendered instead.
+
 See `.env.example`.

@@ -77,7 +77,9 @@ func main() {
 		Storage:      storageBackend,
 		SiteURL:      strings.TrimRight(config.Getenv("SITE_URL", "http://localhost:3000"), "/"),
 		APIKey:       config.Getenv("POSTS_API_KEY", ""),
+		Overrides:    &overrides{},
 	}
+	app.loadOverrides()
 
 	addr := config.Getenv("HOST", "127.0.0.1") + ":" + config.Getenv("PORT", "3000")
 	logger.Info("posts server running", "addr", addr)

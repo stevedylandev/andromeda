@@ -37,6 +37,11 @@ textarea.attributes-textarea {
   opacity: 0.6;
 }
 
+.template-tabs .btn[aria-current] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Post list (public) */
 
 .post-list {
