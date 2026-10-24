@@ -72,7 +72,7 @@ func GetByShortID(db *sql.DB, shortID string) (*Note, error) {
 }
 
 func List(db *sql.DB) ([]Note, error) {
-	rows, err := db.Query(`SELECT ` + noteColumns + ` FROM notes ORDER BY id DESC`)
+	rows, err := db.Query(`SELECT ` + noteColumns + ` FROM notes ORDER BY updated_at DESC`)
 	if err != nil {
 		return nil, err
 	}
