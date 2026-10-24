@@ -21,7 +21,7 @@ type Backend interface {
 	List() ([]Note, error)
 	Get(shortID string) (*Note, error)
 	Create(title, content string) (*Note, error)
-	Update(shortID, title, content string) (*Note, error)
+	Update(shortID, title, content string, public *bool) (*Note, error)
 	Delete(shortID string) (bool, error)
 	RemoteURL() string
 	Close() error
@@ -34,8 +34,8 @@ type LocalBackend struct {
 func (b *LocalBackend) List() ([]Note, error)             { return store.List(b.DB) }
 func (b *LocalBackend) Get(s string) (*Note, error)       { return store.GetByShortID(b.DB, s) }
 func (b *LocalBackend) Create(t, c string) (*Note, error) { return store.Create(b.DB, t, c) }
-func (b *LocalBackend) Update(s, t, c string) (*Note, error) {
-	return store.UpdateByShortID(b.DB, s, t, c)
+func (b *LocalBackend) Update(s, t, c string, public *bool) (*Note, error) {
+	return store.UpdateByShortID(b.DB, s, t, c, public)
 }
 func (b *LocalBackend) Delete(s string) (bool, error) { return store.DeleteByShortID(b.DB, s) }
 func (b *LocalBackend) RemoteURL() string             { return "" }
@@ -116,9 +116,9 @@ func (r *RemoteBackend) Create(title, content string) (*Note, error) {
 	return &n, nil
 }
 
-func (r *RemoteBackend) Update(shortID, title, content string) (*Note, error) {
+func (r *RemoteBackend) Update(shortID, title, content string, public *bool) (*Note, error) {
 	var n Note
-	if err := r.do("PUT", "/api/notes/"+shortID, store.NoteInput{Title: title, Content: content}, &n); err != nil {
+	if err := r.do("PUT", "/api/notes/"+shortID, store.UpdateNoteRequest{Title: title, Content: content, Public: public}, &n); err != nil {
 		if err == errNotFound {
 			return nil, nil
 		}

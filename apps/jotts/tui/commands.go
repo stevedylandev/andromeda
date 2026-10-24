@@ -22,7 +22,8 @@ func saveNoteCmd(b Backend, shortID, title, content string) tea.Cmd {
 		if shortID == "" {
 			note, err = b.Create(title, content)
 		} else {
-			note, err = b.Update(shortID, title, content)
+			public := false
+			note, err = b.Update(shortID, title, content, &public)
 		}
 		return noteSavedMsg{Note: note, Err: err}
 	}

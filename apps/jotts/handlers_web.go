@@ -3,6 +3,7 @@ package main
 import (
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/stevedylandev/andromeda/pkg/auth"
@@ -95,6 +96,31 @@ func (a *App) viewNoteHandler(w http.ResponseWriter, r *http.Request) {
 	web.Render(a.Templates, w, "view.html", viewPageData{Note: *note, Rendered: template.HTML(rendered)}, a.Log)
 }
 
+func (a *App) viewPublicNoteHandler(w http.ResponseWriter, r *http.Request) {
+	shortID := r.PathValue("short_id")
+	note, err := getNoteByShortID(a.DB, shortID)
+	if err != nil {
+		a.Log.Error("get note failed", "err", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if note == nil {
+		http.Error(w, "Note not found", http.StatusNotFound)
+		return
+	}
+	if !note.Public {
+		http.Error(w, "Note not public", http.StatusUnauthorized)
+		return
+	}
+	rendered, err := renderMarkdown(note.Content)
+	if err != nil {
+		a.Log.Error("render markdown failed", "err", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	web.Render(a.Templates, w, "view-public.html", viewPageData{Note: *note, Rendered: template.HTML(rendered)}, a.Log)
+}
+
 func (a *App) editNoteGetHandler(w http.ResponseWriter, r *http.Request) {
 	shortID := r.PathValue("short_id")
 	note, err := getNoteByShortID(a.DB, shortID)
@@ -122,7 +148,16 @@ func (a *App) updateNoteHandler(w http.ResponseWriter, r *http.Request) {
 		web.RedirectWithError(w, r, "/notes/"+shortID+"/edit", "Title is required")
 		return
 	}
-	note, err := updateNoteByShortID(a.DB, shortID, title, content)
+	var public *bool
+	if _, ok := r.Form["public"]; ok {
+		v, err := strconv.ParseBool(r.FormValue("public"))
+		if err != nil {
+			web.RedirectWithError(w, r, "/notes/"+shortID+"/edit", "Not boolean value")
+			return
+		}
+		public = &v
+	}
+	note, err := updateNoteByShortID(a.DB, shortID, title, content, public)
 	if err != nil {
 		a.Log.Error("update note failed", "err", err)
 		web.RedirectWithError(w, r, "/notes/"+shortID+"/edit", "Failed to update note")

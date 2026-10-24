@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jotts — {{.Note.Title}}</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="manifest" href="/static/site.webmanifest">
+    <link rel="icon" href="/static/favicon.ico">
+    <meta property="og:title" content="Jotts">
+    <meta property="og:image" content="/static/og.png">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css">
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main>
+      <div class="note-header" style="margin-top:2rem;">
+        <h1>{{.Note.Title}}</h1>
+      </div>
+      <template id="raw-md">{{.Note.Content}}</template>
+      <article class="markdown-body">{{.Rendered}}</article>
+    </main>
+    <script>
+      function copyMarkdown() {
+        const md = document.getElementById("raw-md").content.textContent;
+        const btn = document.getElementById("copy-md-btn");
+        navigator.clipboard.writeText(md).then(() => {
+          btn.textContent = "copied!";
+          setTimeout(() => { btn.textContent = "copy"; }, 1500);
+        });
+      }
+      document.querySelectorAll("time.note-date").forEach(el => {
+        const d = new Date(el.getAttribute("datetime"));
+        if (!isNaN(d)) { el.textContent = d.toLocaleString(); }
+      });
+    </script>
+  </body>
+</html>

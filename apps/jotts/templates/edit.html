@@ -25,6 +25,9 @@
         <input type="text" id="title" name="title" value="{{.Note.Title}}" required>
         <label for="content">content</label>
         <textarea id="content" name="content">{{.Note.Content}}</textarea>
+        <label for="public">Public</label>
+        <input type="checkbox" id="public" name="public" value="true" {{if .Note.Public}}checked{{end}}>
+        <input type="hidden" name="public" value="false">
         <button type="submit">save</button>
       </form>
     </main>

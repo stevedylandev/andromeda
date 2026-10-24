@@ -53,7 +53,7 @@ func (a *App) apiCreateNote(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) apiUpdateNote(w http.ResponseWriter, r *http.Request) {
 	shortID := r.PathValue("short_id")
-	var body NoteInput
+	var body UpdateNoteRequest
 	if !web.DecodeJSON(w, r, &body) {
 		return
 	}
@@ -62,7 +62,7 @@ func (a *App) apiUpdateNote(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "title required", http.StatusBadRequest)
 		return
 	}
-	note, err := updateNoteByShortID(a.DB, shortID, title, body.Content)
+	note, err := updateNoteByShortID(a.DB, shortID, title, body.Content, body.Public)
 	if err != nil {
 		web.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
