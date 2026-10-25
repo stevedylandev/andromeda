@@ -37,6 +37,7 @@ slug: {{$p.Slug}}
           <button type="submit" name="action" value="draft">unpublish</button>
         {{else}}
           <button type="submit" name="action" value="draft">save draft</button>
+          <a class="btn" href="/admin/posts/{{$p.Slug}}">Preview</a>
           <button type="submit" name="action" value="publish">publish</button>
         {{end}}
       </div>

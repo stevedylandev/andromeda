@@ -95,6 +95,35 @@ func (a *App) publicPost(w http.ResponseWriter, r *http.Request) {
 	a.renderPublic(w, r, v.siteContext, post.DisplayTitle()+" — "+v.BlogTitle, postMeta(v), a.body("post", v, postBody(v)))
 }
 
+func (a *App) previewPublicPost(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	post, err := getPostBySlug(a.DB, slug)
+	if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+	if post == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	var weather Weather
+	if post.Weather != nil {
+		w, err := formatWeather(*post.Weather)
+		if err != nil {
+			fmt.Printf("Problem formatting weather: %s", err.Error())
+		} else {
+			weather = w
+		}
+	}
+	v := postView{
+		siteContext:     a.site(),
+		Post:            *post,
+		RenderedContent: template.HTML(renderMarkdown(post.Content)),
+		Weather:         weather,
+	}
+	a.renderPublic(w, r, v.siteContext, post.DisplayTitle()+" — "+v.BlogTitle, postMeta(v), a.body("post", v, postBody(v)))
+}
+
 func (a *App) publicPage(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	page, err := getPageBySlug(a.DB, slug)

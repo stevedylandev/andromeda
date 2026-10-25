@@ -53,6 +53,7 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /admin/posts/new", requireSession(a.adminNewPost))
 	mux.HandleFunc("POST /admin/posts", requireSession(a.adminCreatePost))
 	mux.HandleFunc("GET /admin/posts/{id}/edit", requireSession(a.adminEditPost))
+	mux.HandleFunc("GET /admin/posts/{slug}", requireSession(a.previewPublicPost))
 	mux.HandleFunc("POST /admin/posts/{id}", requireSession(a.adminUpdatePost))
 	mux.HandleFunc("POST /admin/posts/{id}/delete", requireSession(a.adminDeletePost))
 	mux.HandleFunc("POST /admin/posts/{id}/publish", requireSession(a.adminTogglePublish))
