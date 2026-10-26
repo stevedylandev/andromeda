@@ -1,6 +1,6 @@
 # library
 
-Personal book tracker with Google Books search.
+Personal book tracker with Open Library search.
 
 ## Install
 
@@ -45,7 +45,6 @@ go run .
 |---|---|---|
 | `ADMIN_PASSWORD` | `changeme` | Admin login password |
 | `LIBRARY_DB_PATH` | `library.sqlite` | SQLite path |
-| `GOOGLE_BOOKS_API_KEY` | — | Optional Google Books API key |
 | `BASE_URL` | `http://localhost:3000` | Public base URL (OG tags) |
 | `HOST` | `0.0.0.0` | Bind host |
 | `PORT` | `3000` | Server port |

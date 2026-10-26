@@ -69,9 +69,6 @@ func TestBookCRUDSearchSettingsAndGoogleHelpers(t *testing.T) {
 		t.Fatalf("labels %#v", labels)
 	}
 
-	if got := pickISBN([]identifier{{Kind: "ISBN_10", Identifier: "ten"}, {Kind: "ISBN_13", Identifier: "thirteen"}}); got != "thirteen" {
-		t.Fatalf("isbn %q", got)
-	}
 	if !isISBNChars("123456789X") || isISBNChars("123ABC") {
 		t.Fatal("isbn char validation failed")
 	}

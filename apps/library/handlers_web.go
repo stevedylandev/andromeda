@@ -176,9 +176,9 @@ func (a *App) adminUpdateLabels(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) adminSearch(w http.ResponseWriter, r *http.Request) {
-	hits, err := googleBooksSearch(r.Context(), r.URL.Query().Get("q"), a.GoogleBooksKey)
+	hits, err := openLibrarySearch(r.Context(), r.URL.Query().Get("q"))
 	if err != nil {
-		a.Log.Warn("google books search failed", "err", err)
+		a.Log.Warn("Open Library search failed", "err", err)
 		web.WriteError(w, http.StatusBadGateway, err.Error())
 		return
 	}
@@ -199,8 +199,8 @@ func (a *App) adminAddBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	b := NewBook{Title: r.FormValue("title"), Authors: r.FormValue("authors"), Status: status}
-	if v := strings.TrimSpace(r.FormValue("google_id")); v != "" {
-		b.GoogleID = &v
+	if v := strings.TrimSpace(r.FormValue("key")); v != "" {
+		b.OLKey = &v
 	}
 	if v := strings.TrimSpace(r.FormValue("isbn")); v != "" {
 		b.ISBN = &v

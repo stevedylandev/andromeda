@@ -21,6 +21,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	db.Exec(`ALTER TABLE books ADD COLUMN ol_key TEXT`)
 	defer db.Close()
 
 	sessions := &auth.Store{DB: db, CookieName: "session", CookieSecure: config.GetenvBool("COOKIE_SECURE", false)}
@@ -36,7 +37,6 @@ func main() {
 		Templates:      tmpl,
 		Sessions:       sessions,
 		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
-		GoogleBooksKey: os.Getenv("GOOGLE_BOOKS_API_KEY"),
 		CookieSecure:   sessions.CookieSecure,
 		BaseURL:        config.Getenv("BASE_URL", "http://localhost:3000"),
 		DisplayMode:    parseDisplayMode(config.Getenv("LIBRARY_DISPLAY_MODE", "inline")),
