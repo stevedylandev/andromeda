@@ -32,7 +32,6 @@ type App struct {
 	Templates      *template.Template
 	Sessions       *auth.Store
 	AdminPassword  string
-	GoogleBooksKey string
 	CookieSecure   bool
 	BaseURL        string
 	DisplayMode    DisplayMode

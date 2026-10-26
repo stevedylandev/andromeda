@@ -43,7 +43,7 @@
     </section>
 
     <section class="admin-form">
-      <h3>Search Books (Google)</h3>
+      <h3>Search Books (Open Library)</h3>
       <div class="search-row">
         <input type="text" id="book-query" placeholder="title, author, isbn" />
         <button type="button" id="search-btn" onclick="searchBooks()">Search</button>
@@ -239,7 +239,7 @@
           el.value = value || '';
           return el;
         };
-        info.appendChild(hidden('google_id', hit.google_id));
+        info.appendChild(hidden('key', hit.key));
         info.appendChild(hidden('title', hit.title));
         info.appendChild(hidden('authors', hit.authors));
         info.appendChild(hidden('isbn', hit.isbn));

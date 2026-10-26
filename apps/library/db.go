@@ -11,6 +11,7 @@ const booksSchema = `
 CREATE TABLE IF NOT EXISTS books (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     google_id     TEXT UNIQUE,
+		ol_key        TEXT,
     title         TEXT NOT NULL,
     authors       TEXT NOT NULL,
     isbn          TEXT,
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS settings (
 type Book struct {
 	ID        int64   `json:"id"`
 	GoogleID  *string `json:"google_id,omitempty"`
+	OLKey     *string `json:"key,omitempty"`
 	Title     string  `json:"title"`
 	Authors   string  `json:"authors"`
 	ISBN      *string `json:"isbn,omitempty"`
@@ -43,6 +45,7 @@ type Book struct {
 
 type NewBook struct {
 	GoogleID *string
+	OLKey    *string
 	Title    string
 	Authors  string
 	ISBN     *string
@@ -61,12 +64,12 @@ func defaultLabels() CategoryLabels {
 	return CategoryLabels{Reading: "Reading", Read: "Read", Want: "Want to Read"}
 }
 
-const selectCols = `id, google_id, title, authors, isbn, cover_url, notes, status, added_at, updated_at`
+const selectCols = `id, google_id, ol_key, title, authors, isbn, cover_url, notes, status, added_at, updated_at`
 
 func scanBook(s interface{ Scan(...any) error }) (*Book, error) {
 	var b Book
-	var gid, isbn, cover, notes sql.NullString
-	err := s.Scan(&b.ID, &gid, &b.Title, &b.Authors, &isbn, &cover, &notes, &b.Status, &b.AddedAt, &b.UpdatedAt)
+	var gid, olKey, isbn, cover, notes sql.NullString
+	err := s.Scan(&b.ID, &gid, &olKey, &b.Title, &b.Authors, &isbn, &cover, &notes, &b.Status, &b.AddedAt, &b.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -76,6 +79,10 @@ func scanBook(s interface{ Scan(...any) error }) (*Book, error) {
 	if gid.Valid {
 		v := gid.String
 		b.GoogleID = &v
+	}
+	if olKey.Valid {
+		v := olKey.String
+		b.OLKey = &v
 	}
 	if isbn.Valid {
 		v := isbn.String
@@ -121,9 +128,12 @@ func getBook(db *sql.DB, id int64) (*Book, error) {
 
 func insertBook(db *sql.DB, b NewBook) (int64, error) {
 	now := time.Now().UTC().Unix()
-	var gid, isbn, cover, notes any
+	var gid, olKey, isbn, cover, notes any
 	if b.GoogleID != nil && *b.GoogleID != "" {
 		gid = *b.GoogleID
+	}
+	if b.OLKey != nil && *b.OLKey != "" {
+		olKey = *b.OLKey
 	}
 	if b.ISBN != nil && *b.ISBN != "" {
 		isbn = *b.ISBN
@@ -135,10 +145,10 @@ func insertBook(db *sql.DB, b NewBook) (int64, error) {
 		notes = *b.Notes
 	}
 	res, err := db.Exec(
-		`INSERT INTO books (google_id, title, authors, isbn, cover_url, notes, status, added_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO books (google_id, ol_key, title, authors, isbn, cover_url, notes, status, added_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(google_id) DO UPDATE SET status = excluded.status, updated_at = excluded.updated_at`,
-		gid, b.Title, b.Authors, isbn, cover, notes, b.Status, now, now,
+		gid, olKey, b.Title, b.Authors, isbn, cover, notes, b.Status, now, now,
 	)
 	if err != nil {
 		return 0, err
