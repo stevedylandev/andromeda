@@ -230,7 +230,7 @@
           '<p class="book-authors"></p>' +
           (hit.isbn ? '<p class="book-meta">ISBN: ' + escapeHtml(hit.isbn) + '</p>' : '');
         info.querySelector('.book-title').textContent = hit.title;
-        info.querySelector('.book-authors').textContent = hit.authors;
+        info.querySelector('.book-authors').textContent = hit.author_name;
 
         const hidden = function(name, value) {
           const el = document.createElement('input');
@@ -241,7 +241,7 @@
         };
         info.appendChild(hidden('key', hit.key));
         info.appendChild(hidden('title', hit.title));
-        info.appendChild(hidden('authors', hit.authors));
+        info.appendChild(hidden('author_name', hit.author_name));
         info.appendChild(hidden('isbn', hit.isbn));
         info.appendChild(hidden('cover_url', hit.cover_url));
 

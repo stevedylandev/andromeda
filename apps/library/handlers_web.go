@@ -198,7 +198,7 @@ func (a *App) adminAddBook(w http.ResponseWriter, r *http.Request) {
 		web.RedirectWithError(w, r, "/admin", "Invalid status")
 		return
 	}
-	b := NewBook{Title: r.FormValue("title"), Authors: r.FormValue("authors"), Status: status}
+	b := NewBook{Title: r.FormValue("title"), Authors: r.FormValue("author_name"), Status: status}
 	if v := strings.TrimSpace(r.FormValue("key")); v != "" {
 		b.OLKey = &v
 	}
