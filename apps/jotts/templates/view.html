@@ -29,6 +29,9 @@
       <div class="note-actions">
         <a href="/notes/{{.Note.ShortID}}/edit">edit</a>
         <button type="button" class="link-button" id="copy-md-btn" onclick="copyMarkdown()">copy</button>
+        {{if .Note.Public}}
+        <a class="link-button" href="/n/{{.Note.ShortID}}" target="_blank" rel="noreferrer">link</a>
+        {{end}}
         <form method="POST" action="/notes/{{.Note.ShortID}}/delete" class="inline-form">
           <button type="submit" class="link-button" onclick="return confirm('delete this note?')">delete</button>
         </form>
