@@ -365,3 +365,7 @@ button.danger:hover,
   font-size: 14px;
   margin: 0;
 }
+
+textarea {
+  min-height: 200px !important;
+}

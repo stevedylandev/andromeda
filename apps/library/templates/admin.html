@@ -89,7 +89,7 @@
                 <noscript><button type="submit">Save</button></noscript>
               </form>
               <form method="POST" action="/admin/books/{{.ID}}/notes" class="inline notes-form">
-                <textarea name="notes" rows="2" placeholder="notes">{{.Notes}}</textarea>
+                <textarea name="notes" rows="5" placeholder="notes">{{.Notes}}</textarea>
                 <button type="submit">Save notes</button>
               </form>
               <form method="POST" action="/admin/books/{{.ID}}/delete" class="inline">
