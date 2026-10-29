@@ -8,8 +8,9 @@ type notesLoadedMsg struct {
 }
 
 type noteSavedMsg struct {
-	Note *Note
-	Err  error
+	Note   *Note
+	Err    error
+	Status string // optional status text; defaults to "saved"
 }
 
 type noteDeletedMsg struct {

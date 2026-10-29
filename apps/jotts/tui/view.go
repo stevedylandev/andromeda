@@ -33,7 +33,7 @@ func (m Model) View() tea.View {
 	var overlays []*lipgloss.Layer
 	if m.showHelp {
 		overlays = append(overlays, centerLayer(m.width, m.height,
-			modalStyle.Render(m.help.FullHelpView(m.keys.FullHelp())), 1))
+			modalStyle.Render(m.help.FullHelpView(fullHelp(m.keys))), 1))
 	}
 	if m.confirmDelete {
 		title := ""
@@ -83,11 +83,15 @@ func (m Model) renderContent(w, h int) string {
 	if m.state == stateContent {
 		style = borderActive
 	}
-	header := "preview"
+	titleLine := titleStyle.Render("preview")
 	if t := m.cont.Title(); t != "" {
-		header = t
+		vis := hintStyle.Render("private")
+		if m.cont.Public() {
+			vis = statusOKStyle.Render("public")
+		}
+		titleLine = titleStyle.Render(t) + "  " + vis
 	}
-	inner := lipgloss.JoinVertical(lipgloss.Left, titleStyle.Render(header), m.cont.View())
+	inner := lipgloss.JoinVertical(lipgloss.Left, titleLine, m.cont.View())
 	return style.Width(w).Height(h).Render(inner)
 }
 

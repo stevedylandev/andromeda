@@ -13,6 +13,7 @@ type contentModel struct {
 	shortID string
 	title   string
 	body    string
+	public  bool
 }
 
 func newContentModel() contentModel {
@@ -38,7 +39,7 @@ func (c *contentModel) SetSize(w, h int) {
 
 func (c *contentModel) SetNote(n *Note) {
 	if n == nil {
-		c.shortID, c.title, c.body = "", "", ""
+		c.shortID, c.title, c.body, c.public = "", "", "", false
 		c.vp.SetContent("")
 		c.vp.GotoTop()
 		return
@@ -46,6 +47,7 @@ func (c *contentModel) SetNote(n *Note) {
 	c.shortID = n.ShortID
 	c.title = n.Title
 	c.body = n.Content
+	c.public = n.Public
 	c.vp.GotoTop()
 	c.refresh()
 }
@@ -75,8 +77,9 @@ func (c *contentModel) refresh() {
 	c.vp.SetContent(c.renderer.render(c.shortID, c.body))
 }
 
-func (c contentModel) Title() string { return c.title }
-func (c contentModel) View() string  { return c.vp.View() }
+func (c contentModel) Title() string  { return c.title }
+func (c contentModel) Public() bool   { return c.public }
+func (c contentModel) View() string   { return c.vp.View() }
 
 func (c contentModel) ScrollUp(n int) contentModel {
 	c.vp.ScrollUp(n)

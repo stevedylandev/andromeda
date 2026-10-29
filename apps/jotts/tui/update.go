@@ -39,7 +39,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.state = stateList
 		m.form.Blur()
-		return m, tea.Batch(loadNotesCmd(m.backend), m.setStatus("saved", true))
+		status := "saved"
+		if msg.Status != "" {
+			status = msg.Status
+		}
+		return m, tea.Batch(loadNotesCmd(m.backend), m.setStatus(status, true))
 
 	case noteDeletedMsg:
 		if msg.Err != nil {
@@ -69,10 +73,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if orig == nil || strings.TrimRight(orig.Content, "\n") == strings.TrimRight(msg.Content, "\n") {
 			return m, nil
 		}
-		return m, saveNoteCmd(m.backend, msg.Tag, orig.Title, msg.Content)
+		// Keep the note's current visibility untouched.
+		var public *bool
+		return m, saveNoteCmd(m.backend, msg.Tag, orig.Title, msg.Content, public)
 
 	case submitFormMsg:
-		return m, saveNoteCmd(m.backend, msg.ShortID, msg.Title, msg.Content)
+		// Keep the note's current visibility untouched.
+		var public *bool
+		return m, saveNoteCmd(m.backend, msg.ShortID, msg.Title, msg.Content, public)
 
 	case cancelFormMsg:
 		m.state = stateList
@@ -167,6 +175,11 @@ func (m Model) handleListKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return m, openExternalEditor(n.ShortID, n.Content)
 		}
 		return m, nil
+	case key.Matches(msg, togglePublicKey):
+		if n, ok := m.list.Selected(); ok {
+			return m, togglePublicCmd(m.backend, n)
+		}
+		return m, nil
 	case key.Matches(msg, m.keys.Delete):
 		if _, ok := m.list.Selected(); ok {
 			m.confirmDelete = true
@@ -229,6 +242,11 @@ func (m Model) handleContentKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.ExtEdit):
 		if n, ok := m.list.Selected(); ok {
 			return m, openExternalEditor(n.ShortID, n.Content)
+		}
+		return m, nil
+	case key.Matches(msg, togglePublicKey):
+		if n, ok := m.list.Selected(); ok {
+			return m, togglePublicCmd(m.backend, n)
 		}
 		return m, nil
 	case key.Matches(msg, m.keys.Copy):
