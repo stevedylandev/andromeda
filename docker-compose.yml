@@ -47,16 +47,18 @@ services:
       - cellar_data:/data
     env_file: apps/cellar/.env
 
-  watchtower:
-    image: containrrr/watchtower:1.7.1
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_INCLUDE_RESTARTING=true
-      - DOCKER_API_VERSION=1.44
-    command: --interval 300
+  # watchtower:
+  #   image: containrrr/watchtower:1.7.1
+  #   restart: unless-stopped
+  #   security_opt:
+  #     - label=disable
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   environment:
+  #     - WATCHTOWER_CLEANUP=true
+  #     - WATCHTOWER_INCLUDE_RESTARTING=true
+  #     - DOCKER_API_VERSION=1.44
+  #   command: --interval 300
   posts:
     image: ghcr.io/stevedylandev/andromeda/posts:latest
     restart: unless-stopped
