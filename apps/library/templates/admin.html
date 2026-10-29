@@ -77,7 +77,7 @@
             <div class="book-cover placeholder"></div>
             {{end}}
             <div class="book-info">
-              <h3 class="book-title">{{.Title}}</h3>
+            <h3 class="book-title"><a href="/admin/books/{{.ID}}">{{.Title}}</a></h3>
               <p class="book-authors">{{.Authors}}</p>
               {{if .ISBN}}<p class="book-meta">ISBN: {{.ISBN}}</p>{{end}}
               <form method="POST" action="/admin/books/{{.ID}}/status" class="inline">

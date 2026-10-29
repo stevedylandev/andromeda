@@ -162,6 +162,7 @@
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .quote-page {
@@ -172,6 +173,7 @@
   font-size: 15px;
   line-height: 1.6;
   margin: 2rem 0 1rem;
+  white-space: pre-wrap;
 }
 
 .quote-page-meta {
