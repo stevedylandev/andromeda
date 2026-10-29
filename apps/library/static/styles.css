@@ -96,6 +96,130 @@
   padding: 2rem;
 }
 
+/* Book & quote pages */
+
+.book-card.detail {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.book-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.quote-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 2rem;
+}
+
+.quote-group-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.quote-group-head .book-title {
+  margin: 0;
+}
+
+.quote-group-head a,
+.quote-source a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.quotes-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #333;
+  color: inherit;
+  text-decoration: none;
+}
+
+.quote-item:last-child {
+  border-bottom: none;
+}
+
+.quote-item:hover .quote-text {
+  opacity: 0.75;
+}
+
+.quote-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.quote-page {
+  font-size: 12px;
+}
+
+.quote-page-title {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 2rem 0 1rem;
+}
+
+.quote-page-meta {
+  font-size: 13px;
+  opacity: 0.6;
+}
+
+/* Admin quotes */
+
+.quote-admin-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid #333;
+  padding: 0.75rem;
+}
+
+.quote-admin-row .meta {
+  font-size: 12px;
+  opacity: 0.5;
+  margin: 0;
+}
+
+.quote-admin-row .meta a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.quote-admin-row .labels-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quote-admin-row textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  background: #121113;
+  color: #ffffff;
+  border: 1px solid #333;
+  padding: 0.3rem 0.4rem;
+  resize: vertical;
+}
+
+
 /* Admin */
 
 .admin-form {

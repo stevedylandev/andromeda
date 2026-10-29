@@ -28,9 +28,21 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("POST /admin/books/{id}/status", requireSession(a.adminUpdateStatus))
 	mux.HandleFunc("POST /admin/books/{id}/notes", requireSession(a.adminUpdateNotes))
 	mux.HandleFunc("POST /admin/books/{id}/delete", requireSession(a.adminDeleteBook))
+	mux.HandleFunc("GET /admin/books/{id}", requireSession(a.adminEditBookHandler))
+	mux.HandleFunc("POST /admin/books/{id}/edit", requireSession(a.adminUpdateBook))
+	mux.HandleFunc("GET /admin/quotes", requireSession(a.adminQuotesHandler))
+	mux.HandleFunc("POST /admin/quotes/add", requireSession(a.adminAddQuote))
+	mux.HandleFunc("POST /admin/quotes/{id}/edit", requireSession(a.adminUpdateQuote))
+	mux.HandleFunc("POST /admin/quotes/{id}/delete", requireSession(a.adminDeleteQuote))
+
+	mux.HandleFunc("GET /book/{id}", a.bookPageHandler)
+	mux.HandleFunc("GET /quotes", a.quotesHandler)
+	mux.HandleFunc("GET /quotes/{id}", a.quotePageHandler)
 
 	mux.HandleFunc("GET /api/books", a.apiListBooks)
 	mux.HandleFunc("GET /api/books/{id}", a.apiGetBook)
+	mux.HandleFunc("GET /api/quotes", a.apiListQuotes)
+	mux.HandleFunc("GET /api/quotes/{id}", a.apiGetQuote)
 
 	return mux
 }

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Library | Admin</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>LIBRARY</h1></a>
+      <nav class="links">
+        <a href="/admin/quotes">quotes</a>
+        <a href="/admin/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    <article class="book-card admin">
+      {{if .Book.CoverURL}}
+      <img class="book-cover" src="{{.Book.CoverURL}}" alt="" loading="lazy" />
+      {{else}}
+      <div class="book-cover placeholder"></div>
+      {{end}}
+      <div class="book-info">
+        <h2 class="book-title">{{.Book.Title}}</h2>
+        <p class="book-authors">{{.Book.Authors}}</p>
+        {{if .Book.ISBN}}<p class="book-meta">ISBN: {{.Book.ISBN}}</p>{{end}}
+      </div>
+    </article>
+
+    <section class="admin-form">
+      <h3>Edit book</h3>
+      <form method="POST" action="/admin/books/{{.Book.ID}}/edit" class="labels-form">
+        <input type="hidden" name="from" value="/admin/books/{{.Book.ID}}" />
+        <label>
+          <span>Title</span>
+          <input type="text" name="title" value="{{.Book.Title}}" required />
+        </label>
+        <label>
+          <span>Authors</span>
+          <input type="text" name="authors" value="{{.Book.Authors}}" required />
+        </label>
+        <label>
+          <span>ISBN</span>
+          <input type="text" name="isbn" value="{{.Book.ISBN}}" />
+        </label>
+        <label>
+          <span>Cover URL</span>
+          <input type="text" name="cover_url" value="{{.Book.CoverURL}}" />
+        </label>
+        <label>
+          <span>Notes</span>
+          <textarea name="notes" rows="2">{{.Book.Notes}}</textarea>
+        </label>
+        <button type="submit">Save book</button>
+      </form>
+    </section>
+
+    <section class="admin-form">
+      <h3>Add quote</h3>
+      <form method="POST" action="/admin/quotes/add" class="labels-form">
+        <input type="hidden" name="book_id" value="{{.Book.ID}}" />
+        <input type="hidden" name="from" value="/admin/books/{{.Book.ID}}" />
+        <label>
+          <span>Page</span>
+          <input type="text" name="page" placeholder="optional" />
+        </label>
+        <label>
+          <span>Quote</span>
+          <textarea name="quote" rows="4" required></textarea>
+        </label>
+        <button type="submit">Add quote</button>
+      </form>
+    </section>
+
+    <section class="admin-subs">
+      <h3>Quotes ({{len .Quotes}})</h3>
+      {{if not .Quotes}}
+      <p class="hint">No quotes from this book yet.</p>
+      {{else}}
+      {{range .Quotes}}
+      <div class="quote-admin-row">
+        <p class="meta"><a href="/quotes/{{.ID}}">view</a></p>
+        <form method="POST" action="/admin/quotes/{{.ID}}/edit" class="labels-form">
+          <input type="hidden" name="book_id" value="{{.BookID}}" />
+          <input type="hidden" name="from" value="/admin/books/{{$.Book.ID}}" />
+          <label>
+            <span>Page</span>
+            <input type="text" name="page" value="{{.Page}}" />
+          </label>
+          <label>
+            <span>Quote</span>
+            <textarea name="quote" rows="3" required>{{.Quote}}</textarea>
+          </label>
+          <button type="submit">Save</button>
+        </form>
+        <form method="POST" action="/admin/quotes/{{.ID}}/delete" class="inline">
+          <input type="hidden" name="from" value="/admin/books/{{$.Book.ID}}" />
+          <button type="submit" class="danger">Delete</button>
+        </form>
+      </div>
+      {{end}}
+      {{end}}
+    </section>
+  </body>
+</html>
