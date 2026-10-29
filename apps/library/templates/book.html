@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Library | {{.Book.Title}}</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>LIBRARY</h1></a>
+      <nav class="links">
+        <a href="/quotes">quotes</a>
+      </nav>
+    </div>
+
+    <article class="book-card detail">
+      {{if .Book.CoverURL}}
+      <img class="book-cover" src="{{.Book.CoverURL}}" alt="" />
+      {{else}}
+      <div class="book-cover placeholder"></div>
+      {{end}}
+      <div class="book-info">
+        <h2 class="book-title">{{.Book.Title}}</h2>
+        <p class="book-authors">{{.Book.Authors}}</p>
+        {{if .Book.ISBN}}<p class="book-meta">ISBN: {{.Book.ISBN}}</p>{{end}}
+      </div>
+    </article>
+
+    <section class="section">
+      <h3 class="section-label">Quotes</h3>
+      {{if not .Quotes}}
+      <p class="no-books">No quotes from this book yet.</p>
+      {{else}}
+      <div class="quotes-list">
+        {{range .Quotes}}
+        <a class="quote-item" href="/quotes/{{.ID}}">
+          <blockquote class="quote-text">{{.Quote}}</blockquote>
+          {{if .Page}}<p class="quote-page">p. {{.Page}}</p>{{end}}
+        </a>
+        {{end}}
+      </div>
+      {{end}}
+    </section>
+  </body>
+</html>

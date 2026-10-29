@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121113" />
+    <link rel="stylesheet" href="/assets/darkmatter.css" />
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>Library | Quotes Admin</title>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo"><h1>LIBRARY</h1></a>
+      <nav class="links">
+        <a href="/admin">admin</a>
+        <a href="/admin/logout">logout</a>
+      </nav>
+    </div>
+
+    {{if .Success}}<p class="success">{{.Success}}</p>{{end}}
+    {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+
+    <section class="admin-form">
+      <h3>Add quote</h3>
+      {{if not .Books}}
+      <p class="hint">No books yet. Add a book before adding quotes.</p>
+      {{else}}
+      <form method="POST" action="/admin/quotes/add" class="labels-form">
+        <input type="hidden" name="from" value="/admin/quotes" />
+        <label>
+          <span>Book</span>
+          <select name="book_id" required>
+            {{range .Books}}
+            <option value="{{.ID}}">{{.Title}}{{if .Authors}} — {{.Authors}}{{end}}</option>
+            {{end}}
+          </select>
+        </label>
+        <label>
+          <span>Page</span>
+          <input type="text" name="page" placeholder="optional" />
+        </label>
+        <label>
+          <span>Quote</span>
+          <textarea name="quote" rows="2" required></textarea>
+        </label>
+        <button type="submit">Add quote</button>
+      </form>
+      {{end}}
+    </section>
+
+    <section class="admin-subs">
+      <h3>All quotes ({{len .Quotes}})</h3>
+      {{if not .Quotes}}
+      <p class="hint">No quotes yet.</p>
+      {{else}}
+      {{range .Quotes}}
+      {{$q := .}}
+      <div class="quote-admin-row">
+        <p class="meta"><a href="/quotes/{{$q.ID}}">view</a> · {{if $q.BookTitle}}{{$q.BookTitle}}{{else}}book #{{$q.BookID}}{{end}}</p>
+        <form method="POST" action="/admin/quotes/{{$q.ID}}/edit" class="labels-form">
+          <input type="hidden" name="from" value="/admin/quotes" />
+          <label>
+            <span>Book</span>
+            <select name="book_id">
+              {{range $.Books}}{{$b := .}}
+              <option value="{{$b.ID}}"{{if eq $q.BookID $b.ID}} selected{{end}}>{{$b.Title}}{{if $b.Authors}} — {{$b.Authors}}{{end}}</option>
+              {{end}}
+            </select>
+          </label>
+          <label>
+            <span>Page</span>
+            <input type="text" name="page" value="{{$q.Page}}" />
+          </label>
+          <label>
+            <span>Quote</span>
+            <textarea name="quote" rows="2" required>{{$q.Quote}}</textarea>
+          </label>
+          <button type="submit">Save</button>
+        </form>
+        <form method="POST" action="/admin/quotes/{{$q.ID}}/delete" class="inline">
+          <input type="hidden" name="from" value="/admin/quotes" />
+          <button type="submit" class="danger">Delete</button>
+        </form>
+      </div>
+      {{end}}
+      {{end}}
+    </section>
+  </body>
+</html>

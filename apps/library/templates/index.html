@@ -32,7 +32,7 @@
         <a href="/?category={{.Slug}}"{{if .Active}} class="active"{{end}}>{{.Label}}</a>
         {{end}}
         {{end}}
-        <a href="/admin">add</a>
+        <a href="/quotes">quotes</a>
       </nav>
     </div>
 
@@ -49,6 +49,7 @@
       {{else}}
       <div class="books-list">
         {{range .Books}}
+        <a class="book-card-link" href="/book/{{.ID}}">
         <article class="book-card">
           {{if .CoverURL}}
           <img class="book-cover" src="{{.CoverURL}}" alt="" loading="lazy" />
@@ -63,6 +64,7 @@
             {{end}}
           </div>
         </article>
+        </a>
         {{end}}
       </div>
       {{end}}

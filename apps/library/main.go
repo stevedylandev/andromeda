@@ -32,14 +32,14 @@ func main() {
 
 	tmpl := template.Must(template.ParseFS(appFS, "templates/*.html"))
 	app := &App{
-		DB:             db,
-		Log:            logger,
-		Templates:      tmpl,
-		Sessions:       sessions,
-		AdminPassword:  os.Getenv("ADMIN_PASSWORD"),
-		CookieSecure:   sessions.CookieSecure,
-		BaseURL:        config.Getenv("BASE_URL", "http://localhost:3000"),
-		DisplayMode:    parseDisplayMode(config.Getenv("LIBRARY_DISPLAY_MODE", "inline")),
+		DB:            db,
+		Log:           logger,
+		Templates:     tmpl,
+		Sessions:      sessions,
+		AdminPassword: os.Getenv("ADMIN_PASSWORD"),
+		CookieSecure:  sessions.CookieSecure,
+		BaseURL:       config.Getenv("BASE_URL", "http://localhost:3000"),
+		DisplayMode:   parseDisplayMode(config.Getenv("LIBRARY_DISPLAY_MODE", "inline")),
 	}
 
 	addr := config.Getenv("HOST", "0.0.0.0") + ":" + config.Getenv("PORT", "3000")
