@@ -37,7 +37,7 @@ function Install-Andromeda {
     }
     $arch = $archMap[$procArch]
     if ($arch -eq "arm64") {
-        throw "No windows/arm64 build published (goreleaser config ignores it)."
+        throw "No windows/arm64 build published."
     }
 
     # Resolve version

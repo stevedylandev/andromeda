@@ -53,7 +53,7 @@ if [ -z "$VERSION" ]; then
   fi
 fi
 
-# Strip leading v for archive filename (goreleaser strips it from {{.Version}})
+# Strip leading v for archive filename
 ver_num="${VERSION#v}"
 tag="${APP}/${VERSION}"
 archive="${APP}_${ver_num}_${os}_${arch}.tar.gz"
