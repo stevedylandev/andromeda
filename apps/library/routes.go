@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/stevedylandev/andromeda/pkg/darkmatter"
+	"github.com/stevedylandev/andromeda/pkg/pwa"
 	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
@@ -17,6 +18,7 @@ func (a *App) routes() *http.ServeMux {
 	mux.HandleFunc("GET /", a.indexHandler)
 	mux.HandleFunc("GET /static/", web.EmbeddedHandler(appFS, "static"))
 	darkmatter.Mount(mux, "/assets")
+	pwa.Mount(mux)
 
 	mux.HandleFunc("GET /admin/login", a.loginGetHandler)
 	mux.HandleFunc("POST /admin/login", a.loginPostHandler)

@@ -1,6 +1,10 @@
 {
   "name": "Quotes",
   "short_name": "Quotes",
+  "description": "A quote a day from classic literature",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/static/android-chrome-192x192.png",

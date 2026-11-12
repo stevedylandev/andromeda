@@ -18,6 +18,11 @@ docs/node_modules
 *.out
 coverage.*
 vendor/
+
+# pkg/ holds real shared source code in this monorepo. Some global Go
+# gitignore templates ignore /pkg/, which would silently hide new files
+# under pkg/ — unignore it here so the repo is safe on any machine.
+!pkg/
 apps/blobs/blobs
 apps/bookmarks/bookmarks
 apps/cellar/cellar

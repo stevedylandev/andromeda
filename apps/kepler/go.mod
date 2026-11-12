@@ -5,6 +5,7 @@ go 1.25
 require (
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/stevedylandev/andromeda/pkg/config v0.0.0
+	github.com/stevedylandev/andromeda/pkg/pwa v0.0.0
 	github.com/stevedylandev/andromeda/pkg/web v0.0.0
 	github.com/yuin/goldmark v1.7.8
 )
@@ -36,5 +37,6 @@ require (
 
 replace (
 	github.com/stevedylandev/andromeda/pkg/config => ../../pkg/config
+	github.com/stevedylandev/andromeda/pkg/pwa => ../../pkg/pwa
 	github.com/stevedylandev/andromeda/pkg/web => ../../pkg/web
 )

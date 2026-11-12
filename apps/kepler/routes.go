@@ -4,6 +4,8 @@ import (
 	"mime"
 	"net/http"
 	"path"
+
+	"github.com/stevedylandev/andromeda/pkg/pwa"
 )
 
 func (a *App) routes() *http.ServeMux {
@@ -55,6 +57,8 @@ func (a *App) routes() *http.ServeMux {
 	} {
 		mux.HandleFunc("GET /assets/"+name, staticAsset)
 	}
+
+	pwa.Mount(mux)
 
 	mux.HandleFunc("GET /api/repos", a.apiReposHandler)
 

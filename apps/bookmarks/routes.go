@@ -5,6 +5,7 @@ import (
 
 	"github.com/stevedylandev/andromeda/pkg/auth"
 	"github.com/stevedylandev/andromeda/pkg/darkmatter"
+	"github.com/stevedylandev/andromeda/pkg/pwa"
 	"github.com/stevedylandev/andromeda/pkg/web"
 )
 
@@ -35,5 +36,6 @@ func (a *App) routes() *http.ServeMux {
 
 	mux.HandleFunc("GET /static/", web.EmbeddedHandler(appFS, "static"))
 	darkmatter.Mount(mux, "/assets")
+	pwa.Mount(mux)
 	return mux
 }
